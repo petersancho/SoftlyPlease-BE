@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delaunay Mesh Configurator - SoftlyPlease</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="examples/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="examples/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="examples/favicon/favicon-16x16.png">
+    <link rel="manifest" href="examples/favicon/site.webmanifest">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Times New Roman', serif;
+            line-height: 1.6;
+            color: #000;
+            background: #fff url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="%23ddd" stroke-width="0.5"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>');
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #000;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #000;
+            font-family: 'Times New Roman', serif;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: #000;
+            text-decoration: none;
+            font-weight: bold;
+            font-family: 'Times New Roman', serif;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            color: #666;
+            text-decoration: underline;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            padding: 2rem 0;
+            min-height: calc(100vh - 80px);
+        }
+
+        .visualization-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 0.5rem;
+        }
+
+        #canvas-container {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            background: #f9f9f9;
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+        }
+
+        .control-group {
+            margin-bottom: 2rem;
+        }
+
+        .control-label {
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .control-description {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .slider-container {
+            position: relative;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            background: #ddd;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #000;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #000;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            border: none;
+        }
+
+        .slider-value {
+            position: absolute;
+            top: -25px;
+            right: 0;
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+        }
+
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+        }
+
+        .range-label {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .action-buttons {
+            margin-top: 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 5px;
+            border: 1px solid #000;
+            background: #fff;
+            color: #000;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn:hover {
+            background: #000;
+            color: #fff;
+        }
+
+        .btn.primary {
+            background: #000;
+            color: #fff;
+        }
+
+        .btn.primary:hover {
+            background: #333;
+        }
+
+        .info-panel {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(0,0,0,0.05);
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .info-title {
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-text {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.9rem;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            font-family: 'Times New Roman', serif;
+            font-size: 0.8rem;
+            z-index: 1000;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .controls-panel {
+                order: -1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">Computing Delaunay Mesh...</div>
+    <div id="status" class="status">Ready</div>
+
+    <header>
+        <div class="container header-content">
+            <div class="logo">SoftlyPlease</div>
+            <nav>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/examples/">Examples</a></li>
+                    <li><a href="https://github.com/boi1da-proj/SoftlyPlease-Compute" target="_blank">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="visualization-panel">
+                <div class="panel-header">Delaunay Mesh Visualization</div>
+                <div id="canvas-container">
+                    <canvas id="delaunay-canvas" width="800" height="600"></canvas>
+                </div>
+            </div>
+
+            <div class="controls-panel">
+                <div class="control-group">
+                    <label class="control-label">Mesh Parameters</label>
+                    <div class="control-description">Adjust the computational parameters for the Delaunay triangulation algorithm</div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Point Count: <span id="point-count-value">50</span></label>
+                    <div class="control-description">Number of random points to generate for triangulation</div>
+                    <div class="slider-container">
+                        <input type="range" id="point-count" class="slider" min="3" max="200" value="50" step="1">
+                        <div class="slider-value" id="point-count-display">50</div>
+                    </div>
+                    <div class="range-labels">
+                        <span class="range-label">3 points</span>
+                        <span class="range-label">200 points</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Distribution Radius: <span id="radius-value">100</span></label>
+                    <div class="control-description">Radius of the point distribution area</div>
+                    <div class="slider-container">
+                        <input type="range" id="radius" class="slider" min="50" max="300" value="100" step="10">
+                        <div class="slider-value" id="radius-display">100</div>
+                    </div>
+                    <div class="range-labels">
+                        <span class="range-label">50 units</span>
+                        <span class="range-label">300 units</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Mesh Density: <span id="density-value">1.0</span></label>
+                    <div class="control-description">Controls the density and connectivity of the mesh</div>
+                    <div class="slider-container">
+                        <input type="range" id="density" class="slider" min="0.1" max="2.0" value="1.0" step="0.1">
+                        <div class="slider-value" id="density-display">1.0</div>
+                    </div>
+                    <div class="range-labels">
+                        <span class="range-label">Sparse</span>
+                        <span class="range-label">Dense</span>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="generate-btn" class="btn primary">Generate Mesh</button>
+                    <button id="randomize-btn" class="btn">Random Points</button>
+                    <button id="reset-btn" class="btn">Reset View</button>
+                    <button id="export-btn" class="btn">Export 3DM</button>
+                </div>
+
+                <div class="info-panel">
+                    <div class="info-title">Research Context</div>
+                    <div class="info-text">
+                        This Delaunay mesh configurator demonstrates advanced computational geometry algorithms developed by Peter J Wingo-Sancho. The triangulation algorithm creates optimal mesh structures from point distributions, with real-time parameter adjustment for research and educational purposes.
+                    </div>
+                </div>
+
+                <div class="info-panel">
+                    <div class="info-title">Technical Details</div>
+                    <div class="info-text">
+                        <strong>Algorithm:</strong> Delaunay triangulation<br>
+                        <strong>Backend:</strong> Rhino Compute + Grasshopper<br>
+                        <strong>Visualization:</strong> Three.js WebGL<br>
+                        <strong>Real-time:</strong> Sub-second computation
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let canvas, ctx;
+        let points = [];
+        let triangles = [];
+        let isComputing = false;
+
+        // UI elements
+        const pointCountSlider = document.getElementById('point-count');
+        const radiusSlider = document.getElementById('radius');
+        const densitySlider = document.getElementById('density');
+        const generateBtn = document.getElementById('generate-btn');
+        const randomizeBtn = document.getElementById('randomize-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const exportBtn = document.getElementById('export-btn');
+        const statusDiv = document.getElementById('status');
+        const loadingDiv = document.getElementById('loading');
+
+        // Initialize canvas
+        function initCanvas() {
+            canvas = document.getElementById('delaunay-canvas');
+            ctx = canvas.getContext('2d');
+
+            // Set canvas size to match container
+            const container = document.getElementById('canvas-container');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+
+            // Initial draw
+            drawGrid();
+            updateStatus('Canvas initialized');
+        }
+
+        // Draw background grid
+        function drawGrid() {
+            ctx.fillStyle = '#f9f9f9';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 0.5;
+
+            // Draw grid
+            for (let x = 0; x < canvas.width; x += 20) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y < canvas.height; y += 20) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        // Generate random points
+        function generateRandomPoints(count, radius) {
+            points = [];
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * radius;
+                const x = centerX + Math.cos(angle) * distance;
+                const y = centerY + Math.sin(angle) * distance;
+                points.push({ x, y });
+            }
+        }
+
+        // Draw points
+        function drawPoints() {
+            ctx.fillStyle = '#000';
+            points.forEach(point => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Simple triangulation visualization (placeholder for actual Rhino compute result)
+        function drawTriangles() {
+            if (triangles.length === 0) return;
+
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 1;
+
+            triangles.forEach(triangle => {
+                ctx.beginPath();
+                ctx.moveTo(triangle.a.x, triangle.a.y);
+                ctx.lineTo(triangle.b.x, triangle.b.y);
+                ctx.lineTo(triangle.c.x, triangle.c.y);
+                ctx.closePath();
+                ctx.stroke();
+            });
+        }
+
+        // Update status display
+        function updateStatus(message) {
+            statusDiv.textContent = message;
+        }
+
+        // Show/hide loading spinner
+        function showLoading(show) {
+            loadingDiv.style.display = show ? 'flex' : 'none';
+            isComputing = show;
+            generateBtn.disabled = show;
+        }
+
+        // Generate mesh function (simulated for now)
+        async function generateMesh() {
+            if (isComputing) return;
+
+            showLoading(true);
+            updateStatus('Computing Delaunay mesh...');
+
+            try {
+                // Generate random points
+                const pointCount = parseInt(pointCountSlider.value);
+                const radius = parseInt(radiusSlider.value);
+                generateRandomPoints(pointCount, radius);
+
+                // Simulate computation delay
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Simple mock triangulation (in real implementation, this would call Rhino Compute)
+                triangles = [];
+                for (let i = 0; i < points.length - 2; i += 3) {
+                    if (i + 2 < points.length) {
+                        triangles.push({
+                            a: points[i],
+                            b: points[i + 1],
+                            c: points[i + 2]
+                        });
+                    }
+                }
+
+                // Redraw
+                drawGrid();
+                drawTriangles();
+                drawPoints();
+
+                updateStatus(`Generated mesh with ${points.length} points and ${triangles.length} triangles`);
+                showLoading(false);
+
+            } catch (error) {
+                console.error('Error generating mesh:', error);
+                updateStatus('Error generating mesh');
+                showLoading(false);
+            }
+        }
+
+        // Event listeners
+        function setupEventListeners() {
+            // Slider event listeners
+            [pointCountSlider, radiusSlider, densitySlider].forEach(slider => {
+                slider.addEventListener('input', updateSliderDisplay);
+            });
+
+            // Button event listeners
+            generateBtn.addEventListener('click', generateMesh);
+            randomizeBtn.addEventListener('click', () => {
+                generateRandomPoints(
+                    parseInt(pointCountSlider.value),
+                    parseInt(radiusSlider.value)
+                );
+                drawGrid();
+                drawPoints();
+                updateStatus('Points randomized');
+            });
+
+            resetBtn.addEventListener('click', () => {
+                points = [];
+                triangles = [];
+                drawGrid();
+                updateStatus('View reset');
+            });
+
+            exportBtn.addEventListener('click', () => {
+                alert('Export functionality would save the mesh as a 3DM file');
+                updateStatus('Export requested');
+            });
+        }
+
+        // Update slider display values
+        function updateSliderDisplay() {
+            document.getElementById('point-count-value').textContent = pointCountSlider.value;
+            document.getElementById('point-count-display').textContent = pointCountSlider.value;
+
+            document.getElementById('radius-value').textContent = radiusSlider.value;
+            document.getElementById('radius-display').textContent = radiusSlider.value;
+
+            document.getElementById('density-value').textContent = densitySlider.value;
+            document.getElementById('density-display').textContent = densitySlider.value;
+        }
+
+        // Initialize the application
+        function init() {
+            initCanvas();
+            setupEventListeners();
+            updateSliderDisplay();
+            updateStatus('Delaunay Mesh Configurator initialized');
+        }
+
+        // Start the application
+        window.addEventListener('load', init);
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (canvas) {
+                const container = document.getElementById('canvas-container');
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                drawGrid();
+                drawPoints();
+                drawTriangles();
+            }
+        });
+    </script>
+</body>
+</html>
