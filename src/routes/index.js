@@ -28,18 +28,25 @@ function setComputeParams (){
 }
 
 /**
- * Return list of definitions available on this server. The definitions
- * are located in the 'files' directory. These are the names that can be
- * used to call '/:definition_name` for details about a specific definition
+ * Serve homepage or return list of definitions based on Accept header
  */
 router.get('/',  function(req, res, next) {
-  let definitions = []
-  req.app.get('definitions').forEach( def => {
-    definitions.push({name: def.name})
-  })
+  // Check if client accepts HTML (browser request)
+  const acceptsHTML = req.headers.accept && req.headers.accept.includes('text/html')
 
-  res.setHeader('Content-Type', 'application/json')
-  res.send(JSON.stringify(definitions))
+  if (acceptsHTML) {
+    // Serve the HTML homepage
+    res.sendFile(require('path').join(__dirname, '../index.html'))
+  } else {
+    // Return JSON list of definitions (API request)
+    let definitions = []
+    req.app.get('definitions').forEach( def => {
+      definitions.push({name: def.name})
+    })
+
+    res.setHeader('Content-Type', 'application/json')
+    res.send(JSON.stringify(definitions))
+  }
 })
 
 function describeDefinition(definition, req, res, next){

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoftlyPlease - Computational Design Platform</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="examples/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="examples/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="examples/favicon/favicon-16x16.png">
+    <link rel="manifest" href="examples/favicon/site.webmanifest">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: #667eea;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .features {
+            padding: 4rem 0;
+            background: white;
+        }
+
+        .features h2 {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .examples {
+            padding: 4rem 0;
+            background: #f8f9fa;
+        }
+
+        .examples h2 {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .example-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .example-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .example-image {
+            height: 200px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 4rem;
+        }
+
+        .example-content {
+            padding: 1.5rem;
+        }
+
+        .example-content h3 {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .example-content p {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .example-link {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            transition: background 0.3s ease;
+        }
+
+        .example-link:hover {
+            background: #5a67d8;
+        }
+
+        .status {
+            padding: 2rem 0;
+            background: white;
+            text-align: center;
+        }
+
+        .status-card {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 10px;
+            display: inline-block;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #4CAF50;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .features-grid, .examples-grid {
+                grid-template-columns: 1fr;
+            }
+
+            nav ul {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">SoftlyPlease</div>
+            <nav>
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#examples">Examples</a></li>
+                    <li><a href="examples/">API Docs</a></li>
+                    <li><a href="https://github.com/boi1da-proj/SoftlyPlease-Compute" target="_blank">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Computational Design Platform</h1>
+            <p>Real-time Grasshopper geometry generation powered by Rhino Compute</p>
+            <a href="#examples" class="cta-button">Explore Examples</a>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <div class="container">
+            <h2>Powerful Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Real-time Processing</h3>
+                    <p>Sub-second geometry generation with live parameter updates</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔧</div>
+                    <h3>Grasshopper Integration</h3>
+                    <p>Seamless connection between web interface and Grasshopper definitions</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Web-Based</h3>
+                    <p>Access your computational designs from any device, anywhere</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Multiple Formats</h3>
+                    <p>Export to 3DM, OBJ, and other standard geometry formats</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Secure & Scalable</h3>
+                    <p>Enterprise-grade security with automatic scaling on Heroku</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>3D Visualization</h3>
+                    <p>Interactive Three.js rendering with orbit controls and export options</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="examples" id="examples">
+        <div class="container">
+            <h2>Interactive Examples</h2>
+            <div class="examples-grid">
+                <div class="example-card">
+                    <div class="example-image">🔺</div>
+                    <div class="example-content">
+                        <h3>Delaunay Triangulation</h3>
+                        <p>Click to add points and generate Delaunay mesh in real-time</p>
+                        <a href="examples/delaunay/" class="example-link">Try It</a>
+                    </div>
+                </div>
+                <div class="example-card">
+                    <div class="example-image">🌟</div>
+                    <div class="example-content">
+                        <h3>Spiky Thing Generator</h3>
+                        <p>Adjust radius, count, and length to create unique spherical geometries</p>
+                        <a href="examples/spikyThing/" class="example-link">Try It</a>
+                    </div>
+                </div>
+                <div class="example-card">
+                    <div class="example-image">🪑</div>
+                    <div class="example-content">
+                        <h3>Metaball Table</h3>
+                        <p>Interactive point manipulation for organic table design</p>
+                        <a href="examples/metaballTable/" class="example-link">Try It</a>
+                    </div>
+                </div>
+                <div class="example-card">
+                    <div class="example-image">🏗️</div>
+                    <div class="example-content">
+                        <h3>Parametric Structures</h3>
+                        <p>Explore bending gridshells and lattice structures</p>
+                        <a href="examples/bendy/" class="example-link">Try It</a>
+                    </div>
+                </div>
+                <div class="example-card">
+                    <div class="example-image">📐</div>
+                    <div class="example-content">
+                        <h3>Panel Systems</h3>
+                    <p>Generate aperture panels and modular facade systems</p>
+                        <a href="examples/panels/" class="example-link">Try It</a>
+                    </div>
+                </div>
+                <div class="example-card">
+                    <div class="example-image">📤</div>
+                    <div class="example-content">
+                        <h3>File Upload</h3>
+                        <p>Upload and process your own 3DM files</p>
+                        <a href="examples/upload/" class="example-link">Try It</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="status">
+        <div class="container">
+            <div class="status-card">
+                <span class="status-indicator"></span>
+                <strong>System Status: Online</strong><br>
+                <small>Rhino Compute v8.0.0.0 • AppServer v0.1.12</small>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SoftlyPlease - Computational Design Platform</p>
+            <p>Powered by <a href="https://www.rhino3d.com/" target="_blank">Rhino</a> & <a href="https://www.grasshopper3d.com/" target="_blank">Grasshopper</a> • Built with <a href="https://www.heroku.com/" target="_blank">Heroku</a></p>
+        </div>
+    </footer>
+
+    <script>
+        // Simple status check
+        fetch('/version')
+            .then(response => response.json())
+            .then(data => {
+                const statusElement = document.querySelector('.status-card small');
+                statusElement.textContent = `Rhino ${data.rhino} • Compute ${data.compute} • AppServer ${data.appserver}`;
+            })
+            .catch(error => {
+                console.log('Status check failed:', error);
+            });
+    </script>
+</body>
+</html>
