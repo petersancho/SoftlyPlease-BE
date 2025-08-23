@@ -456,7 +456,99 @@
         // Initialize data object for compute()
         const data = {
             definition: 'TopoOpt.gh',
-            inputs: getInputs()
+            inputs: {}
+        }
+
+        const allowedNicknames = ['links','spacing','tolerance','round','pipe width','segment','cube','smooth']
+        const aliasToNickname = { 'pipeWidth': 'pipe width' }
+
+        // Discover GH inputs from server and render controls
+        async function discoverAndRenderInputs() {
+            try {
+                const resp = await fetch(`/definition_description?path=${encodeURIComponent(data.definition)}`)
+                if (!resp.ok) throw new Error(`Failed to load definition inputs: ${resp.status}`)
+                const meta = await resp.json()
+                const inputs = meta.inputs || meta.inputNames || []
+                const controlsPanel = document.querySelector('.controls-panel')
+
+                const autoGroup = document.createElement('div')
+                autoGroup.className = 'control-group'
+                autoGroup.innerHTML = `<h3>Parameters</h3>`
+
+                for (const input of inputs) {
+                    const rawName = (typeof input === 'string') ? input : (input.name || input.id || '')
+                    if (!rawName) continue
+                    const ghName = aliasToNickname[rawName] || rawName
+                    if (!allowedNicknames.includes(ghName)) continue
+
+                    const labelText = ghName
+                    let controlHtml = ''
+                    if (typeof input === 'object') {
+                        switch (input.paramType) {
+                            case 'Integer':
+                                controlHtml = `<div class="control-item"><label for="${ghName}">${labelText}</label><input type="number" id="${ghName}" value="${input.default ?? 0}" step="1"></div>`
+                                break
+                            case 'Number': {
+                                const min = (input.minimum ?? null)
+                                const max = (input.maximum ?? null)
+                                const val = (input.default ?? 0)
+                                if (min !== null && max !== null) {
+                                    controlHtml = `<div class="control-item"><label for="${ghName}">${labelText}</label><input type="range" id="${ghName}" min="${min}" max="${max}" value="${val}" step="${(max-min)<1?0.1:1}"><div class="value-display" id="${ghName}-value">${val}</div></div>`
+                                } else {
+                                    const step = ghName==='pipe width' ? 0.1 : 1
+                                    controlHtml = `<div class="control-item"><label for="${ghName}">${labelText}</label><input type="number" id="${ghName}" value="${val}" step="${step}"></div>`
+                                }
+                                break }
+                            case 'Boolean':
+                                controlHtml = `<div class="control-item"><input type="checkbox" id="${ghName}" ${(input.default? 'checked' : '')}><label for="${ghName}">${labelText}</label></div>`
+                                break
+                            default:
+                                controlHtml = `<div class="control-item"><label for="${ghName}">${labelText}</label><input type="number" id="${ghName}" value="0"></div>`
+                                break
+                        }
+                    } else {
+                        const step = ghName==='pipe width' ? 0.1 : 1
+                        controlHtml = `<div class="control-item"><label for="${ghName}">${labelText}</label><input type="number" id="${ghName}" value="0" step="${step}"></div>`
+                    }
+
+                    autoGroup.insertAdjacentHTML('beforeend', controlHtml)
+                }
+
+                controlsPanel.appendChild(autoGroup)
+
+                setupEventListeners()
+                data.inputs = getInputs()
+                updateValueDisplays()
+            } catch (err) {
+                console.warn('Auto parameter discovery failed, rendering fallback controls:', err)
+                renderFallbackControls()
+            }
+        }
+
+        function renderFallbackControls() {
+            const controlsPanel = document.querySelector('.controls-panel')
+            const autoGroup = document.createElement('div')
+            autoGroup.className = 'control-group'
+            autoGroup.innerHTML = `<h3>Parameters</h3>`
+
+            const fallback = [
+                { id: 'links', label: 'links', step: 1, value: 3 },
+                { id: 'spacing', label: 'spacing', step: 1, value: 0 },
+                { id: 'tolerance', label: 'tolerance', step: 1, value: 3 },
+                { id: 'round', label: 'round', step: 1, value: 11 },
+                { id: 'pipe width', label: 'pipe width', step: 0.1, value: 3.6 },
+                { id: 'segment', label: 'segment', step: 1, value: 6 },
+                { id: 'cube', label: 'cube', step: 1, value: 1 },
+                { id: 'smooth', label: 'smooth', step: 1, value: 0 }
+            ]
+
+            for (const f of fallback) {
+                autoGroup.insertAdjacentHTML('beforeend', `<div class="control-item"><label for="${f.id}">${f.label}</label><input type="number" id="${f.id}" value="${f.value}" step="${f.step}"></div>`)
+            }
+
+            controlsPanel.appendChild(autoGroup)
+            setupEventListeners()
+            data.inputs = getInputs()
         }
 
         // Initialize the application
@@ -466,8 +558,11 @@
                 console.log('Loaded rhino3dm.')
                 
                 setupScene()
-                setupEventListeners()
-                updateValueDisplays()
+                // Clear any pre-existing static control groups to ensure only allowed controls are shown
+                const panel = document.querySelector('.controls-panel')
+                panel.innerHTML = '<h2 class="panel-title">Simulation Controls</h2>'
+                
+                await discoverAndRenderInputs()
                 
                 document.getElementById('status').textContent = 'Ready'
             } catch (error) {
@@ -534,25 +629,20 @@
             document.getElementById('downloadBtn').addEventListener('click', download)
         }
 
-        // Get all input values
+        // Get all input values (only allowed ones)
         function getInputs() {
             const inputs = {}
-            
-            // Range inputs
-            document.querySelectorAll('input[type="range"]').forEach(input => {
-                inputs[input.id] = parseFloat(input.value)
-            })
-            
-            // Number inputs
-            document.querySelectorAll('input[type="number"]').forEach(input => {
-                inputs[input.id] = parseFloat(input.value)
-            })
-            
-            // Checkbox inputs
-            document.querySelectorAll('input[type="checkbox"]').forEach(input => {
-                inputs[input.id] = input.checked
-            })
-            
+            const allowed = new Set(allowedNicknames)
+            for (const input of document.querySelectorAll('.controls-panel input')) {
+                const id = aliasToNickname[input.id] || input.id
+                if (!allowed.has(id)) continue
+                if (input.type === 'checkbox') {
+                    inputs[id] = input.checked
+                } else if (input.type === 'range' || input.type === 'number' || input.type === 'text') {
+                    const val = input.type === 'text' ? input.value : parseFloat(input.value)
+                    inputs[id] = val
+                }
+            }
             return inputs
         }
 
