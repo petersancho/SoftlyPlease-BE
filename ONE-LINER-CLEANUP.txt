@@ -1,0 +1,16 @@
+# One-liner PowerShell cleanup command
+# Copy and paste this entire command into PowerShell (run as Administrator):
+
+Remove-Item "C:\win-acme.v2.2.9.1701.64.pluggable.zip" -Force -ErrorAction SilentlyContinue; Remove-Item "C:\bootstrap_step-2_log.txt" -Force -ErrorAction SilentlyContinue; Remove-Item "C:\bootstrap_step-1_log.txt" -Force -ErrorAction SilentlyContinue; Remove-Item "C:\public_suffix_list.dat" -Force -ErrorAction SilentlyContinue; Remove-Item "C:\settings_default.json" -Force -ErrorAction SilentlyContinue; Remove-Item "C:\Web_Config.xml" -Force -ErrorAction SilentlyContinue; Remove-Item "C:\version.txt" -Force -ErrorAction SilentlyContinue; Remove-Item "C:\MACOSX" -Recurse -Force -ErrorAction SilentlyContinue; Remove-Item "C:\emptyfolderforweb" -Recurse -Force -ErrorAction SilentlyContinue; Write-Host "Cleanup complete!" -ForegroundColor Green
+
+# Alternative: Run as separate commands for better visibility
+Remove-Item "C:\win-acme.v2.2.9.1701.64.pluggable.zip" -Force
+Remove-Item "C:\bootstrap_step-2_log.txt" -Force  
+Remove-Item "C:\bootstrap_step-1_log.txt" -Force
+Remove-Item "C:\public_suffix_list.dat" -Force
+Remove-Item "C:\settings_default.json" -Force
+Remove-Item "C:\Web_Config.xml" -Force
+Remove-Item "C:\version.txt" -Force
+Remove-Item "C:\MACOSX" -Recurse -Force
+Remove-Item "C:\emptyfolderforweb" -Recurse -Force
+Write-Host "Quick cleanup complete!" -ForegroundColor Green
