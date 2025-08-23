@@ -58,6 +58,14 @@ router.get('/delaunay-configurator', function(req, res, next) {
   res.sendFile(require('path').join(__dirname, '../delaunay-configurator.html'))
 })
 
+router.get('/topoopt-configurator.html', function(req, res, next) {
+  res.sendFile(require('path').join(__dirname, '../topoopt-configurator.html'))
+})
+
+router.get('/topoopt-configurator', function(req, res, next) {
+  res.sendFile(require('path').join(__dirname, '../topoopt-configurator.html'))
+})
+
 function describeDefinition(definition, req, res, next){
   if(definition === undefined)
     throw new Error('Definition not found on server.') 
