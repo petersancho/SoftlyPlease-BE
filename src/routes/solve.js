@@ -139,22 +139,25 @@ function commonSolve (req, res, next){
       }
     }
 
-    let fullUrl = req.protocol + '://' + req.get('host')
-    let definitionPath = `${fullUrl}/definition/${definition.id}`
+    // Build a public URL that the remote Compute server can reach.
+    // If PUBLIC_BASE_URL is set (e.g., https://softlyplease.com), use it.
+    // Otherwise fall back to the incoming request host (works in production where the appserver is public).
+    const publicBaseUrl = process.env.PUBLIC_BASE_URL || (req.protocol + '://' + req.get('host'))
+    let definitionPath = `${publicBaseUrl}/definition/${definition.id}`
     const timePreComputeServerCall = performance.now()
     let computeServerTiming = null
 
     // call compute server
     compute.Grasshopper.evaluateDefinition(definitionPath, trees, false).then( (response) => {
-        
-      // Throw error if response not ok
+      // Include response body on errors for better diagnostics
       if(!response.ok) {
-        throw new Error(response.statusText)
+        return response.text().then((body)=>{
+          throw new Error(`${response.status} ${response.statusText} - ${body}`)
+        })
       } else {
         computeServerTiming = response.headers
         return response.text()
       }
-
     }).then( (result) => {
       // Note: IIS does not send these headers which was causing an issue with the appserver response
       /*const timeComputeServerCallComplete = performance.now()

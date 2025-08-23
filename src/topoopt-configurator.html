@@ -678,20 +678,11 @@
                 document.getElementById('status').textContent = 'Solving Physics...'
                 document.getElementById('solveBtn').disabled = true
 
-                // Construct URL for POST /solve
-                const url = '/solve'
-                const requestData = {
-                    definition: data.definition,
-                    inputs: data.inputs
-                }
+                // Prefer GET /solve/definition.gh?param=... for appserver compatibility
+                const url = new URL(`/solve/${data.definition}`, window.location.origin)
+                Object.entries(data.inputs).forEach(([k, v]) => url.searchParams.append(k, String(v)))
 
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(requestData)
-                })
+                const response = await fetch(url.toString(), { method: 'GET' })
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`)
