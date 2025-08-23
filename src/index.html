@@ -327,6 +327,41 @@
             background: #5a67d8;
         }
 
+        .example-card.featured {
+            grid-column: 1 / -1;
+            background: #fff;
+            border: 3px solid #000;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            transform: scale(1.02);
+        }
+
+        .example-card.featured .example-image {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .example-card.featured .example-content h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .example-card.featured .example-content p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .example-card.featured .example-link {
+            font-size: 1.1rem;
+            padding: 1rem 2rem;
+            background: #000;
+            border-radius: 0;
+        }
+
+        .example-card.featured .example-link:hover {
+            background: #333;
+        }
+
         .status {
             padding: 2rem 0;
             background: white;
@@ -403,12 +438,12 @@
     <section class="hero">
         <div class="container">
             <h1>SoftlyPlease</h1>
-            <p>Advanced Computational Design Research Platform</p>
-            <a href="#examples" class="cta-button">Explore Examples</a>
+            <p>Advanced Physics-Based Form-Finding Research Platform</p>
+            <a href="#examples" class="cta-button">Launch Physics Engine</a>
 
             <div class="research-info">
                 <h3>Research Project</h3>
-                <p>This platform represents cutting-edge research in computational design, developed by Peter J Wingo-Sancho. The system integrates advanced geometric algorithms with real-time web-based visualization, enabling parametric design exploration through an intuitive interface. Each example demonstrates the power of algorithmic geometry generation, from Delaunay triangulation to complex surface manipulation.</p>
+                <p>This platform represents cutting-edge research in computational design, developed by Peter J Wingo-Sancho. The system integrates advanced physics simulation using Kangaroo solver with real-time web-based visualization, enabling dynamic form-finding exploration through an intuitive interface. The TopoOpt algorithm demonstrates the power of physics-based design optimization and structural form generation.</p>
             </div>
         </div>
     </section>
@@ -424,8 +459,8 @@
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🔧</div>
-                    <h3>Grasshopper Integration</h3>
-                    <p>Seamless connection between web interface and Grasshopper definitions</p>
+                    <h3>Kangaroo Physics Engine</h3>
+                    <p>Advanced physics simulation using Kangaroo solver for dynamic form-finding</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🌐</div>
@@ -455,60 +490,12 @@
         <div class="container">
             <h2>Interactive Examples</h2>
             <div class="examples-grid">
-                <div class="example-card">
-                    <div class="example-image">🔺</div>
-                    <div class="example-content">
-                        <h3>Delaunay Mesh Configurator</h3>
-                        <p>Professional research tool for Delaunay triangulation with advanced parameter controls</p>
-                        <a href="delaunay-configurator" class="example-link">Try It</a>
-                    </div>
-                </div>
-                <div class="example-card">
+                <div class="example-card featured">
                     <div class="example-image">⚡</div>
                     <div class="example-content">
                         <h3>TopoOpt Physics Simulation</h3>
-                        <p>Physics-based form-finding using Kangaroo solver with dynamic relaxation</p>
-                        <a href="topoopt-configurator" class="example-link">Try It</a>
-                    </div>
-                </div>
-                <div class="example-card">
-                    <div class="example-image">🌟</div>
-                    <div class="example-content">
-                        <h3>Spiky Thing Generator</h3>
-                        <p>Adjust radius, count, and length to create unique spherical geometries</p>
-                        <a href="examples/spikyThing/" class="example-link">Try It</a>
-                    </div>
-                </div>
-                <div class="example-card">
-                    <div class="example-image">🪑</div>
-                    <div class="example-content">
-                        <h3>Metaball Table</h3>
-                        <p>Interactive point manipulation for organic table design</p>
-                        <a href="examples/metaballTable/" class="example-link">Try It</a>
-                    </div>
-                </div>
-                <div class="example-card">
-                    <div class="example-image">🏗️</div>
-                    <div class="example-content">
-                        <h3>Parametric Structures</h3>
-                        <p>Explore bending gridshells and lattice structures</p>
-                        <a href="examples/bendy/" class="example-link">Try It</a>
-                    </div>
-                </div>
-                <div class="example-card">
-                    <div class="example-image">📐</div>
-                    <div class="example-content">
-                        <h3>Panel Systems</h3>
-                    <p>Generate aperture panels and modular facade systems</p>
-                        <a href="examples/panels/" class="example-link">Try It</a>
-                    </div>
-                </div>
-                <div class="example-card">
-                    <div class="example-image">📤</div>
-                    <div class="example-content">
-                        <h3>File Upload</h3>
-                        <p>Upload and process your own 3DM files</p>
-                        <a href="examples/upload/" class="example-link">Try It</a>
+                        <p>Advanced physics-based form-finding using Kangaroo solver with dynamic relaxation. Explore how material properties, gravitational forces, and boundary conditions influence structural geometry through real-time simulation.</p>
+                        <a href="topoopt-configurator" class="example-link">Launch Physics Engine</a>
                     </div>
                 </div>
             </div>

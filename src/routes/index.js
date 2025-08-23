@@ -50,14 +50,6 @@ router.get('/',  function(req, res, next) {
 })
 
 // Specific routes must come before parameterized routes
-router.get('/delaunay-configurator.html', function(req, res, next) {
-  res.sendFile(require('path').join(__dirname, '../delaunay-configurator.html'))
-})
-
-router.get('/delaunay-configurator', function(req, res, next) {
-  res.sendFile(require('path').join(__dirname, '../delaunay-configurator.html'))
-})
-
 router.get('/topoopt-configurator.html', function(req, res, next) {
   res.sendFile(require('path').join(__dirname, '../topoopt-configurator.html'))
 })
