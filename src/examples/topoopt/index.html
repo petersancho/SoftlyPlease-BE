@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TopoOpt – Rhino Compute</title>
+    <style>
+      body { margin: 0; font-family: 'Times New Roman', serif; }
+      #loader { border: 5px solid #f3f3f3; border-top: 5px solid #000; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; position: absolute; top: 50%; left: 50%; display: none; }
+      @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
+      #ui { position: absolute; z-index: 10; top: 10px; left: 10px; width: 280px; background: rgba(255,255,255,0.95); border: 2px solid #000; padding: 10px; }
+      #ui h3 { margin: 0 0 10px; }
+      .row { margin-bottom: 8px; }
+      .row label { display: block; font-weight: bold; }
+      .row input { width: 100%; }
+      .actions { display: flex; gap: 8px; margin-top: 8px; }
+      button { padding: 6px 10px; border: 2px solid #000; background: #000; color: #fff; cursor: pointer; }
+      button:disabled { opacity: .5; cursor: default; }
+      #status { position: absolute; right: 10px; bottom: 10px; background: #fff; border: 2px solid #000; padding: 4px 8px; font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <div id="loader"></div>
+    <div id="ui">
+      <h3>TopoOpt Controls</h3>
+      <div class="row"><label>links</label><input id="links" type="number" value="3" step="1"></div>
+      <div class="row"><label>spacing</label><input id="spacing" type="number" value="0" step="1"></div>
+      <div class="row"><label>tolerance</label><input id="tolerance" type="number" value="3" step="1"></div>
+      <div class="row"><label>round</label><input id="round" type="number" value="11" step="1"></div>
+      <div class="row"><label>pipe width</label><input id="pipe width" type="number" value="3.6" step="0.1"></div>
+      <div class="row"><label>segment</label><input id="segment" type="number" value="6" step="1"></div>
+      <div class="row"><label>cube</label><input id="cube" type="number" value="1" step="1"></div>
+      <div class="row"><label>smooth</label><input id="smooth" type="number" value="0" step="1"></div>
+      <div class="actions">
+        <button id="solve">Solve</button>
+        <button id="reset">Reset View</button>
+      </div>
+    </div>
+    <div id="status">Ready</div>
+
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.156.1/build/three.module.js",
+          "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.156.1/examples/jsm/controls/OrbitControls.js",
+          "three/examples/jsm/loaders/3DMLoader": "https://unpkg.com/three@0.156.1/examples/jsm/loaders/3DMLoader.js",
+          "rhino3dm": "https://unpkg.com/rhino3dm@8.0.0-beta/rhino3dm.module.js",
+          "rhinocompute": "https://unpkg.com/compute-rhino3d@0.13.0-beta/compute.rhino3d.module.js"
+        }
+      }
+    </script>
+    <script type="module" src="./script.js"></script>
+  </body>
+</html>
+
+
