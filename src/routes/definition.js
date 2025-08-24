@@ -16,16 +16,39 @@ let router = express.Router()
  * definition is modified. 
  */
 router.get('/:id', function(req, res, next) {
-  let definition = req.app.get('definitions').find(o => o.id === req.params.id)
+  let definitions = req.app.get('definitions') || []
+  let definition = null
+
+  // Try to find by hash first (for compute requests)
+  definition = definitions.find(o => o.id === req.params.id)
+
+  // If not found by hash, try to find by name (for direct requests)
+  if (!definition) {
+    definition = definitions.find(o => o.name === req.params.id)
+  }
+
+  // If still not found, return 404
+  if (!definition) {
+    return res.status(404).json({
+      error: 'Definition not found',
+      requestedId: req.params.id,
+      availableDefinitions: definitions.map(d => ({ name: d.name, id: d.id }))
+    })
+  }
+
   const options = {
     headers: {
       'x-timestamp': Date.now(),
-      'x-sent': true
+      'x-sent': true,
+      'Content-Type': 'application/octet-stream'
     }
   }
+
   res.sendFile(definition.path, options, (error) => {
-    if(error !== undefined)
-      console.log(error)
+    if(error !== undefined) {
+      console.error('Definition serving error:', error)
+      next(error)
+    }
   })
 })
 
