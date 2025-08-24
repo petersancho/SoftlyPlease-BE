@@ -1,0 +1,79 @@
+{
+  "name": "@mcneel/compute.rhino3d.appserver",
+  "version": "0.1.12",
+  "keywords": [
+    "node.js",
+    "expressjs",
+    "compute.rhino3d",
+    "rhino3d",
+    "rhino3dm",
+    "grasshopper3d"
+  ],
+  "description": "A node.js/expressjs server which communicates to a rhino3d compute geometry server to remote solve Grasshopper definitions.",
+  "homepage": "https://www.rhino3d.com/compute",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/boi1da-proj/SoftlyPlease-Compute.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mcneel/compute.rhino3d.appserver/issues"
+  },
+  "author": {
+    "name": "Robert McNeel & Associates"
+  },
+  "contributors": [
+    {
+      "name": "Luis E. Fraguada",
+      "email": "luis@mcneel.com",
+      "url": "https://github.com/fraguada"
+    }
+  ],
+  "license": "MIT",
+  "preferGlobal": true,
+  "engines": {
+    "node": "16.x"
+  },
+  "main": "./bin/www",
+  "bin": {
+    "compute-rhino3d-appserver": ".src/bin/www"
+  },
+  "scripts": {
+    "start": "node ./src/bin/www",
+    "start:production": "NODE_ENV=production WEB_CONCURRENCY=2 node ./src/bin/www",
+    "start:clustered": "NODE_ENV=production WEB_CONCURRENCY=4 node ./src/bin/www",
+    "start:dev": "NODE_ENV=development node ./src/bin/www",
+    "start:debug": "NODE_ENV=development DEBUG=* node ./src/bin/www",
+    "lint": "eslint src/*.js --fix && eslint src/routes/*.js --fix && eslint src/bin/www --fix",
+    "start-args": "node ./src/bin/www --computeUrl http://localhost:6500/",
+    "start-rhino": "powershell -Command \"Start-Process -FilePath 'C:\\SoftlyPlease-Compute\\compute.rhino3d-8.x\\src\\bin\\Release\\compute.geometry\\compute.geometry.exe' -ArgumentList '--port=6500' -NoNewWindow\"",
+    "stop-rhino": "powershell -Command \"Stop-Process -Name 'compute.geometry' -Force -ErrorAction SilentlyContinue\"",
+    "restart": "npm run stop-rhino && timeout 5 && npm run start-rhino && timeout 10 && npm start",
+    "test:health": "curl -f http://localhost:3000/health || exit 1",
+    "test:ready": "curl -f http://localhost:3000/ready || exit 1",
+    "test:metrics": "curl -f http://localhost:3000/metrics || exit 1"
+  },
+  "dependencies": {
+    "camelcase-keys": "^6.2.2",
+    "compression": "1.7.4",
+    "compute-rhino3d": "^0.13.0-beta",
+    "cors": "2.8.5",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "express-rate-limit": "^6.7.0",
+    "helmet": "^6.0.1",
+    "hbs": "^4.2.0",
+    "http-errors": "~1.6.3",
+    "md5-file": "5.0.0",
+    "memjs": "^1.2.2",
+    "morgan": "~1.9.1",
+    "node-cache": "^5.1.1",
+    "node-fetch": "2.6.7",
+    "response-time": "^2.3.2",
+    "rhino3dm": "7.15.0",
+    "throng": "4.0.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "eslint": "8.7.0"
+  }
+}
