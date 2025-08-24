@@ -148,7 +148,7 @@ if (process.env.NODE_ENV === 'production') {
   // In production, point to the same Heroku app
   const herokuUrl = process.env.HEROKU_APP_NAME
     ? `https://${process.env.HEROKU_APP_NAME}.herokuapp.com/`
-    : 'https://softlyplease-appserver.herokuapp.com/'; // Fallback
+    : 'https://www.softlyplease.com/'; // Fallback
   process.env.RHINO_COMPUTE_URL = herokuUrl;
   console.log('🌐 Production mode: RHINO_COMPUTE_URL set to:', herokuUrl);
 } else {
