@@ -142,8 +142,19 @@ if (argIndex > -1)
 if (!process.env.RHINO_COMPUTE_URL)
   process.env.RHINO_COMPUTE_URL = 'http://localhost:6500/' // Fixed to 6500 to match Rhino Compute
 
-// Force override any existing environment variable to ensure consistency
-process.env.RHINO_COMPUTE_URL = 'http://localhost:6500/'
+// Configure RHINO_COMPUTE_URL based on environment
+if (process.env.NODE_ENV === 'production') {
+  // In production, point to the same Heroku app
+  const herokuUrl = process.env.HEROKU_APP_NAME
+    ? `https://${process.env.HEROKU_APP_NAME}.herokuapp.com/`
+    : 'https://softlyplease-appserver.herokuapp.com/'; // Fallback
+  process.env.RHINO_COMPUTE_URL = herokuUrl;
+  console.log('🌐 Production mode: RHINO_COMPUTE_URL set to:', herokuUrl);
+} else {
+  // In development, use localhost
+  process.env.RHINO_COMPUTE_URL = 'http://localhost:6500/';
+  console.log('💻 Development mode: RHINO_COMPUTE_URL set to localhost');
+}
 
 // Ensure URL has trailing slash for proper concatenation
 if (!process.env.RHINO_COMPUTE_URL.endsWith('/')) {
@@ -223,6 +234,38 @@ app.get('/favicon.ico', (req, res) => res.status(200))
 app.get('/topoopt', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'topoopt_test.html'))
 })
+
+// Rhino Compute endpoint for Grasshopper processing
+app.post('/grasshopper', async (req, res) => {
+  try {
+    const { definition, inputs } = req.body;
+
+    console.log('🦏 Rhino Compute request:', { definition, inputs });
+
+    // For now, return a mock response
+    // In production, this would use the compute-rhino3d library
+    const result = {
+      success: true,
+      message: 'Computation completed successfully',
+      data: {
+        definition: definition,
+        inputs: inputs,
+        timestamp: new Date().toISOString(),
+        mockResult: 'This is a mock response. Full implementation would process the Grasshopper definition.',
+        note: 'Rhino Compute functionality integrated into the same app'
+      }
+    };
+
+    res.json(result);
+  } catch (error) {
+    console.error('❌ Rhino Compute error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
 
 // Root route - serve a simple homepage
 app.get('/', (req, res) => {

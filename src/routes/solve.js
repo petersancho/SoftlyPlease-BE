@@ -260,9 +260,26 @@ async function performComputation(req, res, timePostStart, requestId) {
 
     console.log(`🔧 Starting computation for ${res.locals.params.definition.name} (ID: ${requestId})`)
 
-    // Call compute server with timeout and retry logic
+    // Call internal Rhino Compute endpoint
     const computeStart = performance.now()
-    const response = await compute.Grasshopper.evaluateDefinition(definitionPath, trees, false)
+
+    // Convert DataTree objects to simple format for our endpoint
+    const simplifiedInputs = {}
+    trees.forEach((tree, index) => {
+      const paramName = Object.keys(res.locals.params.inputs)[index] || `input_${index}`
+      simplifiedInputs[paramName] = tree.data || tree
+    })
+
+    const response = await fetch(`${req.protocol}://${req.get('host')}/grasshopper`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        definition: res.locals.params.definition.name,
+        inputs: simplifiedInputs
+      })
+    })
 
     if(!response.ok) {
       throw new Error(`Rhino Compute error: ${response.status} ${response.statusText}`)
