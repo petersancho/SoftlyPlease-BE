@@ -238,14 +238,153 @@ app.get('/topoopt', (req, res) => {
 
 app.get('/configurator/:name', (req, res) => {
   const configName = req.params.name
-  const configFile = path.join(__dirname, 'views', `configurator-${configName}.html`)
 
-  // Check if specific configurator exists, otherwise use generic
-  if (fs.existsSync(configFile)) {
-    res.sendFile(configFile)
-  } else {
-    res.sendFile(path.join(__dirname, 'views', 'configurator-generic.html'))
+  // Check multiple naming patterns for configurator files
+  const possibleFiles = [
+    path.join(__dirname, 'views', `${configName}.html`),
+    path.join(__dirname, 'views', `configurator-${configName}.html`),
+    path.join(__dirname, 'views', `${configName.replace('_', '')}.html`)
+  ]
+
+  // Try to find an existing configurator file
+  for (const configFile of possibleFiles) {
+    if (fs.existsSync(configFile)) {
+      return res.sendFile(configFile)
+    }
   }
+
+  // If no specific configurator exists, check if there's a matching GH definition
+  const definitions = req.app.get('definitions') || []
+  const definition = definitions.find(def => {
+    const defName = def.name.replace('.gh', '').toLowerCase()
+    return defName === configName.toLowerCase() ||
+           defName === configName.replace('_', '').toLowerCase() ||
+           defName.includes(configName.toLowerCase())
+  })
+
+  if (definition) {
+    // Create a dynamic configurator based on the definition
+    const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SoftlyPlease - ${definition.name} Configurator</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                color: #333;
+                padding: 20px;
+            }
+            .container { max-width: 800px; margin: 0 auto; }
+            .header {
+                text-align: center;
+                color: white;
+                margin-bottom: 30px;
+            }
+            .configurator {
+                background: rgba(255, 255, 255, 0.95);
+                border-radius: 20px;
+                padding: 30px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            }
+            .back-link {
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                background: rgba(255, 255, 255, 0.9);
+                color: #667eea;
+                padding: 10px 20px;
+                border-radius: 25px;
+                text-decoration: none;
+                font-weight: 500;
+            }
+            .compute-btn {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 15px 30px;
+                border-radius: 50px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                margin-top: 20px;
+            }
+            .status { margin-top: 20px; padding: 15px; border-radius: 10px; }
+            .loading { background: #fff3cd; color: #856404; }
+            .success { background: #d4edda; color: #155724; }
+            .error { background: #f8d7da; color: #721c24; }
+        </style>
+    </head>
+    <body>
+        <a href="/view" class="back-link">← Back to Configurators</a>
+        <div class="container">
+            <div class="header">
+                <h1>🔧 ${definition.name.replace('.gh', '')} Configurator</h1>
+                <p>Configure your Grasshopper definition parameters</p>
+            </div>
+            <div class="configurator">
+                <h2>Definition Details</h2>
+                <p><strong>File:</strong> ${definition.name}</p>
+                <p><strong>ID:</strong> ${definition.id}</p>
+                <p><strong>Status:</strong> Ready for computation</p>
+
+                <h3 style="margin-top: 30px;">Parameters</h3>
+                <p>Note: Parameter discovery from .gh files requires Rhino Compute API access.</p>
+                <p>Use the solve endpoint directly with your parameters.</p>
+
+                <button class="compute-btn" onclick="testComputation()">🚀 Test Computation</button>
+
+                <div id="status" class="status" style="display: none;"></div>
+            </div>
+        </div>
+
+        <script>
+            async function testComputation() {
+                const status = document.getElementById('status');
+                status.style.display = 'block';
+                status.className = 'status loading';
+                status.textContent = '🔄 Testing computation...';
+
+                try {
+                    const response = await fetch('/solve', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            definition: '${definition.name}',
+                            inputs: { test: [1] }
+                        })
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        status.className = 'status success';
+                        status.textContent = '✅ Computation successful! Check browser console for details.';
+                        console.log('Computation result:', result);
+                    } else {
+                        const error = await response.json();
+                        status.className = 'status error';
+                        status.textContent = '❌ Error: ' + (error.message || 'Unknown error');
+                    }
+                } catch (error) {
+                    status.className = 'status error';
+                    status.textContent = '❌ Network Error: ' + error.message;
+                }
+            }
+        </script>
+    </body>
+    </html>
+    `;
+
+    return res.send(html);
+  }
+
+  // If no match found, show 404
+  res.status(404).send('Configurator not found')
 })
 
 // View all configurators route
