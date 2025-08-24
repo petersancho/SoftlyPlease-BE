@@ -248,6 +248,179 @@ app.get('/configurator/:name', (req, res) => {
   }
 })
 
+// View all configurators route
+app.get('/view', (req, res) => {
+  const definitions = req.app.get('definitions') || []
+  const viewsDir = path.join(__dirname, 'views')
+  let availableConfigurators = []
+
+  // Get available HTML files
+  if (fs.existsSync(viewsDir)) {
+    const viewFiles = fs.readdirSync(viewsDir).filter(file => file.endsWith('.html'))
+    availableConfigurators = viewFiles.map(file => file.replace('.html', ''))
+  }
+
+  // Create configurator overview page
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SoftlyPlease - All Configurators</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                color: #333;
+                padding: 20px;
+            }
+            .container { max-width: 1200px; margin: 0 auto; }
+            .header {
+                text-align: center;
+                color: white;
+                margin-bottom: 30px;
+            }
+            .header h1 { font-size: 2.5rem; margin-bottom: 10px; font-weight: 300; }
+            .configurators-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 20px;
+                margin-bottom: 30px;
+            }
+            .configurator-card {
+                background: rgba(255, 255, 255, 0.95);
+                border-radius: 15px;
+                padding: 25px;
+                text-align: center;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                transition: transform 0.3s ease;
+            }
+            .configurator-card:hover { transform: translateY(-5px); }
+            .configurator-icon {
+                font-size: 3rem;
+                margin-bottom: 15px;
+                display: block;
+            }
+            .configurator-title {
+                font-size: 1.3rem;
+                font-weight: 600;
+                margin-bottom: 10px;
+                color: #333;
+            }
+            .configurator-desc {
+                color: #666;
+                margin-bottom: 20px;
+                line-height: 1.5;
+            }
+            .configurator-btn {
+                display: inline-block;
+                padding: 12px 25px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                text-decoration: none;
+                border-radius: 25px;
+                font-weight: 600;
+                transition: all 0.3s ease;
+            }
+            .configurator-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            }
+            .back-link {
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                background: rgba(255, 255, 255, 0.9);
+                color: #667eea;
+                padding: 10px 20px;
+                border-radius: 25px;
+                text-decoration: none;
+                font-weight: 500;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            }
+            .definitions-list {
+                background: rgba(255, 255, 255, 0.95);
+                border-radius: 15px;
+                padding: 25px;
+                margin-top: 20px;
+            }
+            .definitions-list h2 {
+                color: #667eea;
+                margin-bottom: 15px;
+                font-size: 1.5rem;
+            }
+            .definition-item {
+                padding: 10px 0;
+                border-bottom: 1px solid #eee;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .definition-item:last-child { border-bottom: none; }
+        </style>
+    </head>
+    <body>
+        <a href="/" class="back-link">← Back to Home</a>
+        <div class="container">
+            <div class="header">
+                <h1>🎮 All Configurators</h1>
+                <p>Explore our collection of parametric design tools</p>
+            </div>
+
+            <div class="configurators-grid">
+                ${availableConfigurators.map(name => {
+                    const icons = {
+                        'topoopt': '🧮',
+                        'furniture': '🪑',
+                        'structural': '🏗️',
+                        'organic': '🌿',
+                        'metaball': '🔮'
+                    };
+                    const descriptions = {
+                        'topoopt': 'Optimize material distribution for structural efficiency',
+                        'furniture': 'Design custom furniture with parametric controls',
+                        'structural': 'Create optimized structural components',
+                        'organic': 'Generate organic and natural forms',
+                        'metaball': 'Explore implicit surface modeling'
+                    };
+
+                    return `
+                        <div class="configurator-card">
+                            <span class="configurator-icon">${icons[name] || '🔧'}</span>
+                            <div class="configurator-title">${name.charAt(0).toUpperCase() + name.slice(1)}</div>
+                            <div class="configurator-desc">${descriptions[name] || 'Custom parametric configurator'}</div>
+                            <a href="/configurator/${name}" class="configurator-btn">Launch Configurator</a>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+
+            <div class="definitions-list">
+                <h2>📋 Available Grasshopper Definitions</h2>
+                ${definitions.map(def => `
+                    <div class="definition-item">
+                        <div>
+                            <strong>${def.name}</strong>
+                            <span style="color: #666; margin-left: 10px;">ID: ${def.id}</span>
+                        </div>
+                        <div style="color: #888; font-size: 0.9rem;">
+                            ${(def.inputs || []).length} inputs •
+                            ${(def.outputs || []).length} outputs
+                        </div>
+                    </div>
+                `).join('') || '<p>No definitions loaded</p>'}
+            </div>
+        </div>
+    </body>
+    </html>
+  `;
+
+  res.send(html);
+})
+
 // Enhanced Rhino Compute endpoint for Grasshopper processing
 app.post('/grasshopper', async (req, res) => {
   try {
