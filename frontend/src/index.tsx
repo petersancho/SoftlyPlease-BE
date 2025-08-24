@@ -1,0 +1,83 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { ThemeProvider } from 'styled-components';
+import App from './App';
+import './styles/index.css';
+
+// Simple theme
+const theme = {
+  colors: {
+    primary: '#00ff88',
+    secondary: '#f0f0f0',
+    accent: '#00ff88',
+    background: '#000000',
+    surface: '#111111',
+    surfaceLight: '#1a1a1a',
+    text: '#ffffff',
+    textSecondary: '#cccccc',
+    textMuted: '#999999',
+    border: '#333333',
+    borderLight: '#444444',
+    success: '#00ff88',
+    warning: '#ffaa00',
+    error: '#ff4444',
+  },
+  fonts: {
+    primary: 'Eurostile Extended, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    mono: '"SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace',
+  },
+  fontSizes: {
+    xs: '0.75rem',
+    sm: '0.875rem',
+    base: '1rem',
+    lg: '1.125rem',
+    xl: '1.25rem',
+    '2xl': '1.5rem',
+    '3xl': '1.875rem',
+    '4xl': '2.25rem',
+    '5xl': '3rem',
+  },
+  fontWeights: {
+    thin: 100,
+    light: 300,
+    normal: 400,
+    medium: 500,
+    semibold: 600,
+    bold: 700,
+    extrabold: 800,
+    black: 900,
+  },
+  spacing: {
+    xs: '0.25rem',
+    sm: '0.5rem',
+    md: '1rem',
+    lg: '1.5rem',
+    xl: '2rem',
+    '2xl': '3rem',
+    '3xl': '4rem',
+  },
+  borderRadius: {
+    none: '0',
+    sm: '0.125rem',
+    md: '0.375rem',
+    lg: '0.5rem',
+    xl: '0.75rem',
+    '2xl': '1rem',
+    full: '9999px',
+  },
+};
+
+const root = ReactDOM.createRoot(
+  document.getElementById('root') as HTMLElement
+);
+
+root.render(
+  <React.StrictMode>
+    <ThemeProvider theme={theme}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </ThemeProvider>
+  </React.StrictMode>
+);
