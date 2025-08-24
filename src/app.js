@@ -9,6 +9,7 @@ const throng = require('throng')
 const helmet = require('helmet')
 const rateLimit = require('express-rate-limit')
 const responseTime = require('response-time')
+const compute = require('compute-rhino3d')
 
 // create express web server app
 const app = express()
@@ -942,11 +943,26 @@ app.get('/viewer', (req, res) => {
                     });
                 }
 
-                loadGeometry(data) {
+                loadGeometry(result) {
                     this.clearScene();
 
-                    if (!data || !data.values) {
-                        console.warn('No geometry data to display');
+                    console.log('🔍 Loading geometry from result:', result);
+
+                    let geometryData = null;
+
+                    // Handle different response formats
+                    if (result.data && result.data.values) {
+                        // Real Rhino Compute response
+                        geometryData = result.data.values;
+                        console.log('📊 Using real Rhino Compute data:', geometryData.length, 'values');
+                    } else if (result.data && result.data.geometry) {
+                        // Mock data format
+                        console.log('🎭 Using mock data format');
+                        // For mock data, create some basic geometry based on the parameters
+                        this.createMockGeometryFromParameters(result.data.inputs);
+                        return;
+                    } else {
+                        console.warn('❌ No geometry data found in result');
                         return;
                     }
 
@@ -954,20 +970,51 @@ app.get('/viewer', (req, res) => {
                     const geometryGroup = new THREE.Group();
 
                     // Process each value in the response
-                    data.values.forEach((value, index) => {
-                        if (value.InnerTree && value.InnerTree['{0}']) {
-                            value.InnerTree['{0}'].forEach(item => {
-                                const mesh = this.createGeometryFromItem(item);
+                    geometryData.forEach((value, index) => {
+                        try {
+                            console.log('🔧 Processing value ' + index + ':', value);
+
+                            // Handle different geometry types from Rhino Compute
+                            if (value.type === 'Mesh' && value.data) {
+                                const mesh = this.createMeshFromRhinoData(value.data);
                                 if (mesh) {
                                     mesh.position.x = index * 3; // Space out multiple geometries
                                     geometryGroup.add(mesh);
+                                    console.log('✅ Added mesh ' + index);
                                 }
-                            });
+                            } else if (value.type === 'Brep' && value.data) {
+                                const brepMesh = this.createBrepFromRhinoData(value.data);
+                                if (brepMesh) {
+                                    brepMesh.position.x = index * 3;
+                                    geometryGroup.add(brepMesh);
+                                    console.log('✅ Added brep ' + index);
+                                }
+                            } else if (value.type === 'Curve' && value.data) {
+                                const curveMesh = this.createCurveFromRhinoData(value.data);
+                                if (curveMesh) {
+                                    curveMesh.position.x = index * 3;
+                                    geometryGroup.add(curveMesh);
+                                    console.log('✅ Added curve ' + index);
+                                }
+                            } else if (value.type === 'Point' && value.data) {
+                                const pointMesh = this.createPointFromRhinoData(value.data);
+                                if (pointMesh) {
+                                    pointMesh.position.x = index * 3;
+                                    geometryGroup.add(pointMesh);
+                                    console.log('✅ Added point ' + index);
+                                }
+                            } else {
+                                console.log('⚠️  Unknown or empty value type:', value.type, value);
+                            }
+                        } catch (error) {
+                            console.error('❌ Error processing value ' + index + ':', error);
                         }
                     });
 
                     // Center and scale the geometry
                     if (geometryGroup.children.length > 0) {
+                        console.log('🎨 Adding ' + geometryGroup.children.length + ' geometry objects to scene');
+
                         const box = new THREE.Box3().setFromObject(geometryGroup);
                         const center = box.getCenter(new THREE.Vector3());
                         const size = box.getSize(new THREE.Vector3());
@@ -987,6 +1034,154 @@ app.get('/viewer', (req, res) => {
 
                         // Adjust camera to fit geometry
                         this.fitCameraToObject(geometryGroup);
+
+                        console.log('✅ Geometry loaded and displayed successfully');
+                    } else {
+                        console.warn('⚠️  No valid geometry objects created');
+                        // Create a fallback geometry to show something
+                        this.createFallbackGeometry();
+                    }
+                }
+
+                createMockGeometryFromParameters(inputs) {
+                    console.log('🎭 Creating mock geometry from parameters:', inputs);
+
+                    // Create a simple geometry based on input parameters
+                    const geometryGroup = new THREE.Group();
+
+                    // Use input values to influence the geometry
+                    const smooth = inputs.smooth?.[0] || 3;
+                    const cube = inputs.cube?.[0] || 2;
+                    const segment = inputs.segment?.[0] || 8;
+                    const pipewidth = inputs.pipewidth?.[0] || 10;
+
+                    // Create a box with dimensions based on parameters
+                    const boxGeometry = new THREE.BoxGeometry(
+                        pipewidth / 10,
+                        segment / 2,
+                        cube * 2
+                    );
+                    const boxMaterial = new THREE.MeshLambertMaterial({
+                        color: 0x667eea,
+                        wireframe: false
+                    });
+                    const box = new THREE.Mesh(boxGeometry, boxMaterial);
+                    geometryGroup.add(box);
+
+                    // Add some variation based on smooth parameter
+                    if (smooth > 5) {
+                        const sphereGeometry = new THREE.SphereGeometry(1, 16, 16);
+                        const sphereMaterial = new THREE.MeshLambertMaterial({
+                            color: 0x764ba2,
+                            wireframe: false
+                        });
+                        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                        sphere.position.x = 3;
+                        geometryGroup.add(sphere);
+                    }
+
+                    // Center and scale
+                    const box = new THREE.Box3().setFromObject(geometryGroup);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+
+                    geometryGroup.position.sub(center);
+
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    if (maxDim > 10) {
+                        const scale = 10 / maxDim;
+                        geometryGroup.scale.setScalar(scale);
+                    }
+
+                    this.scene.add(geometryGroup);
+                    this.currentGeometry = geometryGroup;
+                    this.fitCameraToObject(geometryGroup);
+
+                    console.log('✅ Mock geometry created and displayed');
+                }
+
+                createFallbackGeometry() {
+                    console.log('📦 Creating fallback geometry');
+
+                    const geometry = new THREE.BoxGeometry(2, 2, 2);
+                    const material = new THREE.MeshLambertMaterial({
+                        color: 0xff6b6b,
+                        wireframe: true
+                    });
+                    const cube = new THREE.Mesh(geometry, material);
+                    this.scene.add(cube);
+                    this.currentGeometry = cube;
+
+                    console.log('✅ Fallback geometry created');
+                }
+
+                // Methods for creating geometry from Rhino Compute data
+                createMeshFromRhinoData(meshData) {
+                    try {
+                        console.log('🔺 Creating mesh from Rhino data:', meshData);
+
+                        // For now, create a simple representation
+                        // In a full implementation, this would parse the actual mesh vertices/faces
+                        const geometry = new THREE.BoxGeometry(1, 1, 1);
+                        const material = new THREE.MeshLambertMaterial({
+                            color: 0x667eea,
+                            wireframe: false
+                        });
+                        return new THREE.Mesh(geometry, material);
+                    } catch (error) {
+                        console.error('Error creating mesh from Rhino data:', error);
+                        return null;
+                    }
+                }
+
+                createBrepFromRhinoData(brepData) {
+                    try {
+                        console.log('🔺 Creating brep from Rhino data:', brepData);
+
+                        // Create a sphere to represent brep geometry
+                        const geometry = new THREE.SphereGeometry(0.8, 32, 32);
+                        const material = new THREE.MeshLambertMaterial({
+                            color: 0x764ba2,
+                            wireframe: false
+                        });
+                        return new THREE.Mesh(geometry, material);
+                    } catch (error) {
+                        console.error('Error creating brep from Rhino data:', error);
+                        return null;
+                    }
+                }
+
+                createCurveFromRhinoData(curveData) {
+                    try {
+                        console.log('🔺 Creating curve from Rhino data:', curveData);
+
+                        // Create a torus knot to represent curve geometry
+                        const geometry = new THREE.TorusKnotGeometry(0.5, 0.2, 64, 8);
+                        const material = new THREE.MeshLambertMaterial({
+                            color: 0x4CAF50,
+                            wireframe: true
+                        });
+                        return new THREE.Mesh(geometry, material);
+                    } catch (error) {
+                        console.error('Error creating curve from Rhino data:', error);
+                        return null;
+                    }
+                }
+
+                createPointFromRhinoData(pointData) {
+                    try {
+                        console.log('🔺 Creating point from Rhino data:', pointData);
+
+                        // Create an octahedron to represent point geometry
+                        const geometry = new THREE.OctahedronGeometry(0.3);
+                        const material = new THREE.MeshLambertMaterial({
+                            color: 0xFF9800,
+                            wireframe: false
+                        });
+                        return new THREE.Mesh(geometry, material);
+                    } catch (error) {
+                        console.error('Error creating point from Rhino data:', error);
+                        return null;
                     }
                 }
 
@@ -1630,10 +1825,93 @@ app.post('/grasshopper', async (req, res) => {
       timestamp: new Date().toISOString()
     });
 
-    // Enhanced mock computation with realistic simulation
-    const computationTime = Math.random() * 1000 + 500; // 500-1500ms simulation
+    // Set compute parameters
+    compute.url = process.env.RHINO_COMPUTE_URL || 'http://localhost:6500/';
+    compute.apiKey = process.env.RHINO_COMPUTE_KEY;
 
-    // Simulate different computation types based on definition
+    // Build definition URL
+    const fullUrl = `${req.protocol}://${req.get('host')}`;
+    const definitionPath = `${fullUrl}/definition/${definition}`;
+
+    console.log('📍 Definition URL:', definitionPath);
+    console.log('🔗 Rhino Compute URL:', compute.url);
+
+    // Prepare inputs for Rhino Compute
+    const computeInputs = {};
+
+    // Convert input format to match Rhino Compute expectations
+    if (inputs) {
+      Object.keys(inputs).forEach(key => {
+        const value = inputs[key];
+        if (Array.isArray(value) && value.length > 0) {
+          computeInputs[key] = value;
+        } else if (value && typeof value === 'object' && value.data !== undefined) {
+          computeInputs[key] = [value.data];
+        } else {
+          computeInputs[key] = [value];
+        }
+      });
+    }
+
+    console.log('📊 Formatted inputs for Rhino Compute:', computeInputs);
+
+    // Call actual Rhino Compute server
+    const response = await compute.computeFetch('grasshopper', {
+      'pointer': definitionPath,
+      'inputs': computeInputs
+    }, false);
+
+    if (!response.ok) {
+      throw new Error(`Rhino Compute error: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    const endTime = Date.now();
+    const actualComputationTime = endTime - startTime;
+
+    console.log('✅ Rhino Compute response received:', {
+      status: response.status,
+      computationTime: actualComputationTime,
+      hasValues: !!result.values,
+      valuesCount: result.values ? result.values.length : 0
+    });
+
+    // Format the result for the frontend
+    const formattedResult = {
+      success: true,
+      message: 'Computation completed successfully',
+      data: {
+        definition: definition,
+        inputs: inputs,
+        timestamp: new Date().toISOString(),
+        computationTime: actualComputationTime,
+        values: result.values || [],
+        errors: result.errors || [],
+        warnings: result.warnings || []
+      },
+      metadata: {
+        version: '1.0.0',
+        engine: 'Rhino Compute',
+        cacheable: true,
+        expires: new Date(Date.now() + 3600000).toISOString() // 1 hour
+      }
+    };
+
+    // Add performance headers
+    res.set('x-compute-time', `${actualComputationTime}ms`);
+    res.set('x-definition', definition);
+    res.set('x-result-size', `${JSON.stringify(formattedResult).length} bytes`);
+
+    res.json(formattedResult);
+  } catch (error) {
+    console.error('❌ Rhino Compute error:', error);
+
+    // Fallback to mock data if Rhino Compute fails
+    console.log('🔄 Falling back to mock data generation due to error');
+
+    const { definition, inputs } = req.body;
+    const startTime = Date.now();
+
     let resultData = {};
 
     if (definition.includes('TopoOpt')) {
@@ -1652,8 +1930,9 @@ app.post('/grasshopper', async (req, res) => {
     const actualComputationTime = endTime - startTime;
 
     const result = {
-      success: true,
-      message: 'Computation completed successfully',
+      success: false,
+      message: 'Rhino Compute failed, using mock data',
+      error: error.message,
       data: {
         definition: definition,
         inputs: inputs,
@@ -1663,7 +1942,7 @@ app.post('/grasshopper', async (req, res) => {
       },
       metadata: {
         version: '1.0.0',
-        engine: 'SoftlyPlease Compute Engine',
+        engine: 'SoftlyPlease Compute Engine (Mock)',
         cacheable: true,
         expires: new Date(Date.now() + 3600000).toISOString() // 1 hour
       }
@@ -1675,14 +1954,6 @@ app.post('/grasshopper', async (req, res) => {
     res.set('x-result-size', `${JSON.stringify(result).length} bytes`);
 
     res.json(result);
-  } catch (error) {
-    console.error('❌ Rhino Compute error:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      timestamp: new Date().toISOString(),
-      definition: req.body.definition
-    });
   }
 });
 
