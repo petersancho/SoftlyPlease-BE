@@ -236,6 +236,317 @@ app.get('/topoopt', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'topoopt.html'))
 })
 
+// Enhanced tutorial page for Rhino AppServer configurators
+app.get('/tutorial', (req, res) => {
+  const definitions = req.app.get('definitions') || []
+
+  // Select tutorial configurators (start with 2, can expand later)
+  const tutorialConfigurators = [
+    {
+      name: 'TopoOpt',
+      file: 'TopoOpt.gh',
+      icon: '🧮',
+      title: 'Topology Optimization',
+      description: 'Learn how to optimize material distribution for structural efficiency using advanced algorithms.',
+      difficulty: 'Advanced',
+      category: 'Optimization',
+      learningPoints: [
+        'Understand topology optimization principles',
+        'Configure material constraints and loads',
+        'Interpret optimization results',
+        'Export optimized geometries'
+      ]
+    },
+    {
+      name: 'delaunay',
+      file: 'delaunay.gh',
+      icon: '🔺',
+      title: 'Delaunay Triangulation',
+      description: 'Master the art of creating efficient triangular meshes from point clouds using Delaunay algorithms.',
+      difficulty: 'Intermediate',
+      category: 'Mesh Generation',
+      learningPoints: [
+        'Understand Delaunay triangulation concepts',
+        'Work with point cloud data',
+        'Control mesh density and quality',
+        'Apply boundary conditions'
+      ]
+    }
+  ]
+
+  const tutorialHtml = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SoftlyPlease - Rhino Compute Tutorials</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                color: #333;
+                padding: 20px;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            .header {
+                text-align: center;
+                color: white;
+                margin-bottom: 40px;
+            }
+            .header h1 {
+                font-size: 3rem;
+                margin-bottom: 10px;
+                font-weight: 300;
+            }
+            .header p {
+                font-size: 1.2rem;
+                opacity: 0.9;
+            }
+            .back-link {
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                background: rgba(255, 255, 255, 0.9);
+                color: #667eea;
+                padding: 10px 20px;
+                border-radius: 25px;
+                text-decoration: none;
+                font-weight: 500;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                z-index: 1000;
+            }
+            .tutorial-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+                gap: 30px;
+                margin-bottom: 40px;
+            }
+            .tutorial-card {
+                background: rgba(255, 255, 255, 0.95);
+                border-radius: 20px;
+                overflow: hidden;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                transition: transform 0.3s ease;
+            }
+            .tutorial-card:hover {
+                transform: translateY(-5px);
+            }
+            .tutorial-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 30px 25px 20px;
+                text-align: center;
+            }
+            .tutorial-icon {
+                font-size: 4rem;
+                margin-bottom: 15px;
+                display: block;
+            }
+            .tutorial-title {
+                font-size: 1.8rem;
+                font-weight: 600;
+                margin-bottom: 10px;
+            }
+            .tutorial-meta {
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin-bottom: 15px;
+                font-size: 0.9rem;
+                opacity: 0.9;
+            }
+            .difficulty-badge {
+                background: rgba(255, 255, 255, 0.2);
+                padding: 5px 15px;
+                border-radius: 20px;
+            }
+            .category-badge {
+                background: rgba(255, 255, 255, 0.2);
+                padding: 5px 15px;
+                border-radius: 20px;
+            }
+            .tutorial-content {
+                padding: 25px;
+            }
+            .tutorial-description {
+                color: #666;
+                line-height: 1.6;
+                margin-bottom: 20px;
+                font-size: 1rem;
+            }
+            .learning-points {
+                margin-bottom: 25px;
+            }
+            .learning-points h4 {
+                color: #667eea;
+                margin-bottom: 10px;
+                font-size: 1.1rem;
+            }
+            .learning-points ul {
+                list-style: none;
+                padding-left: 0;
+            }
+            .learning-points li {
+                padding: 8px 0;
+                padding-left: 25px;
+                position: relative;
+                color: #555;
+            }
+            .learning-points li:before {
+                content: "✓";
+                color: #4CAF50;
+                font-weight: bold;
+                position: absolute;
+                left: 0;
+            }
+            .tutorial-actions {
+                display: flex;
+                gap: 15px;
+                justify-content: center;
+            }
+            .tutorial-btn {
+                padding: 12px 25px;
+                border: none;
+                border-radius: 25px;
+                font-weight: 600;
+                text-decoration: none;
+                display: inline-block;
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+            .primary-btn {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+            .primary-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            }
+            .secondary-btn {
+                background: #f8f9fa;
+                color: #667eea;
+                border: 2px solid #667eea;
+            }
+            .secondary-btn:hover {
+                background: #667eea;
+                color: white;
+                transform: translateY(-2px);
+            }
+            .coming-soon {
+                text-align: center;
+                background: rgba(255, 255, 255, 0.9);
+                border-radius: 20px;
+                padding: 40px;
+                margin-top: 20px;
+            }
+            .coming-soon h3 {
+                color: #667eea;
+                margin-bottom: 15px;
+            }
+            .coming-soon p {
+                color: #666;
+                font-size: 1.1rem;
+            }
+            @media (max-width: 768px) {
+                .tutorial-grid {
+                    grid-template-columns: 1fr;
+                }
+                .header h1 {
+                    font-size: 2rem;
+                }
+                .tutorial-meta {
+                    flex-direction: column;
+                    gap: 10px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <a href="/" class="back-link">← Back to Home</a>
+        <div class="container">
+            <div class="header">
+                <h1>📚 Rhino Compute Tutorials</h1>
+                <p>Master parametric design with interactive Grasshopper configurators</p>
+            </div>
+
+            <div class="tutorial-grid">
+                ${tutorialConfigurators.map(config => `
+                    <div class="tutorial-card">
+                        <div class="tutorial-header">
+                            <span class="tutorial-icon">${config.icon}</span>
+                            <div class="tutorial-title">${config.title}</div>
+                            <div class="tutorial-meta">
+                                <span class="difficulty-badge">🎯 ${config.difficulty}</span>
+                                <span class="category-badge">📁 ${config.category}</span>
+                            </div>
+                        </div>
+                        <div class="tutorial-content">
+                            <div class="tutorial-description">
+                                ${config.description}
+                            </div>
+                            <div class="learning-points">
+                                <h4>📋 What You'll Learn:</h4>
+                                <ul>
+                                    ${config.learningPoints.map(point => `<li>${point}</li>`).join('')}
+                                </ul>
+                            </div>
+                            <div class="tutorial-actions">
+                                <a href="/configurator/${config.name.toLowerCase()}" class="tutorial-btn primary-btn">
+                                    🚀 Launch Tutorial
+                                </a>
+                                <a href="/definition/${config.file}" class="tutorial-btn secondary-btn">
+                                    📖 View Definition
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div class="coming-soon">
+                <h3>🚧 More Tutorials Coming Soon!</h3>
+                <p>We're continuously adding new tutorial configurators to help you master Rhino Compute and Grasshopper.
+                Check back soon for advanced topics like structural analysis, organic modeling, and fabrication-ready designs.</p>
+            </div>
+        </div>
+
+        <script>
+            // Add some interactive elements
+            document.addEventListener('DOMContentLoaded', function() {
+                // Add hover effects for learning points
+                const learningItems = document.querySelectorAll('.learning-points li');
+                learningItems.forEach(item => {
+                    item.addEventListener('mouseenter', function() {
+                        this.style.transform = 'translateX(5px)';
+                        this.style.transition = 'transform 0.2s ease';
+                    });
+                    item.addEventListener('mouseleave', function() {
+                        this.style.transform = 'translateX(0)';
+                    });
+                });
+
+                // Add click tracking for analytics
+                const tutorialButtons = document.querySelectorAll('.tutorial-btn');
+                tutorialButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        console.log('Tutorial interaction:', this.textContent.trim());
+                    });
+                });
+            });
+        </script>
+    </body>
+    </html>
+  `;
+
+  res.send(tutorialHtml);
+})
+
 app.get('/configurator/:name', (req, res) => {
   const configName = req.params.name
 
@@ -809,6 +1120,7 @@ app.get('/', (req, res) => {
         </div>
 
         <a href="/topoopt" class="button">🎮 TopoOpt Configurator</a>
+        <a href="/tutorial" class="button">📚 Rhino Compute Tutorials</a>
         <a href="/view" class="button">📊 View All Configurators</a>
         <a href="/health" class="button">🏥 System Health</a>
         <a href="/metrics" class="button">📈 Performance Metrics</a>
