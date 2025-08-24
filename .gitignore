@@ -1,3 +1,4 @@
 ﻿node_modules
 .vscode/*
 !.vscode/launch.json
+compute.rhino3d-8.x/script/rhino7_setup.exe
