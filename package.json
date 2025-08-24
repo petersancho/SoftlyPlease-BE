@@ -39,8 +39,13 @@
   },
   "scripts": {
     "start": "node ./src/bin/www",
+    "start:production": "NODE_ENV=production node ./src/bin/www",
+    "start:dev": "NODE_ENV=development node ./src/bin/www",
     "lint": "eslint src/*.js --fix && eslint src/routes/*.js --fix && eslint src/bin/www --fix",
-    "start-args": "node ./src/bin/www --computeUrl http://localhost:6500/"
+    "start-args": "node ./src/bin/www --computeUrl http://localhost:6500/",
+    "start-rhino": "powershell -Command \"Start-Process -FilePath 'C:\\SoftlyPlease-Compute\\compute.rhino3d-8.x\\src\\bin\\Release\\compute.geometry\\compute.geometry.exe' -ArgumentList '--port=6500' -NoNewWindow\"",
+    "stop-rhino": "powershell -Command \"Stop-Process -Name 'compute.geometry' -Force -ErrorAction SilentlyContinue\"",
+    "restart": "npm run stop-rhino && timeout 5 && npm run start-rhino && timeout 10 && npm start"
   },
   "dependencies": {
     "camelcase-keys": "^6.2.2",

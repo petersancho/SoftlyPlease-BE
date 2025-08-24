@@ -13,7 +13,20 @@ if(process.env.NODE_ENV !== 'production')
 
 app.use(express.json({limit: '10mb'}))
 app.use(express.urlencoded({ extended: false }))
-app.use(cors())
+
+// CORS configuration for cross-origin access
+app.use(cors({
+  origin: [
+    'https://softlyplease-compute-server-5208d1db7d4b.herokuapp.com',
+    'https://www.softlyplease.com',
+    'https://softlyplease.com',
+    process.env.CORS_ORIGIN
+  ].filter(Boolean),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}))
+
 app.use(compression())
 
 // Define URL for our compute server
@@ -28,6 +41,20 @@ if (argIndex > -1)
   process.env.RHINO_COMPUTE_URL = process.argv[argIndex + 1]
 if (!process.env.RHINO_COMPUTE_URL)
   process.env.RHINO_COMPUTE_URL = 'http://localhost:6500/' // default if nothing else exists
+
+// Ensure URL has trailing slash for proper concatenation
+if (!process.env.RHINO_COMPUTE_URL.endsWith('/')) {
+  process.env.RHINO_COMPUTE_URL += '/'
+}
+
+// Production configuration for Heroku deployment
+if (process.env.NODE_ENV === 'production') {
+  // Use external IP for production (this computer needs to be accessible from internet)
+  if (process.env.RHINO_COMPUTE_URL.includes('localhost')) {
+    // For production, you may need to use the public IP or domain
+    console.log('⚠️  WARNING: Using localhost in production. Make sure Rhino Compute is accessible externally.');
+  }
+}
 
 console.log('RHINO_COMPUTE_URL: ' + process.env.RHINO_COMPUTE_URL)
 
