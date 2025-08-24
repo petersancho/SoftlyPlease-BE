@@ -75,17 +75,17 @@ if ((Test-Path "$appDirectory\compute") -eq $false) {
     Remove-Item "compute.zip"
 }
 
-Write-Step 'Download latest Rhino 7'
-$rhino7DownloadUrl = "https://www.rhino3d.com/download/rhino-for-windows/7/latest/direct?email=$EmailAddress"
-$rhino7Setup = "rhino7_setup.exe"
-Download $rhino7DownloadUrl $rhino7Setup
+Write-Step 'Download latest Rhino 8'
+$rhino8DownloadUrl = "https://www.rhino3d.com/download/rhino-for-windows/8/latest/direct?email=$EmailAddress"
+$rhino8Setup = "rhino8_setup.exe"
+Download $rhino8DownloadUrl $rhino8Setup
 # TODO: print rhino version
 
 Write-Step 'Install Rhino'
 # automated install (https://wiki.mcneel.com/rhino/installingrhino/6)
-Start-Process -FilePath $rhino7Setup -ArgumentList '-passive', '-norestart' -Wait
+Start-Process -FilePath $rhino8Setup -ArgumentList '-passive', '-norestart' -Wait
 # delete installer
-Remove-Item $rhino7Setup
+Remove-Item $rhino8Setup
 
 
 Write-Step 'Install compute.geometry service'
