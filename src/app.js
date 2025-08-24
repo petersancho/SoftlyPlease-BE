@@ -146,12 +146,19 @@ if (!process.env.RHINO_COMPUTE_URL)
 
 // Configure RHINO_COMPUTE_URL based on environment
 if (process.env.NODE_ENV === 'production') {
-  // In production, point to the same Heroku app
-  const herokuUrl = process.env.HEROKU_APP_NAME
-    ? `https://${process.env.HEROKU_APP_NAME}.herokuapp.com/`
-    : 'https://www.softlyplease.com/'; // Fallback
-  process.env.RHINO_COMPUTE_URL = herokuUrl;
-  console.log('🌐 Production mode: RHINO_COMPUTE_URL set to:', herokuUrl);
+  // Use custom domain if available, otherwise construct from Heroku app name
+  let rhinoUrl;
+  if (process.env.CUSTOM_DOMAIN_URL) {
+    rhinoUrl = process.env.CUSTOM_DOMAIN_URL;
+    console.log('🌐 Production mode: Using custom domain URL:', rhinoUrl);
+  } else if (process.env.HEROKU_APP_NAME) {
+    rhinoUrl = `https://${process.env.HEROKU_APP_NAME}.herokuapp.com/`;
+    console.log('🌐 Production mode: Using Heroku app URL:', rhinoUrl);
+  } else {
+    rhinoUrl = 'https://www.softlyplease.com/'; // Fallback
+    console.log('🌐 Production mode: Using fallback URL:', rhinoUrl);
+  }
+  process.env.RHINO_COMPUTE_URL = rhinoUrl;
 } else {
   // In development, use localhost
   process.env.RHINO_COMPUTE_URL = 'http://localhost:6500/';
