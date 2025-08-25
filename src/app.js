@@ -246,9 +246,339 @@ app.use('/version', require('./routes/version'))
 const viewerRoute = require('./routes/viewer')
 app.use('/mcneelghexamples', viewerRoute)
 
-// Serve React app for all React routes BEFORE catch-all route
+// Serve light-themed homepage for root route
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'))
+  const homepageHtml = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SoftlyPlease Compute - Parametric Design Platform</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Times New Roman', serif;
+                background-image:
+                    linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+                background-size: 20px 20px;
+                background-color: #ffffff;
+                color: #2c3e50;
+                line-height: 1.6;
+                min-height: 100vh;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 2rem;
+            }
+
+            .header {
+                text-align: center;
+                margin-bottom: 3rem;
+                padding: 2rem 0;
+            }
+
+            .logo {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+                background: linear-gradient(45deg, #ff6b9d, #4ecdc4, #ffe66d);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+
+            .title {
+                font-size: 2.5rem;
+                color: #2c3e50;
+                margin-bottom: 1rem;
+                font-weight: bold;
+            }
+
+            .subtitle {
+                font-size: 1.2rem;
+                color: #7f8c8d;
+                margin-bottom: 2rem;
+            }
+
+            .nav-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 2rem;
+                margin-bottom: 3rem;
+            }
+
+            .nav-card {
+                background: linear-gradient(135deg, #f8f9ff 0%, #e8f4ff 100%);
+                border: 2px solid transparent;
+                border-radius: 15px;
+                padding: 2rem;
+                text-align: center;
+                transition: all 0.3s ease;
+                text-decoration: none;
+                color: inherit;
+            }
+
+            .nav-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                border-color: #4ecdc4;
+            }
+
+            .nav-icon {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+                display: block;
+            }
+
+            .nav-title {
+                font-size: 1.5rem;
+                color: #2c3e50;
+                margin-bottom: 0.5rem;
+                font-weight: bold;
+            }
+
+            .nav-description {
+                color: #7f8c8d;
+                font-size: 0.9rem;
+            }
+
+            .features {
+                margin-top: 4rem;
+                padding: 3rem 0;
+                background: linear-gradient(135deg, #fff5f5 0%, #f0f9ff 100%);
+                border-radius: 20px;
+            }
+
+            .features h2 {
+                text-align: center;
+                color: #2c3e50;
+                margin-bottom: 2rem;
+                font-size: 2rem;
+            }
+
+            .features-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 2rem;
+                margin-top: 2rem;
+            }
+
+            .feature-item {
+                text-align: center;
+                padding: 2rem;
+                background: rgba(255, 255, 255, 0.8);
+                border-radius: 15px;
+                border: 2px solid transparent;
+                transition: all 0.3s ease;
+            }
+
+            .feature-item:hover {
+                border-color: #ff6b9d;
+                transform: translateY(-3px);
+            }
+
+            .feature-icon {
+                font-size: 2.5rem;
+                margin-bottom: 1rem;
+                display: block;
+            }
+
+            .feature-title {
+                color: #2c3e50;
+                margin-bottom: 0.5rem;
+                font-weight: bold;
+            }
+
+            .feature-desc {
+                color: #7f8c8d;
+                font-size: 0.9rem;
+            }
+
+            .status {
+                margin-top: 3rem;
+                padding: 2rem;
+                background: rgba(255, 255, 255, 0.9);
+                border-radius: 15px;
+                text-align: center;
+            }
+
+            .status h3 {
+                color: #2c3e50;
+                margin-bottom: 1rem;
+                font-size: 1.5rem;
+            }
+
+            .status-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+                margin-top: 1rem;
+            }
+
+            .status-item {
+                padding: 1rem;
+                background: #f8f9fa;
+                border-radius: 10px;
+                border-left: 4px solid #4ecdc4;
+            }
+
+            .status-label {
+                font-weight: bold;
+                color: #2c3e50;
+                margin-bottom: 0.5rem;
+            }
+
+            .status-value {
+                color: #7f8c8d;
+            }
+
+            .footer {
+                margin-top: 4rem;
+                text-align: center;
+                padding: 2rem 0;
+                color: #7f8c8d;
+                border-top: 1px solid #ecf0f1;
+            }
+
+            @media (max-width: 768px) {
+                .container {
+                    padding: 1rem;
+                }
+
+                .title {
+                    font-size: 2rem;
+                }
+
+                .nav-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .features-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <header class="header">
+                <div class="logo">🎨</div>
+                <h1 class="title">SoftlyPlease Compute</h1>
+                <p class="subtitle">Advanced Parametric Design & Computational Geometry Platform</p>
+            </header>
+
+            <nav class="nav-grid">
+                <a href="/configurator" class="nav-card">
+                    <span class="nav-icon">🎮</span>
+                    <div class="nav-title">Configurator</div>
+                    <div class="nav-description">Interactive Grasshopper definition configuration with real-time 3D visualization</div>
+                </a>
+
+                <a href="/mcneel-compute-examples" class="nav-card">
+                    <span class="nav-icon">🧩</span>
+                    <div class="nav-title">McNeel Examples</div>
+                    <div class="nav-description">Explore Grasshopper definitions and computational design tutorials</div>
+                </a>
+
+                <a href="/performance" class="nav-card">
+                    <span class="nav-icon">📊</span>
+                    <div class="nav-title">Performance</div>
+                    <div class="nav-description">Real-time system metrics and performance monitoring dashboard</div>
+                </a>
+
+                <a href="/about" class="nav-card">
+                    <span class="nav-icon">ℹ️</span>
+                    <div class="nav-title">About</div>
+                    <div class="nav-description">Learn about our platform and computational design capabilities</div>
+                </a>
+
+                <a href="/contact" class="nav-card">
+                    <span class="nav-icon">📞</span>
+                    <div class="nav-title">Contact</div>
+                    <div class="nav-description">Get in touch with our team for support and collaboration</div>
+                </a>
+            </nav>
+
+            <section class="features">
+                <h2>🚀 Platform Features</h2>
+                <div class="features-grid">
+                    <div class="feature-item">
+                        <span class="feature-icon">⚡</span>
+                        <div class="feature-title">High Performance</div>
+                        <div class="feature-desc">Cloud-based computational engine for fast, scalable processing</div>
+                    </div>
+
+                    <div class="feature-item">
+                        <span class="feature-icon">🔄</span>
+                        <div class="feature-title">REST API</div>
+                        <div class="feature-desc">Simple HTTP interface for easy integration and automation</div>
+                    </div>
+
+                    <div class="feature-item">
+                        <span class="feature-icon">📈</span>
+                        <div class="feature-title">Real-time</div>
+                        <div class="feature-desc">Live computation with instant feedback and visualization</div>
+                    </div>
+
+                    <div class="feature-item">
+                        <span class="feature-icon">🌐</span>
+                        <div class="feature-title">Web-based</div>
+                        <div class="feature-desc">No software installation required - works in any browser</div>
+                    </div>
+
+                    <div class="feature-item">
+                        <span class="feature-icon">💾</span>
+                        <div class="feature-title">Intelligent Caching</div>
+                        <div class="feature-desc">Smart caching system for optimized performance and speed</div>
+                    </div>
+
+                    <div class="feature-item">
+                        <span class="feature-icon">🎯</span>
+                        <div class="feature-title">Optimization</div>
+                        <div class="feature-desc">Advanced algorithms for topology and structural optimization</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="status">
+                <h3>📊 System Status</h3>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-label">Status</div>
+                        <div class="status-value">✅ Healthy</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Uptime</div>
+                        <div class="status-value">${Math.floor(process.uptime() / 3600)}h ${Math.floor((process.uptime() % 3600) / 60)}m</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Memory</div>
+                        <div class="status-value">${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)} MB</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Rhino Compute</div>
+                        <div class="status-value">✅ Connected</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <footer class="footer">
+            <p>© 2025 SoftlyPlease Compute - Advanced Parametric Design Platform</p>
+        </footer>
+    </body>
+    </html>
+  `;
+
+  res.send(homepageHtml);
 })
 
 app.get('/configurator', (req, res) => {
@@ -271,8 +601,9 @@ app.get('/contact', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'))
 })
 
-// Catch-all route (must be last)
-app.use('/', require('./routes/index'))
+// API routes for definitions - only for specific endpoints
+app.get('/definition/:name*', require('./routes/index'))
+app.get('/definition_description', require('./routes/index'))
 
 // Static file serving must come AFTER API routes for React routing to work
 app.use(express.static(path.join(__dirname, '../public')))

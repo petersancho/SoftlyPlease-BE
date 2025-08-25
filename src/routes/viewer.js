@@ -84,7 +84,7 @@ router.get('/', (req, res) => {
                 z-index: 100;
             }
             .btn {
-                background: linear-gradient(45deg, #666666, #888888);
+                background: linear-gradient(45deg, #ff6b9d, #4ecdc4);
                 color: white;
                 border: none;
                 padding: 12px 24px;
@@ -98,7 +98,8 @@ router.get('/', (req, res) => {
             }
             .btn:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 5px 15px rgba(102, 102, 102, 0.3);
+                box-shadow: 0 5px 15px rgba(255, 107, 157, 0.3);
+                background: linear-gradient(45deg, #ffe66d, #ff6b9d);
             }
         </style>
     </head>

@@ -110,26 +110,35 @@ const StatusText = styled.span`
 
 const PerformancePage: React.FC = () => {
   const [healthData, setHealthData] = useState<any>(null);
+  const [definitions, setDefinitions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchHealthData = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/health');
-        if (response.ok) {
-          const data = await response.json();
+        // Fetch health data
+        const healthResponse = await fetch('/health');
+        if (healthResponse.ok) {
+          const data = await healthResponse.json();
           setHealthData(data);
         }
+
+        // Fetch definitions list
+        const definitionsResponse = await fetch('/');
+        if (definitionsResponse.ok) {
+          const data = await definitionsResponse.json();
+          setDefinitions(data);
+        }
       } catch (error) {
-        console.error('Failed to fetch health data:', error);
+        console.error('Failed to fetch data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchHealthData();
+    fetchData();
     // Update every 5 seconds
-    const interval = setInterval(fetchHealthData, 5000);
+    const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -241,6 +250,185 @@ const PerformancePage: React.FC = () => {
           <br />
           <small>Real-time system resource utilization</small>
         </ChartPlaceholder>
+      </ChartContainer>
+
+      <ChartContainer>
+        <ChartTitle>📋 Available API Definitions</ChartTitle>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+          gap: '1rem',
+          maxHeight: '300px',
+          overflowY: 'auto',
+          padding: '1rem'
+        }}>
+          {definitions.length > 0 ? (
+            definitions.map((def, index) => (
+              <div
+                key={index}
+                style={{
+                  background: '#2a2a2a',
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  border: '1px solid #444',
+                  textAlign: 'center',
+                  fontFamily: '"Times New Roman", serif',
+                  color: '#ffffff'
+                }}
+              >
+                <div style={{
+                  fontSize: '1.2rem',
+                  marginBottom: '0.5rem',
+                  background: 'linear-gradient(45deg, #ff6b9d, #4ecdc4)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>
+                  📄
+                </div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+                  {def.name.replace('.gh', '')}
+                </div>
+                <div style={{
+                  fontSize: '0.8rem',
+                  color: '#cccccc',
+                  marginTop: '0.5rem'
+                }}>
+                  .gh file
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={{
+              gridColumn: '1 / -1',
+              textAlign: 'center',
+              color: '#cccccc',
+              fontFamily: '"Times New Roman", serif'
+            }}>
+              Loading definitions...
+            </div>
+          )}
+        </div>
+      </ChartContainer>
+
+      <ChartContainer>
+        <ChartTitle>🔧 API Endpoints</ChartTitle>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '1rem'
+        }}>
+          <div style={{
+            background: '#2a2a2a',
+            padding: '1.5rem',
+            borderRadius: '8px',
+            border: '1px solid #444'
+          }}>
+            <h4 style={{
+              color: '#ffffff',
+              marginBottom: '1rem',
+              fontFamily: '"Times New Roman", serif',
+              background: 'linear-gradient(45deg, #ff6b9d, #4ecdc4)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              GET /health
+            </h4>
+            <p style={{
+              color: '#cccccc',
+              fontSize: '0.9rem',
+              fontFamily: '"Times New Roman", serif',
+              marginBottom: '0.5rem'
+            }}>
+              System health and metrics
+            </p>
+            <div style={{
+              background: '#1a1a1a',
+              padding: '0.5rem',
+              borderRadius: '4px',
+              fontSize: '0.8rem',
+              color: '#4ecdc4',
+              fontFamily: 'monospace'
+            }}>
+              curl https://your-domain.com/health
+            </div>
+          </div>
+
+          <div style={{
+            background: '#2a2a2a',
+            padding: '1.5rem',
+            borderRadius: '8px',
+            border: '1px solid #444'
+          }}>
+            <h4 style={{
+              color: '#ffffff',
+              marginBottom: '1rem',
+              fontFamily: '"Times New Roman", serif',
+              background: 'linear-gradient(45deg, #4ecdc4, #ffe66d)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              POST /solve
+            </h4>
+            <p style={{
+              color: '#cccccc',
+              fontSize: '0.9rem',
+              fontFamily: '"Times New Roman", serif',
+              marginBottom: '0.5rem'
+            }}>
+              Run Grasshopper computation
+            </p>
+            <div style={{
+              background: '#1a1a1a',
+              padding: '0.5rem',
+              borderRadius: '4px',
+              fontSize: '0.8rem',
+              color: '#ffe66d',
+              fontFamily: 'monospace'
+            }}>
+              curl -X POST https://your-domain.com/solve
+            </div>
+          </div>
+
+          <div style={{
+            background: '#2a2a2a',
+            padding: '1.5rem',
+            borderRadius: '8px',
+            border: '1px solid #444'
+          }}>
+            <h4 style={{
+              color: '#ffffff',
+              marginBottom: '1rem',
+              fontFamily: '"Times New Roman", serif',
+              background: 'linear-gradient(45deg, #ffe66d, #ff6b9d)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              GET /
+            </h4>
+            <p style={{
+              color: '#cccccc',
+              fontSize: '0.9rem',
+              fontFamily: '"Times New Roman", serif',
+              marginBottom: '0.5rem'
+            }}>
+              List available definitions
+            </p>
+            <div style={{
+              background: '#1a1a1a',
+              padding: '0.5rem',
+              borderRadius: '4px',
+              fontSize: '0.8rem',
+              color: '#ff6b9d',
+              fontFamily: 'monospace'
+            }}>
+              curl https://your-domain.com/
+            </div>
+          </div>
+        </div>
       </ChartContainer>
     </Container>
   );

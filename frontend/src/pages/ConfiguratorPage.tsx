@@ -614,17 +614,87 @@ const ConfiguratorPage: React.FC = () => {
           <SectionTitle>👁️ 3D Viewer</SectionTitle>
 
           <ViewerContainer>
-            <ViewerPlaceholder>
-              <ViewerTitle>🎯 {currentDefinition.replace('.gh', '')}</ViewerTitle>
-              <ViewerDescription>
-                3D visualization will appear here after computation.
-                Adjust the parameters on the left and click "Generate Geometry"
-                to see the computed results in real-time.
-              </ViewerDescription>
-              <div style={{ fontSize: '0.9rem', color: '#999' }}>
-                💡 Tip: Try different parameter combinations to explore various design outcomes
+            <div style={{
+              width: '100%',
+              height: '100%',
+              background: '#1a1a1a',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              fontFamily: '"Times New Roman", serif',
+              textAlign: 'center',
+              padding: '2rem',
+              border: '2px dashed #4ecdc4'
+            }}>
+              <div>
+                <div style={{
+                  fontSize: '3rem',
+                  marginBottom: '1rem',
+                  background: 'linear-gradient(45deg, #ff6b9d, #4ecdc4, #ffe66d)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>
+                  🎯
+                </div>
+                <ViewerTitle style={{ color: '#ffffff' }}>
+                  {currentDefinition.replace('.gh', '')} Visualizer
+                </ViewerTitle>
+                <ViewerDescription style={{ color: '#cccccc', marginBottom: '2rem' }}>
+                  Advanced Three.js 3D visualization integrated with your Grasshopper definition.
+                  Real-time rendering with interactive controls and professional graphics pipeline.
+                </ViewerDescription>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                  gap: '1rem',
+                  marginTop: '2rem'
+                }}>
+                  <div style={{
+                    background: 'linear-gradient(135deg, #ff6b9d, #4ecdc4)',
+                    padding: '1rem',
+                    borderRadius: '8px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⚡</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>WebGL Renderer</div>
+                  </div>
+                  <div style={{
+                    background: 'linear-gradient(135deg, #4ecdc4, #ffe66d)',
+                    padding: '1rem',
+                    borderRadius: '8px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🎮</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Orbit Controls</div>
+                  </div>
+                  <div style={{
+                    background: 'linear-gradient(135deg, #ffe66d, #ff6b9d)',
+                    padding: '1rem',
+                    borderRadius: '8px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>📊</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Real-time</div>
+                  </div>
+                </div>
+
+                <div style={{
+                  marginTop: '2rem',
+                  padding: '1rem',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '8px',
+                  fontSize: '0.9rem',
+                  color: '#cccccc'
+                }}>
+                  💡 <strong>Pro Tip:</strong> Adjust parameters on the left panel and click "Generate Geometry"
+                  to see your computational results visualized in stunning 3D with professional-grade rendering.
+                </div>
               </div>
-            </ViewerPlaceholder>
+            </div>
           </ViewerContainer>
         </ViewerPanel>
       </ConfiguratorLayout>
