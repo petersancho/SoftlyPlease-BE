@@ -244,7 +244,7 @@ app.use('/version', require('./routes/version'))
 
 // Specific routes must come BEFORE catch-all routes
 const viewerRoute = require('./routes/viewer')
-app.use('/viewer', viewerRoute)
+app.use('/mcneelghexamples', viewerRoute)
 
 // Serve React app for root path BEFORE catch-all route
 app.get('/', (req, res) => {
@@ -1220,7 +1220,7 @@ app.get('/', (req, res) => {
             <p>• Response Time: <50ms</p>
         </div>
 
-        <a href="/viewer?definition=TopoOpt.gh" class="button">🎮 TopoOpt Configurator</a>
+                        <a href="/mcneelghexamples?definition=TopoOpt.gh" class="button">🎮 TopoOpt Configurator</a>
         <a href="/tutorial" class="button">📚 Rhino Compute Tutorials</a>
         <a href="/viewer" class="button">👁️ 3D Geometry Viewer</a>
         <a href="/view" class="button">📊 View All Configurators</a>

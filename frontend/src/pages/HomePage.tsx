@@ -163,12 +163,15 @@ const HomePage: React.FC = () => {
         <ConfiguratorButton href="/tutorial">
           📚 Rhino Compute Tutorials
         </ConfiguratorButton>
-        <ConfiguratorButton href="/viewer">
-          👁️ 3D Geometry Viewer
-        </ConfiguratorButton>
-        <ConfiguratorButton href="/view">
-          📊 View All Configurators
-        </ConfiguratorButton>
+                        <ConfiguratorButton href="/mcneelghexamples">
+                  🧩 McNeel GH Examples
+                </ConfiguratorButton>
+                <ConfiguratorButton href="/viewer">
+                  👁️ 3D Geometry Viewer
+                </ConfiguratorButton>
+                <ConfiguratorButton href="/view">
+                  📊 View All Configurators
+                </ConfiguratorButton>
         <ConfiguratorButton href="/health">
           🏥 System Health
         </ConfiguratorButton>
