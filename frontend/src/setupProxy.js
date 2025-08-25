@@ -35,7 +35,7 @@ module.exports = function(app) {
 
   // Proxy all other backend routes
   app.use(
-    ['/topoopt', '/tutorial', '/viewer', '/view', '/configurator', '/metrics', '/ready'],
+    ['/tutorial', '/viewer', '/view', '/configurator', '/metrics', '/ready'],
     createProxyMiddleware({
       target: 'http://localhost:3000',
       changeOrigin: true,

@@ -95,6 +95,12 @@ router.get('/definition_description', function(req, res, next){
  * called when '/definition_description' is requested
  */
 router.get('/:name', function(req, res, next){
+  // Skip certain paths that are handled by other routes
+  const skipPaths = ['topoopt', 'health', 'ready', 'metrics', 'favicon.ico', 'definition']
+  if (skipPaths.includes(req.params.name)) {
+    return next()
+  }
+
   let definition = req.app.get('definitions').find(o => o.name === req.params.name)
   describeDefinition(definition, req, res, next)
 })

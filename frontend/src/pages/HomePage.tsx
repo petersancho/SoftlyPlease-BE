@@ -157,7 +157,7 @@ const HomePage: React.FC = () => {
       </Header>
 
       <ButtonGrid>
-        <ConfiguratorButton href="/topoopt">
+        <ConfiguratorButton href="/viewer?definition=TopoOpt.gh">
           🎮 TopoOpt Configurator
         </ConfiguratorButton>
         <ConfiguratorButton href="/tutorial">
@@ -178,7 +178,7 @@ const HomePage: React.FC = () => {
       </ButtonGrid>
 
       <FooterText>
-        🏆 Outperforming ShapeDiver - Ready for softlyplease.com
+
       </FooterText>
     </Container>
   );

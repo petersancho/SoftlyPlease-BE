@@ -140,12 +140,10 @@ const ThreeJSViewerDemo: React.FC = () => {
   }
 
   const handleDemoChange = async (demoType: string) => {
-    setLoading(true)
     setCurrentDemo(demoType)
 
     // Simulate loading delay for better UX
     await new Promise(resolve => setTimeout(resolve, 500))
-    setLoading(false)
   }
 
   const getCurrentGeometry = () => {
