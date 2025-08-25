@@ -45,7 +45,7 @@
     "start:debug": "NODE_ENV=development DEBUG=* node ./src/bin/www",
     "start:workshop": "ts-node ./src/workshop/server.ts",
     "build:workshop": "tsc ./src/workshop/*.ts --outDir ./dist",
-    "postinstall": "npm run build:workshop && node ./dist/src/workshop/generate-manifest.js",
+    "postinstall": "npm run build:workshop && cp gh-manifest.json dist/ 2>/dev/null || true",
     "lint": "eslint src/*.js --fix && eslint src/routes/*.js --fix && eslint src/bin/www --fix",
     "start-args": "node ./src/bin/www --computeUrl http://localhost:6500/",
     "start-rhino": "powershell -Command \"Start-Process -FilePath 'C:\\SoftlyPlease-Compute\\compute.rhino3d-8.x\\src\\bin\\Release\\compute.geometry\\compute.geometry.exe' -ArgumentList '--port=6500' -NoNewWindow\"",
