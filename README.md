@@ -102,18 +102,21 @@ All documentation is organized in the `guides/` folder:
 ## 📁 Key Components
 
 ### Core Applications
-- `src/` - Main Node.js API server with workshop architecture
+- `src/workshop/` - TypeScript API server with authentication and caching
+- `dist/` - Compiled workshop server (production)
+- `src/app.js` - Legacy Node.js server (deprecated)
 - `guides/frontend/` - Frontend design guides and documentation
 - `compute.rhino3d-8.x/` - Rhino Compute engine source code
 
 ### Assets & Definitions
-- `assets/gh-definitions/` - Grasshopper definition files (.gh)
+- `assets/gh-definitions/` - 15 Grasshopper definition files (.gh)
+- `assets/gh-definitions/gh-manifest.json` - Definition metadata and IDs
 - `assets/images/` - Website images and screenshots
 
 ### Configuration
 - `package.json` - Backend dependencies and scripts
 - `tsconfig.json` - TypeScript configuration for workshop engine
-- `deployment/` - All deployment configurations
+- `deployment/` - Azure VM and Heroku deployment scripts
 
 ## 🎯 Key Features
 
@@ -124,10 +127,13 @@ All documentation is organized in the `guides/` folder:
 - **Memory Optimization**: Efficient resource usage
 
 ### 🛡️ Security & Reliability
-- **Rate Limiting**: Protection against abuse
-- **Helmet Security**: Comprehensive security headers
-- **Input Validation**: Strict parameter validation
-- **Error Handling**: Graceful degradation
+- **Authentication**: Bearer token authentication for all API endpoints
+- **Rate Limiting**: Protection against abuse (1000 req/15min)
+- **Helmet Security**: Comprehensive security headers and CSP
+- **Input Validation**: Strict parameter validation and sanitization
+- **Error Handling**: Graceful degradation with detailed logging
+- **Health Checks**: Automated monitoring endpoints (/health, /ready, /metrics)
+- **Rhino Compute Auth**: Secure connection to Rhino Compute with JWT token
 
 ### 📈 Scalability
 - **Multi-Definition Support**: Handles multiple Grasshopper files

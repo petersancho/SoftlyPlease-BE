@@ -103,7 +103,25 @@ const SOFTLYPLEASE_API = {
 
 ### **Example API Calls**
 ```javascript
-// Test TopoOpt computation
+// List all available definitions
+fetch('https://softlyplease.com/', {
+  headers: {
+    'Authorization': 'Bearer prod-token-456'
+  }
+})
+.then(r => r.json())
+.then(data => console.log('Definitions:', data));
+
+// Get definition metadata
+fetch('https://softlyplease.com/definitions/f3997a3b7a68e0f2', {
+  headers: {
+    'Authorization': 'Bearer prod-token-456'
+  }
+})
+.then(r => r.json())
+.then(data => console.log('Definition metadata:', data));
+
+// Test computation (TopoOpt)
 fetch('https://softlyplease.com/solve', {
   method: 'POST',
   headers: {
@@ -120,21 +138,12 @@ fetch('https://softlyplease.com/solve', {
       smooth: [3],
       cube: [2],
       segment: [8],
-      pipewidth: [10],
-      round: [2],
-      tolerance: [5],
-      minr: [10],
-      maxr: [50],
-      format: ["mesh"],
-      quality: [5],
-      detail: [10],
-      preview: [true],
-      optimize: [true]
+      pipewidth: [10]
     }
   })
 })
 .then(r => r.json())
-.then(data => console.log('TopoOpt Result:', data))
+.then(data => console.log('Computation result:', data));
 ```
 
 ---

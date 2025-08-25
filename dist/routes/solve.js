@@ -6,7 +6,7 @@ const path = require("path");
 const crypto = require("crypto");
 const router = express.Router();
 // Load manifest
-const MANIFEST_PATH = path.join(__dirname, '../../gh-manifest.json');
+const MANIFEST_PATH = path.join(__dirname, '../../assets/gh-definitions/gh-manifest.json');
 let manifest = [];
 try {
     if (fs.existsSync(MANIFEST_PATH)) {

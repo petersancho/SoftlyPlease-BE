@@ -40,9 +40,11 @@
 ### Prerequisites
 
 - Node.js 18.x (as specified in package.json)
-- Rhino 7 or 8
+- Rhino 7 or 8 with valid Cloud Zoo license
 - Heroku CLI (for deployment)
-- Memcached (optional, for production)
+- All npm dependencies installed (see package.json)
+- 15 Grasshopper definitions in assets/gh-definitions/
+- Valid Rhino Compute authentication token
 
 ### Installation
 
@@ -51,26 +53,63 @@
 git clone https://github.com/boi1da-proj/SoftlyPlease-Compute.git
 cd SoftlyPlease-Compute
 
-# Install dependencies
+# Install dependencies (including missing ones)
 npm install
 
-# Start development server
-npm run start:dev
+# Install critical dependencies that may be missing
+npm install md5-file compute-rhino3d memjs camelcase-keys
 
-# Start Rhino Compute
-npm run start-rhino
+# Build the TypeScript workshop server
+npm run build:workshop
+
+# Start the workshop server (recommended)
+APP_TOKEN=prod-token-456 node ./dist/server.js
+
+# OR start the legacy server (not recommended)
+npm run start:dev
 ```
 
 ### Test the API
 
 ```bash
-# Health check
+# Set environment variables
+export APP_TOKEN=prod-token-456
+export RHINO_COMPUTE_KEY="your-rhino-auth-token"
+
+# Build and start the server
+npm run build:workshop
+APP_TOKEN=$APP_TOKEN node ./dist/server.js &
+sleep 3
+
+# Health check (no auth required)
 curl http://localhost:3000/health
 
-# Test TopoOpt.gh computation
+# List all definitions (with auth)
+curl -H "Authorization: Bearer $APP_TOKEN" http://localhost:3000/
+
+# Get definition metadata (with auth)
+curl -H "Authorization: Bearer $APP_TOKEN" http://localhost:3000/definitions/f3997a3b7a68e0f2
+
+# Test computation (with auth)
 curl -X POST http://localhost:3000/solve \
+  -H "Authorization: Bearer $APP_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"definition":"TopoOpt.gh","inputs":{"width":[1000],"height":[500]}}'
+  -d '{
+    "definitionId": "f3997a3b7a68e0f2",
+    "inputs": {
+      "height": [750],
+      "width": [1500],
+      "depth": [500],
+      "num": [8],
+      "smooth": [3],
+      "cube": [2],
+      "segment": [8],
+      "pipewidth": [10]
+    }
+  }'
+
+# Stop the server
+pkill -f "node.*dist/server.js"
 ```
 
 ---
@@ -116,13 +155,23 @@ curl -X POST http://localhost:3000/solve \
 ### Development Scripts
 
 ```bash
-# Start development server with debug logging
+# Build the TypeScript workshop server
+npm run build:workshop
+
+# Start workshop server (recommended)
+APP_TOKEN=prod-token-456 node ./dist/server.js
+
+# Start development server (legacy)
 npm run start:dev
 
-# Start with debug logging
+# Start with debug logging (legacy)
 npm run start:debug
 
-# Run health check test
+# Test workshop server endpoints
+curl http://localhost:3000/health
+curl -H "Authorization: Bearer prod-token-456" http://localhost:3000/
+
+# Run health check test (requires server running)
 npm run test:health
 
 # Run readiness check test
@@ -130,9 +179,6 @@ npm run test:ready
 
 # Run metrics check test
 npm run test:metrics
-
-# Build TypeScript workshop engine
-npm run build:workshop
 
 # Lint code (placeholder - not yet configured)
 npm run lint
@@ -181,63 +227,90 @@ heroku login
 # If you need to create a new app, use:
 heroku create softlyplease-compute
 
-# Set production environment (already configured)
+# Set production environment variables
 heroku config:set NODE_ENV=production --app softlyplease-appserver
 heroku config:set WEB_CONCURRENCY=2 --app softlyplease-appserver
 heroku config:set RHINO_COMPUTE_URL=https://compute.softlyplease.com --app softlyplease-appserver
 heroku config:set APP_TOKEN=prod-token-456 --app softlyplease-appserver
+heroku config:set RHINO_COMPUTE_KEY="your-rhino-auth-token" --app softlyplease-appserver
+heroku config:set COMPUTE_TIMEOUT_MS=30000 --app softlyplease-appserver
+heroku config:set RATE_LIMIT=1000 --app softlyplease-appserver
 
 # Add Memcached (if not already added)
 heroku addons:create memcachier:dev --app softlyplease-appserver
 
-# Deploy
+# Build and deploy
+npm run build:workshop
+git add .
+git commit -m "Deploy workshop server with fixes"
 git push heroku main
 ```
 
 ### Environment Variables
 
 ```bash
-# Required
+# Required Production Variables
 NODE_ENV=production
 RHINO_COMPUTE_URL=https://compute.softlyplease.com
 APP_TOKEN=prod-token-456
-CORS_ORIGIN=https://softlyplease.com,https://www.softlyplease.com
+RHINO_COMPUTE_KEY="your-rhino-auth-token"
 
-# Performance
+# Performance & Security
 WEB_CONCURRENCY=2
 COMPUTE_TIMEOUT_MS=30000
 RATE_LIMIT=1000
 
+# CORS Configuration
+CORS_ORIGIN=https://softlyplease.com,https://www.softlyplease.com,https://api.softlyplease.com
+
 # Caching (auto-configured by MemCachier addon)
-CACHE_BACKEND=memcached
+MEMCACHIER_SERVERS=mc7-dev.ec2.memcachier.com:11211
+MEMCACHIER_USERNAME=your-memcachier-username
+MEMCACHIER_PASSWORD=your-memcachier-password
 CACHE_DEFAULT_TTL=3600
 CACHE_TOPOOPT_TTL=7200
 CACHE_MAX_KEYS=5000
 
-# Monitoring
+# Monitoring & Logging
 PERFORMANCE_LOGGING=true
 SLOW_REQUEST_THRESHOLD=5000
 LOG_LEVEL=info
+
+# Development Variables
+DEBUG=softlyplease-compute:*
+PORT=3000
 ```
 
 ### Production Monitoring
 
 ```bash
-# Health checks
+# Health checks (no auth required)
 curl https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/health
 curl https://softlyplease.com/health
 
-# Readiness checks
+# Readiness checks (no auth required)
 curl https://softlyplease.com/ready
 
-# Performance metrics
-curl https://softlyplease.com/metrics
+# Performance metrics (with auth)
+curl -H "Authorization: Bearer prod-token-456" https://softlyplease.com/metrics
+
+# List definitions (with auth)
+curl -H "Authorization: Bearer prod-token-456" https://softlyplease.com/
+
+# Get definition metadata (with auth)
+curl -H "Authorization: Bearer prod-token-456" https://softlyplease.com/definitions/f3997a3b7a68e0f2
 
 # Heroku logs
 heroku logs --tail --app softlyplease-appserver
 
 # Performance monitoring
 heroku addons:open librato --app softlyplease-appserver  # If installed
+
+# Test computation (with auth)
+curl -X POST https://softlyplease.com/solve \
+  -H "Authorization: Bearer prod-token-456" \
+  -H "Content-Type: application/json" \
+  -d '{"definitionId": "f3997a3b7a68e0f2", "inputs": {"height": [750], "width": [1500]}}'
 ```
 
 ---
@@ -342,11 +415,13 @@ heroku ps:scale web=3
 
 ### 🛡️ Security & Reliability
 
-- **Rate Limiting**: Protection against abuse (100 req/15min)
-- **Helmet Security**: Comprehensive security headers
-- **Input Validation**: Strict parameter validation
+- **Authentication**: Bearer token authentication for all API endpoints
+- **Rate Limiting**: Protection against abuse (1000 req/15min)
+- **Helmet Security**: Comprehensive security headers and CSP
+- **Input Validation**: Strict parameter validation and sanitization
 - **Error Handling**: Graceful degradation with detailed logging
-- **Health Checks**: Automated monitoring endpoints
+- **Health Checks**: Automated monitoring endpoints (/health, /ready, /metrics)
+- **Rhino Compute Auth**: Secure connection to Rhino Compute with JWT token
 
 ### 📈 Scalability
 

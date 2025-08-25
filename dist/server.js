@@ -11,8 +11,18 @@ const index_1 = __importDefault(require("./routes/index"));
 const definitions_1 = __importDefault(require("./routes/definitions"));
 const solve_1 = __importDefault(require("./routes/solve"));
 const compute_1 = require("./compute");
+console.log('🔧 Loading routes...');
+console.log('📋 Index route loaded:', !!index_1.default);
+console.log('📋 Definitions route loaded:', !!definitions_1.default);
+console.log('📋 Solve route loaded:', !!solve_1.default);
 // Create Express app
 const app = express();
+// Ensure fetch is available globally for Node.js versions that don't have it
+const fetch = require('node-fetch').default;
+global.fetch = fetch;
+global.Request = require('node-fetch').Request;
+global.Response = require('node-fetch').Response;
+global.Headers = require('node-fetch').Headers;
 // Security middleware
 app.use(helmet({
     contentSecurityPolicy: {
@@ -27,7 +37,7 @@ app.use(helmet({
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT || "100"),
+    max: parseInt(process.env.RATE_LIMIT || "1000"),
     message: {
         error: 'Too many requests from this IP, please try again later.',
         retryAfter: 15 * 60
@@ -35,8 +45,40 @@ const limiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 });
+console.log('📋 Setting up middleware...');
 // Apply rate limiting to solve endpoints
 app.use('/solve', limiter);
+console.log('📋 Rate limiting middleware added');
+// Authentication middleware for protected endpoints
+const authMiddleware = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    const appToken = process.env.APP_TOKEN;
+    // Skip auth for health, ready, version endpoints
+    if (req.path === '/health' || req.path === '/ready' || req.path === '/version' || req.path === '/') {
+        return next();
+    }
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({
+            error: 'Missing or invalid authorization header',
+            message: 'Please provide a valid Bearer token'
+        });
+    }
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    if (!appToken) {
+        console.warn('⚠️  APP_TOKEN not set in environment - skipping auth for development');
+        return next();
+    }
+    if (token !== appToken) {
+        return res.status(401).json({
+            error: 'Invalid authorization token',
+            message: 'The provided token is not valid'
+        });
+    }
+    next();
+};
+// Apply authentication to all routes
+app.use(authMiddleware);
+console.log('📋 Authentication middleware added');
 // CORS configuration
 app.use(cors({
     origin: [
@@ -86,9 +128,13 @@ app.get('/health', async (req, res) => {
     });
 });
 // Mount routes
+console.log('📋 Mounting routes...');
 app.use("/", index_1.default);
+console.log('📋 Index route mounted');
 app.use("/definitions", definitions_1.default);
+console.log('📋 Definitions route mounted');
 app.use("/solve", solve_1.default);
+console.log('📋 Solve route mounted');
 // 404 handler
 app.use((req, res) => {
     res.status(404).json({

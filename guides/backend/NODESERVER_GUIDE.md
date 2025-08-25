@@ -98,15 +98,22 @@ cd SoftlyPlease-Compute
 # 2. Install dependencies
 npm install
 
-# 3. Start Rhino Compute (in background)
-npm run start-rhino
+# Install critical dependencies that may be missing
+npm install md5-file compute-rhino3d memjs camelcase-keys
 
-# 4. Start Node.js server (in new terminal)
-npm start
+# Build the TypeScript workshop server
+npm run build:workshop
+
+# 3. Start the workshop server (recommended)
+APP_TOKEN=prod-token-456 RHINO_COMPUTE_KEY="your-rhino-auth-token" node ./dist/server.js
+
+# OR start legacy server (not recommended)
+npm run start:dev
 
 # 5. Verify services are running
-curl http://localhost:3000/version
-curl http://localhost:3000/
+curl http://localhost:3000/health
+curl -H "Authorization: Bearer prod-token-456" http://localhost:3000/
+curl -H "Authorization: Bearer prod-token-456" http://localhost:3000/definitions/f3997a3b7a68e0f2
 ```
 
 ### 2.3 Development Environment

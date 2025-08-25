@@ -27,6 +27,7 @@ This comprehensive guide will walk you through setting up and deploying the Soft
 - **Git**: Latest version
 - **Heroku CLI**: Latest version
 - **Package Manager**: npm (comes with Node.js)
+- **Dependencies**: All packages in package.json (including md5-file, compute-rhino3d, memjs, camelcase-keys)
 
 ### Verify Prerequisites
 ```bash
