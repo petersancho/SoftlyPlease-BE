@@ -246,8 +246,28 @@ app.use('/version', require('./routes/version'))
 const viewerRoute = require('./routes/viewer')
 app.use('/mcneelghexamples', viewerRoute)
 
-// Serve React app for root path BEFORE catch-all route
+// Serve React app for all React routes BEFORE catch-all route
 app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'))
+})
+
+app.get('/configurator', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'))
+})
+
+app.get('/mcneel-compute-examples', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'))
+})
+
+app.get('/performance', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'))
+})
+
+app.get('/about', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'))
+})
+
+app.get('/contact', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'))
 })
 

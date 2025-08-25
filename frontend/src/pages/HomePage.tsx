@@ -156,28 +156,10 @@ const HomePage: React.FC = () => {
         </StatusSection>
       </Header>
 
-      <ButtonGrid>
-        <ConfiguratorButton href="/viewer?definition=TopoOpt.gh">
-          🎮 TopoOpt Configurator
-        </ConfiguratorButton>
-        <ConfiguratorButton href="/tutorial">
-          📚 Rhino Compute Tutorials
-        </ConfiguratorButton>
-                        <ConfiguratorButton href="/mcneelghexamples">
-                  🧩 McNeel GH Examples
+            <ButtonGrid>
+                <ConfiguratorButton href="/configurator">
+                  🎮 Grasshopper Configurator
                 </ConfiguratorButton>
-                <ConfiguratorButton href="/viewer">
-                  👁️ 3D Geometry Viewer
-                </ConfiguratorButton>
-                <ConfiguratorButton href="/view">
-                  📊 View All Configurators
-                </ConfiguratorButton>
-        <ConfiguratorButton href="/health">
-          🏥 System Health
-        </ConfiguratorButton>
-        <ConfiguratorButton href="/metrics">
-          📈 Performance Metrics
-        </ConfiguratorButton>
       </ButtonGrid>
 
       <FooterText>

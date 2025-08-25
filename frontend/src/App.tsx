@@ -7,7 +7,9 @@ import LoadingSpinner from './components/Common/LoadingSpinner';
 
 // Pages
 const HomePage = React.lazy(() => import('./pages/HomePage'));
-const ExamplesPage = React.lazy(() => import('./pages/ExamplesPage'));
+const ConfiguratorPage = React.lazy(() => import('./pages/ConfiguratorPage'));
+const McNeelComputeExamplesPage = React.lazy(() => import('./pages/McNeelComputeExamplesPage'));
+const PerformancePage = React.lazy(() => import('./pages/PerformancePage'));
 const AboutPage = React.lazy(() => import('./pages/AboutPage'));
 const ContactPage = React.lazy(() => import('./pages/ContactPage'));
 
@@ -91,7 +93,9 @@ const App: React.FC = () => {
           >
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route path="/examples" element={<ExamplesPage />} />
+              <Route path="/configurator" element={<ConfiguratorPage />} />
+              <Route path="/mcneel-compute-examples" element={<McNeelComputeExamplesPage />} />
+              <Route path="/performance" element={<PerformancePage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/threejs-demo" element={<ThreeJSViewerDemo />} />
