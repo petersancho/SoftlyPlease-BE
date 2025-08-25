@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunksoftlyplease_frontend=self.webpackChunksoftlyplease_frontend||[]).push([[471],{471:(e,n,s)=>{s.r(n),s.d(n,{default:()=>o});var l,a=s(147),t=(s(43),s(574)),d=s(579);const i=t.Ay.div(l||(l=(0,a.A)(["\n  padding: 2rem;\n  text-align: center;\n"]))),o=()=>(0,d.jsxs)(i,{children:[(0,d.jsx)("h1",{children:"Examples Page"}),(0,d.jsx)("p",{children:"Computational design examples coming soon..."})]})}}]);
+//# sourceMappingURL=471.908e412e.chunk.js.map
