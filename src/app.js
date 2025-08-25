@@ -246,6 +246,11 @@ app.use('/version', require('./routes/version'))
 const viewerRoute = require('./routes/viewer')
 app.use('/viewer', viewerRoute)
 
+// Serve React app for root path BEFORE catch-all route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'))
+})
+
 // Catch-all route (must be last)
 app.use('/', require('./routes/index'))
 
