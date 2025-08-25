@@ -38,11 +38,14 @@
     "compute-rhino3d-appserver": ".src/bin/www"
   },
   "scripts": {
-    "start": "node ./src/bin/www",
+    "start": "node ./dist/src/workshop/server.js",
     "start:production": "NODE_ENV=production WEB_CONCURRENCY=2 node ./src/bin/www",
     "start:clustered": "NODE_ENV=production WEB_CONCURRENCY=4 node ./src/bin/www",
     "start:dev": "NODE_ENV=development node ./src/bin/www",
     "start:debug": "NODE_ENV=development DEBUG=* node ./src/bin/www",
+    "start:workshop": "ts-node ./src/workshop/server.ts",
+    "build:workshop": "tsc ./src/workshop/*.ts --outDir ./dist",
+    "postinstall": "npm run build:workshop && node ./dist/src/workshop/generate-manifest.js",
     "lint": "eslint src/*.js --fix && eslint src/routes/*.js --fix && eslint src/bin/www --fix",
     "start-args": "node ./src/bin/www --computeUrl http://localhost:6500/",
     "start-rhino": "powershell -Command \"Start-Process -FilePath 'C:\\SoftlyPlease-Compute\\compute.rhino3d-8.x\\src\\bin\\Release\\compute.geometry\\compute.geometry.exe' -ArgumentList '--port=6500' -NoNewWindow\"",
@@ -50,7 +53,8 @@
     "restart": "npm run stop-rhino && timeout 5 && npm run start-rhino && timeout 10 && npm start",
     "test:health": "curl -f http://localhost:3000/health || exit 1",
     "test:ready": "curl -f http://localhost:3000/ready || exit 1",
-    "test:metrics": "curl -f http://localhost:3000/metrics || exit 1"
+    "test:metrics": "curl -f http://localhost:3000/metrics || exit 1",
+    "test:workshop": "curl -H \"Authorization: Bearer $APP_TOKEN\" https://api.softlyplease.com/"
   },
   "dependencies": {
     "camelcase-keys": "^6.2.2",
@@ -74,6 +78,10 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "eslint": "8.7.0"
+    "eslint": "8.7.0",
+    "@types/node": "^18.0.0",
+    "@types/express": "^4.17.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^4.9.0"
   }
 }
