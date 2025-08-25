@@ -158,7 +158,7 @@ const HomePage: React.FC = () => {
 
             <ButtonGrid>
                 <ConfiguratorButton href="/configurator">
-                  🎮 Grasshopper Configurator
+                  🔷 Soft.Geometry
                 </ConfiguratorButton>
       </ButtonGrid>
 

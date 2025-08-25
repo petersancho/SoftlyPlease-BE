@@ -212,23 +212,12 @@ const ConfiguratorPage: React.FC = () => {
   const [currentDefinition, setCurrentDefinition] = useState(searchParams.get('definition') || 'TopoOpt.gh');
   const [parameters, setParameters] = useState<Record<string, any>>({});
 
-  // Available definitions
+  // Core Soft.Geometry definitions (others available in McNeel Examples)
   const definitions = [
     'TopoOpt.gh',
-    'Bending_gridshell.gh',
-    'BranchNodeRnd.gh',
-    'QuadPanelAperture.gh',
-    'SampleGHConvertTo3dm.gh',
-    'beam_mod.gh',
-    'brep_union.gh',
     'delaunay.gh',
-    'docString.gh',
-    'dresser3.gh',
-    'metaballTable.gh',
-    'rnd_lattice.gh',
-    'rnd_node.gh',
-    'srf_kmeans.gh',
-    'value_list.gh'
+    'brep_union.gh',
+    'beam_mod.gh'
   ];
 
   const handleDefinitionChange = (definition: string) => {
@@ -488,8 +477,8 @@ const ConfiguratorPage: React.FC = () => {
   return (
     <Container>
       <Header>
-        <Title>🎛️ Parameter Explorer</Title>
-        <Subtitle>Interactive Grasshopper definition parameter exploration and design study</Subtitle>
+        <Title>🔷 Soft.Geometry</Title>
+        <Subtitle>Advanced computational geometry and topology optimization platform</Subtitle>
       </Header>
 
       <ConfiguratorLayout>
@@ -513,8 +502,8 @@ const ConfiguratorPage: React.FC = () => {
           {currentDefinition === 'TopoOpt.gh' ? renderTopoOptControls() : renderGenericControls()}
 
           <StatusPanel>
-            <StatusTitle>🎛️ Parameter Explorer</StatusTitle>
-            <StatusText>Adjust the sliders above to explore different parameter combinations for {currentDefinition.replace('.gh', '')}</StatusText>
+            <StatusTitle>🔷 Soft.Geometry</StatusTitle>
+            <StatusText>Adjust the sliders above to explore different parameter combinations for {currentDefinition.replace('.gh', '')}. For more examples, visit McNeel Examples page.</StatusText>
           </StatusPanel>
         </ControlPanel>
 
@@ -551,8 +540,8 @@ const ConfiguratorPage: React.FC = () => {
                   {currentDefinition.replace('.gh', '')} Visualizer
                 </ViewerTitle>
                 <ViewerDescription style={{ color: '#cccccc', marginBottom: '2rem' }}>
-                  Interactive parameter exploration for your Grasshopper definition.
-                  Adjust the sliders to see how different parameter values affect your design.
+                  Soft.Geometry provides core computational tools for advanced design exploration.
+                  These fundamental algorithms form the foundation of parametric design workflows.
                 </ViewerDescription>
 
                 <div style={{
@@ -567,8 +556,8 @@ const ConfiguratorPage: React.FC = () => {
                     borderRadius: '8px',
                     textAlign: 'center'
                   }}>
-                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🎛️</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Parameter Control</div>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🔬</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Computational Analysis</div>
                   </div>
                   <div style={{
                     background: 'linear-gradient(135deg, #4ecdc4, #ffe66d)',
@@ -576,8 +565,8 @@ const ConfiguratorPage: React.FC = () => {
                     borderRadius: '8px',
                     textAlign: 'center'
                   }}>
-                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>📊</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Real-time Feedback</div>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⚡</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Algorithm Engine</div>
                   </div>
                   <div style={{
                     background: 'linear-gradient(135deg, #ffe66d, #ff6b9d)',
@@ -585,8 +574,8 @@ const ConfiguratorPage: React.FC = () => {
                     borderRadius: '8px',
                     textAlign: 'center'
                   }}>
-                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🎯</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Design Exploration</div>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🏗️</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Structural Optimization</div>
                   </div>
                 </div>
 
@@ -598,8 +587,8 @@ const ConfiguratorPage: React.FC = () => {
                   fontSize: '0.9rem',
                   color: '#cccccc'
                 }}>
-                  💡 <strong>Parameter Exploration:</strong> Use the sliders on the left to explore how different
-                  parameter values affect your Grasshopper definition. Changes are reflected immediately in the status panel.
+                  💡 <strong>Soft.Geometry Core:</strong> These fundamental computational tools represent the
+                  essential algorithms for advanced design. For additional examples and tutorials, explore the McNeel Examples page.
                 </div>
               </div>
             </div>

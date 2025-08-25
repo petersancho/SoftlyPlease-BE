@@ -484,9 +484,9 @@ app.get('/', (req, res) => {
 
             <nav class="nav-grid">
                 <a href="/configurator" class="nav-card">
-                    <span class="nav-icon">🎮</span>
-                    <div class="nav-title">Configurator</div>
-                    <div class="nav-description">Interactive Grasshopper definition configuration with real-time 3D visualization</div>
+                    <span class="nav-icon">🔷</span>
+                    <div class="nav-title">Soft.Geometry</div>
+                    <div class="nav-description">Advanced computational geometry and topology optimization platform with core algorithms</div>
                 </a>
 
                 <a href="/mcneel-compute-examples" class="nav-card">
