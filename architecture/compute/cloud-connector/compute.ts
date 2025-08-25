@@ -1,0 +1,1 @@
+../../../../src/workshop/compute.ts

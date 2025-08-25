@@ -1,0 +1,1 @@
+../../../deployment/check-status.ps1
