@@ -351,7 +351,7 @@ const PerformancePage: React.FC = () => {
               color: '#4ecdc4',
               fontFamily: 'monospace'
             }}>
-              curl https://your-domain.com/health
+              curl https://softlyplease.com/health
             </div>
           </div>
 
@@ -388,7 +388,7 @@ const PerformancePage: React.FC = () => {
               color: '#ffe66d',
               fontFamily: 'monospace'
             }}>
-              curl -X POST https://your-domain.com/solve
+              curl -X POST https://softlyplease.com/solve
             </div>
           </div>
 
@@ -425,7 +425,7 @@ const PerformancePage: React.FC = () => {
               color: '#ff6b9d',
               fontFamily: 'monospace'
             }}>
-              curl https://your-domain.com/
+              curl https://softlyplease.com/
             </div>
           </div>
         </div>
