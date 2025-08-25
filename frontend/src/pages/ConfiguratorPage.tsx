@@ -212,12 +212,9 @@ const ConfiguratorPage: React.FC = () => {
   const [currentDefinition, setCurrentDefinition] = useState(searchParams.get('definition') || 'TopoOpt.gh');
   const [parameters, setParameters] = useState<Record<string, any>>({});
 
-  // Core Soft.Geometry definitions (others available in McNeel Examples)
+  // Core Soft.Geometry definition - Topology Optimization only
   const definitions = [
-    'TopoOpt.gh',
-    'delaunay.gh',
-    'brep_union.gh',
-    'beam_mod.gh'
+    'TopoOpt.gh'
   ];
 
   const handleDefinitionChange = (definition: string) => {
