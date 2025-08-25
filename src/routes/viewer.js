@@ -20,8 +20,12 @@ router.get('/', (req, res) => {
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
-                font-family: 'Eurostile Extended', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                background: #000000;
+                font-family: 'Times New Roman', serif;
+                background-image:
+                    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                background-size: 20px 20px;
+                background-color: #000000;
                 color: #ffffff;
                 height: 100vh;
                 overflow: hidden;

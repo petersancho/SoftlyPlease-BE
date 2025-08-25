@@ -309,10 +309,14 @@ app.get('/tutorial', (req, res) => {
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                font-family: 'Times New Roman', serif;
+                background-image:
+                    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                background-size: 20px 20px;
+                background-color: #000000;
                 min-height: 100vh;
-                color: #333;
+                color: #ffffff;
                 padding: 20px;
             }
             .container {
@@ -363,7 +367,11 @@ app.get('/tutorial', (req, res) => {
                 transform: translateY(-5px);
             }
             .tutorial-header {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background-image:
+                    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                background-size: 20px 20px;
+                background-color: #000000;
                 color: white;
                 padding: 30px 25px 20px;
                 text-align: center;
@@ -446,7 +454,11 @@ app.get('/tutorial', (req, res) => {
                 cursor: pointer;
             }
             .primary-btn {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background-image:
+                    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                background-size: 20px 20px;
+                background-color: #000000;
                 color: white;
             }
             .primary-btn:hover {
@@ -610,10 +622,14 @@ app.get('/configurator/:name', (req, res) => {
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                font-family: 'Times New Roman', serif;
+                background-image:
+                    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                background-size: 20px 20px;
+                background-color: #000000;
                 min-height: 100vh;
-                color: #333;
+                color: #ffffff;
                 padding: 20px;
             }
             .container { max-width: 800px; margin: 0 auto; }
@@ -640,7 +656,11 @@ app.get('/configurator/:name', (req, res) => {
                 font-weight: 500;
             }
             .compute-btn {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background-image:
+                    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                background-size: 20px 20px;
+                background-color: #000000;
                 color: white;
                 border: none;
                 padding: 15px 30px;
@@ -746,10 +766,14 @@ app.get('/view', (req, res) => {
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                font-family: 'Times New Roman', serif;
+                background-image:
+                    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                background-size: 20px 20px;
+                background-color: #000000;
                 min-height: 100vh;
-                color: #333;
+                color: #ffffff;
                 padding: 20px;
             }
             .container { max-width: 1200px; margin: 0 auto; }
@@ -783,7 +807,7 @@ app.get('/view', (req, res) => {
                 font-size: 1.3rem;
                 font-weight: 600;
                 margin-bottom: 10px;
-                color: #333;
+                color: #ffffff;
             }
             .configurator-desc {
                 color: #666;
@@ -793,7 +817,11 @@ app.get('/view', (req, res) => {
             .configurator-btn {
                 display: inline-block;
                 padding: 12px 25px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background-image:
+                    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                background-size: 20px 20px;
+                background-color: #000000;
                 color: white;
                 text-decoration: none;
                 border-radius: 25px;

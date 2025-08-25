@@ -32,7 +32,7 @@ const theme = {
     error: '#444444',
   },
   fonts: {
-    primary: 'Eurostile Extended, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    primary: '"Times New Roman", serif',
     mono: '"SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace',
   },
   fontSizes: {
