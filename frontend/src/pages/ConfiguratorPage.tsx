@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useSearchParams } from 'react-router-dom';
 
@@ -211,16 +211,62 @@ const ConfiguratorPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentDefinition, setCurrentDefinition] = useState(searchParams.get('definition') || 'TopoOpt.gh');
   const [parameters, setParameters] = useState<Record<string, any>>({});
+  const [isComputing, setIsComputing] = useState(false);
+  const [computationResult, setComputationResult] = useState<any>(null);
+  const [performanceData, setPerformanceData] = useState<any>(null);
+  const [status, setStatus] = useState('Ready to explore');
+  const [availableDefinitions, setAvailableDefinitions] = useState<string[]>(['TopoOpt.gh']);
+  const [definitionInfo, setDefinitionInfo] = useState<any>(null);
 
-  // Core Soft.Geometry definition - Topology Optimization only
-  const definitions = [
-    'TopoOpt.gh'
-  ];
+  // Fetch available definitions on component mount
+  useEffect(() => {
+    const fetchDefinitions = async () => {
+      try {
+        const response = await fetch('/api/definitions');
+        if (response.ok) {
+          const data = await response.json();
+          const defs = data.map((d: any) => d.name);
+          setAvailableDefinitions(defs);
+          console.log('Available definitions:', defs);
+        }
+      } catch (error) {
+        console.error('Failed to fetch definitions:', error);
+        setStatus('Failed to load definitions');
+      }
+    };
+
+    fetchDefinitions();
+  }, []);
+
+  // Fetch definition info when definition changes
+  useEffect(() => {
+    const fetchDefinitionInfo = async () => {
+      if (!currentDefinition) return;
+
+      try {
+        const response = await fetch(`/${currentDefinition}`);
+        if (response.ok) {
+          const data = await response.json();
+          setDefinitionInfo(data);
+          console.log('Definition info:', data);
+        } else {
+          console.error('Failed to fetch definition info');
+        }
+      } catch (error) {
+        console.error('Error fetching definition info:', error);
+      }
+    };
+
+    fetchDefinitionInfo();
+  }, [currentDefinition]);
 
   const handleDefinitionChange = (definition: string) => {
     setCurrentDefinition(definition);
     setSearchParams({ definition });
     setParameters({});
+    setComputationResult(null);
+    setPerformanceData(null);
+    setStatus(`Selected: ${definition.replace('.gh', '')}`);
   };
 
   const handleParameterChange = (paramName: string, value: any) => {
@@ -229,8 +275,83 @@ const ConfiguratorPage: React.FC = () => {
       [paramName]: value
     }));
 
-    // Parameter updated - could add visual feedback here if needed
+    setStatus(`Parameter updated: ${paramName} = ${value}`);
     console.log(`Parameter updated: ${paramName} = ${value}`);
+  };
+
+  const handleCompute = async () => {
+    if (!currentDefinition) {
+      setStatus('❌ Please select a definition first');
+      return;
+    }
+
+    setIsComputing(true);
+    setStatus('🔄 Computing geometry...');
+
+    try {
+      // Prepare the request data
+      const requestData = {
+        definition: currentDefinition,
+        inputs: {} as Record<string, any[]>
+      };
+
+      // Convert parameters to the expected format
+      Object.keys(parameters).forEach(key => {
+        const value = (parameters as Record<string, any>)[key];
+        requestData.inputs[key] = Array.isArray(value) ? value : [value];
+      });
+
+      console.log('Sending computation request:', requestData);
+
+      const startTime = Date.now();
+
+      // Send the computation request
+      const response = await fetch('/solve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      const endTime = Date.now();
+      const responseTime = endTime - startTime;
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Computation result:', result);
+
+        setComputationResult(result);
+
+        // Extract performance data from headers
+        const perfData = {
+          responseTime: responseTime,
+          cacheHit: response.headers.get('x-cache') === 'HIT',
+          computeTime: parseInt(response.headers.get('x-compute-time') || '0'),
+          definition: response.headers.get('x-definition'),
+          resultSize: response.headers.get('x-result-size')
+        };
+
+        setPerformanceData(perfData);
+
+        if (result.success !== false) {
+          setStatus('✅ Geometry computed successfully!');
+        } else {
+          setStatus(`❌ Computation failed: ${result.message || 'Unknown error'}`);
+        }
+      } else {
+        const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+        setStatus(`❌ Error: ${error.message || `HTTP ${response.status}`}`);
+        console.error('Computation error:', error);
+      }
+
+    } catch (error) {
+      console.error('Network error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setStatus(`❌ Network error: ${errorMessage}`);
+    } finally {
+      setIsComputing(false);
+    }
   };
 
 
@@ -488,7 +609,7 @@ const ConfiguratorPage: React.FC = () => {
               value={currentDefinition}
               onChange={(e) => handleDefinitionChange(e.target.value)}
             >
-              {definitions.map(def => (
+              {availableDefinitions.map(def => (
                 <option key={def} value={def}>
                   {def.replace('.gh', '')}
                 </option>
@@ -498,9 +619,72 @@ const ConfiguratorPage: React.FC = () => {
 
           {currentDefinition === 'TopoOpt.gh' ? renderTopoOptControls() : renderGenericControls()}
 
+          <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <button
+              onClick={handleCompute}
+              disabled={isComputing}
+              style={{
+                background: isComputing ? '#444' : 'linear-gradient(45deg, #ff6b9d, #4ecdc4)',
+                color: 'white',
+                border: 'none',
+                padding: '1rem 2rem',
+                borderRadius: '8px',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                fontFamily: '"Times New Roman", serif',
+                cursor: isComputing ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              {isComputing ? '🔄 Computing...' : '🚀 Generate Geometry'}
+            </button>
+
+            <button
+              onClick={() => {
+                setParameters({});
+                setComputationResult(null);
+                setPerformanceData(null);
+                setStatus('Parameters reset to defaults');
+              }}
+              style={{
+                background: '#444',
+                color: 'white',
+                border: 'none',
+                padding: '1rem 2rem',
+                borderRadius: '8px',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                fontFamily: '"Times New Roman", serif',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              🔄 Reset Parameters
+            </button>
+          </div>
+
           <StatusPanel>
-            <StatusTitle>🔷 Soft.Geometry</StatusTitle>
-            <StatusText>Adjust the sliders above to explore different parameter combinations for {currentDefinition.replace('.gh', '')}. For more examples, visit McNeel Examples page.</StatusText>
+            <StatusTitle>🔷 Soft.Geometry Status</StatusTitle>
+            <StatusText>{status}</StatusText>
+
+            {performanceData && (
+              <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#999' }}>
+                <div>Response Time: {performanceData.responseTime}ms</div>
+                <div>Cache Hit: {performanceData.cacheHit ? 'Yes' : 'No'}</div>
+                {performanceData.computeTime > 0 && (
+                  <div>Compute Time: {performanceData.computeTime}ms</div>
+                )}
+              </div>
+            )}
+
+            {computationResult && computationResult.data && (
+              <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#4ecdc4' }}>
+                <div>Geometry: {computationResult.data.type || 'Generated'}</div>
+                {computationResult.data.geometry && (
+                  <div>Details: {JSON.stringify(computationResult.data.geometry).length} bytes</div>
+                )}
+              </div>
+            )}
           </StatusPanel>
         </ControlPanel>
 
@@ -508,87 +692,190 @@ const ConfiguratorPage: React.FC = () => {
           <SectionTitle>👁️ 3D Viewer</SectionTitle>
 
           <ViewerContainer>
-            <div style={{
-              width: '100%',
-              height: '100%',
-              background: '#1a1a1a',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              fontFamily: '"Times New Roman", serif',
-              textAlign: 'center',
-              padding: '2rem',
-              border: '2px dashed #4ecdc4'
-            }}>
-              <div>
-                <div style={{
-                  fontSize: '3rem',
-                  marginBottom: '1rem',
-                  background: 'linear-gradient(45deg, #ff6b9d, #4ecdc4, #ffe66d)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
-                }}>
-                  🎯
-                </div>
-                <ViewerTitle style={{ color: '#ffffff' }}>
-                  {currentDefinition.replace('.gh', '')} Visualizer
-                </ViewerTitle>
-                <ViewerDescription style={{ color: '#cccccc', marginBottom: '2rem' }}>
-                  Soft.Geometry provides core computational tools for advanced design exploration.
-                  These fundamental algorithms form the foundation of parametric design workflows.
-                </ViewerDescription>
+            {!computationResult ? (
+              <div style={{
+                width: '100%',
+                height: '100%',
+                background: '#1a1a1a',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                fontFamily: '"Times New Roman", serif',
+                textAlign: 'center',
+                padding: '2rem',
+                border: '2px dashed #4ecdc4'
+              }}>
+                <div>
+                  <div style={{
+                    fontSize: '3rem',
+                    marginBottom: '1rem',
+                    background: 'linear-gradient(45deg, #ff6b9d, #4ecdc4, #ffe66d)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}>
+                    🎯
+                  </div>
+                  <ViewerTitle style={{ color: '#ffffff' }}>
+                    {currentDefinition.replace('.gh', '')} Visualizer
+                  </ViewerTitle>
+                  <ViewerDescription style={{ color: '#cccccc', marginBottom: '2rem' }}>
+                    Configure parameters and click "Generate Geometry" to see the computational results.
+                    Soft.Geometry provides core computational tools for advanced design exploration.
+                  </ViewerDescription>
 
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                  gap: '1rem',
-                  marginTop: '2rem'
-                }}>
                   <div style={{
-                    background: 'linear-gradient(135deg, #ff6b9d, #4ecdc4)',
+                    marginTop: '2rem',
                     padding: '1rem',
+                    background: 'rgba(255, 255, 255, 0.05)',
                     borderRadius: '8px',
-                    textAlign: 'center'
+                    fontSize: '0.9rem',
+                    color: '#cccccc'
                   }}>
-                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🔬</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Computational Analysis</div>
+                    💡 <strong>Ready to Compute:</strong> Adjust the parameters in the left panel and click "Generate Geometry"
+                    to see real-time computational results with performance metrics.
                   </div>
-                  <div style={{
-                    background: 'linear-gradient(135deg, #4ecdc4, #ffe66d)',
-                    padding: '1rem',
-                    borderRadius: '8px',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⚡</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Algorithm Engine</div>
-                  </div>
-                  <div style={{
-                    background: 'linear-gradient(135deg, #ffe66d, #ff6b9d)',
-                    padding: '1rem',
-                    borderRadius: '8px',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🏗️</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Structural Optimization</div>
-                  </div>
-                </div>
-
-                <div style={{
-                  marginTop: '2rem',
-                  padding: '1rem',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '8px',
-                  fontSize: '0.9rem',
-                  color: '#cccccc'
-                }}>
-                  💡 <strong>Soft.Geometry Core:</strong> These fundamental computational tools represent the
-                  essential algorithms for advanced design. For additional examples and tutorials, explore the McNeel Examples page.
                 </div>
               </div>
-            </div>
+            ) : (
+              <div style={{
+                width: '100%',
+                height: '100%',
+                background: '#1a1a1a',
+                borderRadius: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                color: '#ffffff',
+                fontFamily: '"Times New Roman", serif'
+              }}>
+                <div style={{
+                  padding: '1rem',
+                  background: 'rgba(78, 205, 196, 0.1)',
+                  borderBottom: '1px solid #333',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    <strong style={{ color: '#4ecdc4' }}>
+                      {computationResult.data?.type || 'Computation'} Results
+                    </strong>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#ccc' }}>
+                    {new Date(computationResult.data?.timestamp || Date.now()).toLocaleTimeString()}
+                  </div>
+                </div>
+
+                <div style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '2rem',
+                  textAlign: 'center'
+                }}>
+                  <div>
+                    <div style={{
+                      fontSize: '4rem',
+                      marginBottom: '1rem',
+                      background: 'linear-gradient(45deg, #ff6b9d, #4ecdc4)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text'
+                    }}>
+                      ✅
+                    </div>
+
+                    <ViewerTitle style={{ color: '#4ecdc4', marginBottom: '1rem' }}>
+                      Computation Complete!
+                    </ViewerTitle>
+
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      padding: '1.5rem',
+                      borderRadius: '8px',
+                      marginBottom: '2rem',
+                      fontSize: '0.9rem'
+                    }}>
+                      {computationResult.data?.type === 'topology_optimization' && (
+                        <div style={{ marginBottom: '1rem' }}>
+                          <div style={{ color: '#4ecdc4', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                            🧮 Topology Optimization Results
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', textAlign: 'left' }}>
+                            <div>Original Volume: {(computationResult.data.geometry?.originalVolume || 0).toLocaleString()} mm³</div>
+                            <div>Optimized Volume: {(computationResult.data.geometry?.optimizedVolume || 0).toLocaleString()} mm³</div>
+                            <div>Material Reduction: {((computationResult.data.geometry?.optimizationRatio || 0) * 100).toFixed(1)}%</div>
+                            <div>Nodes: {computationResult.data.geometry?.nodes || 0}</div>
+                            <div>Max Stress: {computationResult.data.performance?.maxStress?.toFixed(2) || 0} MPa</div>
+                            <div>Safety Factor: {computationResult.data.performance?.factorOfSafety?.toFixed(2) || 0}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {computationResult.data?.type && computationResult.data.type !== 'topology_optimization' && (
+                        <div style={{ marginBottom: '1rem' }}>
+                          <div style={{ color: '#4ecdc4', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                            📊 Computation Results
+                          </div>
+                          <div style={{ textAlign: 'left' }}>
+                            <div>Type: {computationResult.data.type}</div>
+                            {computationResult.data.geometry && (
+                              <div>Geometry Size: {JSON.stringify(computationResult.data.geometry).length} bytes</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255, 107, 157, 0.1)', borderRadius: '4px' }}>
+                        <div style={{ color: '#ff6b9d', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                          📈 Performance Metrics
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', textAlign: 'left', fontSize: '0.8rem' }}>
+                          <div>Response Time: {performanceData?.responseTime || 0}ms</div>
+                          <div>Cache Hit: {performanceData?.cacheHit ? 'Yes' : 'No'}</div>
+                          <div>Compute Time: {performanceData?.computeTime || 0}ms</div>
+                          <div>Result Size: {performanceData?.resultSize || 'Unknown'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{
+                      fontSize: '0.9rem',
+                      color: '#cccccc',
+                      marginBottom: '2rem'
+                    }}>
+                      💡 <strong>3D Viewer:</strong> A full Three.js viewer would be integrated here to visualize
+                      the computed geometry in real-time. The current setup demonstrates the complete
+                      computational pipeline with performance monitoring.
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setComputationResult(null);
+                        setPerformanceData(null);
+                        setStatus('Ready to explore');
+                      }}
+                      style={{
+                        background: '#444',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '6px',
+                        fontSize: '0.9rem',
+                        fontFamily: '"Times New Roman", serif',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      🔄 New Computation
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </ViewerContainer>
         </ViewerPanel>
       </ConfiguratorLayout>

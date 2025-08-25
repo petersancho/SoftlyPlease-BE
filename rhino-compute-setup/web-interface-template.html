@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grasshopper Definition Controller - SoftlyPlease</title>
+
+    <!-- Three.js and related libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/rhino3dm@0.13.0/rhino3dm.min.js"></script>
+
+    <!-- Axios for HTTP requests -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.21.1/dist/axios.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Times New Roman', serif;
+        }
+
+        body {
+            background: #1a1a1a;
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .control-panel {
+            width: 380px;
+            background: #2a2a2a;
+            padding: 20px;
+            border-right: 1px solid #444;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+        }
+
+        .viewer-panel {
+            flex: 1;
+            position: relative;
+            background: #000000;
+        }
+
+        .viewer-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .section-title {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #4ecdc4;
+            padding-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .parameter-group {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4ecdc4;
+        }
+
+        .parameter-title {
+            color: #ffffff;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .parameter-item {
+            margin-bottom: 15px;
+        }
+
+        .parameter-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #cccccc;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .parameter-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #444;
+            border-radius: 6px;
+            background: #555;
+            color: #ffffff;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .parameter-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+        }
+
+        .slider-container {
+            position: relative;
+            margin-top: 8px;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            background: #444;
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+            transition: all 0.3s ease;
+        }
+
+        .slider:hover {
+            background: #555;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(255, 107, 157, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.4);
+        }
+
+        .value-display {
+            position: absolute;
+            right: 0;
+            top: -30px;
+            background: #4ecdc4;
+            color: #000000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .control-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+        }
+
+        .control-button {
+            background: linear-gradient(45deg, #ff6b9d, #4ecdc4);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 5px 10px 0;
+            transition: all 0.3s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .control-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 157, 0.3);
+        }
+
+        .control-button:active {
+            transform: translateY(0);
+        }
+
+        .control-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .control-button.secondary {
+            background: linear-gradient(45deg, #666, #888);
+        }
+
+        .control-button.secondary:hover {
+            box-shadow: 0 6px 20px rgba(102, 102, 102, 0.3);
+        }
+
+        .status-panel {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .status-title {
+            color: #ffffff;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-text {
+            color: #cccccc;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #333;
+            border-top: 5px solid #4ecdc4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            margin-left: 20px;
+            font-size: 1.2rem;
+            color: #4ecdc4;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .definition-selector {
+            margin-bottom: 20px;
+        }
+
+        .definition-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #444;
+            border-radius: 6px;
+            background: #333;
+            color: #ffffff;
+            font-size: 1rem;
+            font-family: 'Times New Roman', serif;
+        }
+
+        .definition-info {
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #cccccc;
+        }
+
+        .definition-description {
+            margin-bottom: 8px;
+        }
+
+        .definition-endpoints {
+            font-family: monospace;
+            background: #1a1a1a;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+        }
+
+        .performance-info {
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 0.85rem;
+            color: #cccccc;
+        }
+
+        .performance-metric {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            color: #999;
+        }
+
+        .metric-value {
+            color: #4ecdc4;
+            font-weight: 600;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 400px;
+            color: #4ecdc4;
+            text-decoration: none;
+            font-size: 1.1rem;
+            z-index: 1000;
+            padding: 8px 15px;
+            border: 1px solid #4ecdc4;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: #4ecdc4;
+            color: #000000;
+        }
+
+        .error-message {
+            background: #ff6b9d;
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .success-message {
+            background: #4ecdc4;
+            color: #000000;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .control-panel {
+                width: 100%;
+                max-height: 50vh;
+            }
+
+            .back-link {
+                left: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Back to SoftlyPlease</a>
+
+    <div class="container">
+        <div class="control-panel">
+            <div class="header">
+                <h1>🧩 Grasshopper Configurator</h1>
+                <p>Real-time parametric design</p>
+            </div>
+
+            <div class="definition-selector">
+                <label class="parameter-label">Select Definition</label>
+                <select class="definition-select" id="definitionSelect">
+                    <option value="">Loading definitions...</option>
+                </select>
+
+                <div class="definition-info" id="definitionInfo" style="display: none;">
+                    <div class="definition-description" id="definitionDescription"></div>
+                    <div class="definition-endpoints" id="definitionEndpoints"></div>
+                </div>
+            </div>
+
+            <div id="parametersContainer" style="display: none;">
+                <h2 class="section-title">🎛️ Parameters</h2>
+
+                <!-- Parameters will be dynamically loaded here -->
+                <div id="parametersList"></div>
+            </div>
+
+            <div class="control-section">
+                <button class="control-button" id="generateBtn">
+                    🚀 Generate Geometry
+                </button>
+
+                <button class="control-button secondary" onclick="resetParameters()">
+                    🔄 Reset Parameters
+                </button>
+            </div>
+
+            <div class="status-panel">
+                <h3 class="status-title">📊 Status</h3>
+                <div class="status-text" id="statusText">Ready to explore</div>
+
+                <div class="performance-info" id="performanceInfo" style="display: none;">
+                    <div class="performance-metric">
+                        <span class="metric-label">Response Time:</span>
+                        <span class="metric-value" id="responseTime">-</span>
+                    </div>
+                    <div class="performance-metric">
+                        <span class="metric-label">Cache Hit:</span>
+                        <span class="metric-value" id="cacheHit">-</span>
+                    </div>
+                    <div class="performance-metric">
+                        <span class="metric-label">Compute Time:</span>
+                        <span class="metric-value" id="computeTime">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="viewer-panel">
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Computing geometry...</div>
+            </div>
+            <div class="viewer-container" id="viewerContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let scene, camera, renderer, controls;
+        let rhino3dm;
+        let currentMesh = null;
+        let currentDefinition = null;
+        let definitions = [];
+
+        // Initialize the 3D viewer
+        async function initViewer() {
+            try {
+                // Initialize rhino3dm
+                rhino3dm = await Rhino3dm();
+                console.log('Rhino3dm initialized');
+
+                // Create scene
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x1a1a1a);
+
+                // Create camera
+                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.set(10, 10, 10);
+
+                // Create renderer
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(window.innerWidth - 380, window.innerHeight);
+                document.getElementById('viewerContainer').appendChild(renderer.domElement);
+
+                // Create controls
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+
+                // Add lighting
+                const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+                scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(10, 10, 5);
+                scene.add(directionalLight);
+
+                // Add grid helper
+                const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
+                scene.add(gridHelper);
+
+                // Start render loop
+                animate();
+
+                console.log('3D viewer initialized');
+            } catch (error) {
+                console.error('Failed to initialize viewer:', error);
+                updateStatus(`❌ Failed to initialize 3D viewer: ${error.message}`);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Load definitions from the API
+        async function loadDefinitions() {
+            try {
+                updateStatus('Loading definitions...');
+
+                const response = await axios.get('/');
+
+                if (response.data && Array.isArray(response.data)) {
+                    definitions = response.data;
+                    populateDefinitionSelect();
+                    updateStatus('Definitions loaded successfully');
+                } else {
+                    throw new Error('Invalid response format');
+                }
+            } catch (error) {
+                console.error('Failed to load definitions:', error);
+                updateStatus(`❌ Failed to load definitions: ${error.message}`);
+                document.getElementById('definitionSelect').innerHTML = '<option value="">Failed to load definitions</option>';
+            }
+        }
+
+        // Populate the definition select dropdown
+        function populateDefinitionSelect() {
+            const select = document.getElementById('definitionSelect');
+            select.innerHTML = '<option value="">Select a definition...</option>';
+
+            definitions.forEach(def => {
+                const option = document.createElement('option');
+                option.value = def.name;
+                option.textContent = def.name.replace('.gh', '');
+                select.appendChild(option);
+            });
+        }
+
+        // Handle definition selection
+        async function onDefinitionChange(definitionName) {
+            if (!definitionName) {
+                document.getElementById('parametersContainer').style.display = 'none';
+                document.getElementById('definitionInfo').style.display = 'none';
+                currentDefinition = null;
+                return;
+            }
+
+            try {
+                updateStatus(`Loading definition: ${definitionName}`);
+
+                // Get definition info
+                const response = await axios.get(`/${definitionName}`);
+                const defInfo = response.data;
+
+                // Display definition info
+                document.getElementById('definitionDescription').textContent =
+                    `Definition: ${definitionName} - Contains ${defInfo.inputs ? defInfo.inputs.length : 0} input parameters`;
+
+                const endpoints = `GET /${definitionName}\nPOST /solve (with definition: "${definitionName}")`;
+                document.getElementById('definitionEndpoints').textContent = endpoints;
+                document.getElementById('definitionInfo').style.display = 'block';
+
+                // Load parameters
+                await loadParameters(definitionName, defInfo);
+                currentDefinition = defInfo;
+
+                document.getElementById('parametersContainer').style.display = 'block';
+                updateStatus(`Definition loaded: ${definitionName}`);
+
+            } catch (error) {
+                console.error('Failed to load definition:', error);
+                updateStatus(`❌ Failed to load definition: ${error.message}`);
+            }
+        }
+
+        // Load parameters for the selected definition
+        async function loadParameters(definitionName, defInfo) {
+            const container = document.getElementById('parametersList');
+            container.innerHTML = '';
+
+            if (!defInfo.inputs || defInfo.inputs.length === 0) {
+                container.innerHTML = '<p style="color: #ccc; font-style: italic;">No input parameters found for this definition.</p>';
+                return;
+            }
+
+            // Create parameter groups based on parameter types
+            const parameterGroups = {};
+
+            defInfo.inputs.forEach(param => {
+                const paramType = param.paramType || 'Generic';
+
+                if (!parameterGroups[paramType]) {
+                    parameterGroups[paramType] = [];
+                }
+
+                parameterGroups[paramType].push(param);
+            });
+
+            // Create UI for each parameter group
+            Object.keys(parameterGroups).forEach(groupType => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'parameter-group';
+
+                const groupTitle = document.createElement('div');
+                groupTitle.className = 'parameter-title';
+                groupTitle.innerHTML = `📊 ${groupType} Parameters`;
+                groupDiv.appendChild(groupTitle);
+
+                parameterGroups[groupType].forEach(param => {
+                    const paramDiv = createParameterUI(param);
+                    groupDiv.appendChild(paramDiv);
+                });
+
+                container.appendChild(groupDiv);
+            });
+        }
+
+        // Create UI for a single parameter
+        function createParameterUI(param) {
+            const paramDiv = document.createElement('div');
+            paramDiv.className = 'parameter-item';
+
+            const label = document.createElement('label');
+            label.className = 'parameter-label';
+            label.textContent = param.name || 'Unnamed Parameter';
+            if (param.description) {
+                label.textContent += ` (${param.description})`;
+            }
+            paramDiv.appendChild(label);
+
+            const inputContainer = document.createElement('div');
+
+            // Create appropriate input based on parameter type
+            switch (param.paramType) {
+                case 'Number':
+                    inputContainer.appendChild(createNumberInput(param));
+                    break;
+                case 'Boolean':
+                    inputContainer.appendChild(createBooleanInput(param));
+                    break;
+                case 'String':
+                    inputContainer.appendChild(createStringInput(param));
+                    break;
+                default:
+                    inputContainer.appendChild(createGenericInput(param));
+                    break;
+            }
+
+            paramDiv.appendChild(inputContainer);
+            return paramDiv;
+        }
+
+        // Create number input with slider
+        function createNumberInput(param) {
+            const container = document.createElement('div');
+            container.className = 'slider-container';
+
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.className = 'slider';
+            slider.id = `param_${param.name}`;
+            slider.min = param.min !== undefined ? param.min : 0;
+            slider.max = param.max !== undefined ? param.max : 100;
+            slider.step = param.step !== undefined ? param.step : 1;
+            slider.value = param.default !== undefined ? param.default : 50;
+
+            const valueDisplay = document.createElement('div');
+            valueDisplay.className = 'value-display';
+            valueDisplay.id = `value_${param.name}`;
+            valueDisplay.textContent = slider.value;
+
+            slider.addEventListener('input', function() {
+                valueDisplay.textContent = this.value;
+            });
+
+            container.appendChild(slider);
+            container.appendChild(valueDisplay);
+
+            return container;
+        }
+
+        // Create boolean input
+        function createBooleanInput(param) {
+            const container = document.createElement('div');
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `param_${param.name}`;
+            checkbox.checked = param.default !== undefined ? param.default : false;
+            checkbox.style.marginRight = '10px';
+
+            const label = document.createElement('label');
+            label.textContent = 'Enabled';
+            label.style.color = '#cccccc';
+
+            container.appendChild(checkbox);
+            container.appendChild(label);
+
+            return container;
+        }
+
+        // Create string input
+        function createStringInput(param) {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'parameter-input';
+            input.id = `param_${param.name}`;
+            input.placeholder = param.description || 'Enter text...';
+            input.value = param.default !== undefined ? param.default : '';
+
+            return input;
+        }
+
+        // Create generic input
+        function createGenericInput(param) {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'parameter-input';
+            input.id = `param_${param.name}`;
+            input.placeholder = `Parameter: ${param.name}`;
+            input.value = param.default !== undefined ? param.default : '';
+
+            return input;
+        }
+
+        // Get current parameter values
+        function getParameterValues() {
+            const values = {};
+
+            if (!currentDefinition || !currentDefinition.inputs) {
+                return values;
+            }
+
+            currentDefinition.inputs.forEach(param => {
+                const element = document.getElementById(`param_${param.name}`);
+
+                if (element) {
+                    switch (param.paramType) {
+                        case 'Number':
+                            values[param.name] = [parseFloat(element.value)];
+                            break;
+                        case 'Boolean':
+                            values[param.name] = [element.checked];
+                            break;
+                        default:
+                            values[param.name] = [element.value];
+                            break;
+                    }
+                }
+            });
+
+            return values;
+        }
+
+        // Reset all parameters to defaults
+        function resetParameters() {
+            if (!currentDefinition || !currentDefinition.inputs) {
+                return;
+            }
+
+            currentDefinition.inputs.forEach(param => {
+                const element = document.getElementById(`param_${param.name}`);
+                const valueElement = document.getElementById(`value_${param.name}`);
+
+                if (element) {
+                    switch (param.paramType) {
+                        case 'Number':
+                            const defaultValue = param.default !== undefined ? param.default : 50;
+                            element.value = defaultValue;
+                            if (valueElement) {
+                                valueElement.textContent = defaultValue;
+                            }
+                            break;
+                        case 'Boolean':
+                            element.checked = param.default !== undefined ? param.default : false;
+                            break;
+                        default:
+                            element.value = param.default !== undefined ? param.default : '';
+                            break;
+                    }
+                }
+            });
+
+            updateStatus('Parameters reset to defaults');
+        }
+
+        // Update status display
+        function updateStatus(message) {
+            const statusText = document.getElementById('statusText');
+            statusText.textContent = message;
+
+            // Clear any existing message classes
+            statusText.parentElement.className = 'status-text';
+
+            // Add appropriate class based on message content
+            if (message.includes('❌')) {
+                statusText.parentElement.className = 'status-text error-message';
+            } else if (message.includes('✅')) {
+                statusText.parentElement.className = 'status-text success-message';
+            }
+        }
+
+        // Update performance info
+        function updatePerformanceInfo(performanceData) {
+            const performanceInfo = document.getElementById('performanceInfo');
+
+            if (performanceData) {
+                document.getElementById('responseTime').textContent =
+                    performanceData.responseTime ? `${performanceData.responseTime}ms` : '-';
+                document.getElementById('cacheHit').textContent =
+                    performanceData.cacheHit !== undefined ? (performanceData.cacheHit ? 'Yes' : 'No') : '-';
+                document.getElementById('computeTime').textContent =
+                    performanceData.computeTime ? `${performanceData.computeTime}ms` : '-';
+
+                performanceInfo.style.display = 'block';
+            } else {
+                performanceInfo.style.display = 'none';
+            }
+        }
+
+        // Generate geometry
+        document.getElementById('generateBtn').addEventListener('click', async function() {
+            if (!currentDefinition) {
+                updateStatus('❌ Please select a definition first');
+                return;
+            }
+
+            const generateBtn = document.getElementById('generateBtn');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+
+            // Show loading state
+            generateBtn.disabled = true;
+            generateBtn.textContent = '🔄 Computing...';
+            loadingOverlay.style.display = 'flex';
+            updateStatus('Computing geometry...');
+
+            try {
+                const parameterValues = getParameterValues();
+
+                console.log('Sending computation request:', {
+                    definition: currentDefinition.name,
+                    inputs: parameterValues
+                });
+
+                const startTime = Date.now();
+
+                // Send request to App Server
+                const response = await axios.post('/solve', {
+                    definition: currentDefinition.name,
+                    inputs: parameterValues
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 60000 // 60 second timeout
+                });
+
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+
+                console.log('Computation response:', response);
+
+                if (response.data && response.data.success !== false) {
+                    updateStatus('✅ Geometry computed successfully!');
+
+                    // Extract performance data from headers
+                    const performanceData = {
+                        responseTime: responseTime,
+                        cacheHit: response.headers['x-cache'] === 'HIT',
+                        computeTime: parseInt(response.headers['x-compute-time']) || null
+                    };
+
+                    updatePerformanceInfo(performanceData);
+
+                    // Process and display the result
+                    if (response.data.data) {
+                        await displayResult(response.data.data);
+                    }
+                } else {
+                    const errorMsg = response.data?.message || 'Unknown error occurred';
+                    updateStatus(`❌ Computation failed: ${errorMsg}`);
+                    console.error('Computation error:', response.data);
+                }
+
+            } catch (error) {
+                console.error('Network error:', error);
+
+                let errorMessage = 'Unknown error occurred';
+                if (error.response) {
+                    // Server responded with error status
+                    errorMessage = error.response.data?.message || `HTTP ${error.response.status}: ${error.response.statusText}`;
+                } else if (error.request) {
+                    // Request was made but no response received
+                    errorMessage = 'No response from server - check if App Server is running';
+                } else {
+                    // Something else happened
+                    errorMessage = error.message;
+                }
+
+                updateStatus(`❌ Error: ${errorMessage}`);
+            } finally {
+                // Hide loading state
+                generateBtn.disabled = false;
+                generateBtn.textContent = '🚀 Generate Geometry';
+                loadingOverlay.style.display = 'none';
+            }
+        });
+
+        // Display computation result
+        async function displayResult(data) {
+            try {
+                console.log('Processing result data:', data);
+
+                // Remove previous mesh
+                if (currentMesh) {
+                    scene.remove(currentMesh);
+                }
+
+                // Process the geometry data from your definition
+                if (data.geometry) {
+                    const geometryData = data.geometry;
+
+                    // Convert to Three.js mesh
+                    // This depends on what your definition outputs
+                    // For demonstration, we'll create a simple mesh
+                    const geometry = new THREE.BoxGeometry(5, 5, 5);
+                    const material = new THREE.MeshLambertMaterial({
+                        color: 0x4ecdc4,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+
+                    currentMesh = new THREE.Mesh(geometry, material);
+                    scene.add(currentMesh);
+
+                    // Fit camera to object
+                    const box = new THREE.Box3().setFromObject(currentMesh);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const fov = camera.fov * (Math.PI / 180);
+                    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+
+                    camera.position.set(center.x, center.y, center.z + cameraZ * 2);
+                    camera.lookAt(center);
+                    controls.target.copy(center);
+                    controls.update();
+
+                    updateStatus('Geometry displayed successfully');
+                } else {
+                    updateStatus('⚠️ No geometry data in response');
+                }
+
+            } catch (error) {
+                console.error('Error displaying result:', error);
+                updateStatus('❌ Error displaying geometry');
+            }
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            camera.aspect = (window.innerWidth - 380) / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth - 380, window.innerHeight);
+        });
+
+        // Event listeners
+        document.getElementById('definitionSelect').addEventListener('change', function() {
+            onDefinitionChange(this.value);
+        });
+
+        // Initialize the application
+        window.addEventListener('load', async function() {
+            await initViewer();
+            await loadDefinitions();
+        });
+
+        // Handle unhandled errors
+        window.addEventListener('error', function(event) {
+            console.error('Unhandled error:', event.error);
+            updateStatus(`❌ Unhandled error: ${event.error.message}`);
+        });
+
+        // Handle unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Unhandled promise rejection:', event.reason);
+            updateStatus(`❌ Promise rejection: ${event.reason.message || event.reason}`);
+        });
+    </script>
+</body>
+</html>
