@@ -1,5 +1,5 @@
-# Production web process - simplified for Heroku
-web: npm start
+# Production web process - workshop-compliant API
+web: node ./dist/server.js
 
 # Alternative production with clustering
 # web: npm run start:production
