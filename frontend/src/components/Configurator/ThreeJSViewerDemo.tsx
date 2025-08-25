@@ -77,7 +77,7 @@ const Stats = styled.div`
 
 const ThreeJSViewerDemo: React.FC = () => {
   const [currentDemo, setCurrentDemo] = useState('box')
-  const [loading, setLoading] = useState(false)
+  // const [loading, setLoading] = useState(false) // Currently unused, available for future loading states
 
   // Demo geometry data
   const demoGeometries = {
