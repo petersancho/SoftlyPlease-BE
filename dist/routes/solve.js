@@ -53,7 +53,7 @@ var path = require("path");
 var crypto = require("crypto");
 var router = express.Router();
 // Load manifest
-var MANIFEST_PATH = path.join(__dirname, '../../../gh-manifest.json');
+var MANIFEST_PATH = path.join(__dirname, '../../gh-manifest.json');
 var manifest = [];
 try {
     if (fs.existsSync(MANIFEST_PATH)) {
