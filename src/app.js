@@ -236,8 +236,10 @@ app.get('/metrics', (req, res) => {
 })
 
 // Routes for this app
+// Static file serving must come BEFORE API routes for React routing to work
+app.use(express.static(path.join(__dirname, '../public')))
 app.use('/examples', express.static(__dirname + '/examples'))
-app.use(express.static(path.join(__dirname, '../public')));app.get('/favicon.ico', (req, res) => res.status(200))
+app.get('/favicon.ico', (req, res) => res.status(200))
 
 // Enhanced configurator interfaces
 app.get('/topoopt', (req, res) => {
@@ -2190,10 +2192,10 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500).send(data)
 })
 
-module.exports = app
-
 // Serve React app for all other routes (client-side routing)
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
+
+module.exports = app
 
