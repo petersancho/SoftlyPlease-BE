@@ -30,7 +30,7 @@
 const API_CONFIG = {
   // For production (replace with your Heroku app URL)
   baseURL: process.env.NODE_ENV === 'production'
-    ? 'https://your-app-name.herokuapp.com'
+    ? 'https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com'
     : 'http://localhost:3000',
 
   endpoints: {
@@ -542,7 +542,7 @@ ws.onmessage = (event) => {
 npm install
 
 # Set environment variables
-export API_BASE_URL=https://your-app-name.herokuapp.com
+export API_BASE_URL=https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com
 
 # For production with MemCachier
 export MEMCACHIER_SERVERS=your-memcachier-server

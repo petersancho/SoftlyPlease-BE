@@ -108,7 +108,7 @@ heroku logs --tail
 heroku open
 
 # Test health endpoint
-curl https://your-app-name.herokuapp.com/health
+curl https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/health
 ```
 
 ---
@@ -131,7 +131,7 @@ heroku logs --tail
 #### **Problem 2: Still Getting Blank Screen**
 ```bash
 # Check if app is responding
-curl https://your-app-name.herokuapp.com/
+curl https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/
 
 # Should return HTML, not JSON or error
 ```
@@ -139,10 +139,10 @@ curl https://your-app-name.herokuapp.com/
 #### **Problem 3: TopoOpt Not Working**
 ```bash
 # Test the TopoOpt interface
-curl https://your-app-name.herokuapp.com/topoopt
+curl https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/topoopt
 
 # Test computation
-curl -X POST https://your-app-name.herokuapp.com/solve \
+curl -X POST https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/solve \
   -H "Content-Type: application/json" \
   -d '{"definition":"TopoOpt.gh","inputs":{"height":[600],"width":[1200],"depth":[400],"num":[5],"RH_IN:explode":[false]}}'
 ```
@@ -163,14 +163,14 @@ heroku domains:add softlyplease.com
 heroku domains
 
 # Add CNAME records in your DNS settings:
-# www.softlyplease.com -> your-app-name.herokuapp.com
-# softlyplease.com -> your-app-name.herokuapp.com
+# www.softlyplease.com -> softlyplease-appserver-5d5d5bc6198a.herokuapp.com
+# softlyplease.com -> softlyplease-appserver-5d5d5bc6198a.herokuapp.com
 ```
 
 **Option 2: Direct Heroku URL**
 ```bash
 # Use your Heroku URL directly:
-# https://your-app-name.herokuapp.com
+# https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com
 ```
 
 ---
@@ -192,9 +192,9 @@ heroku config:get MEMCACHIER_PASSWORD
 ### **Application Monitoring**
 ```bash
 # Test all endpoints
-curl https://your-app-name.herokuapp.com/health
-curl https://your-app-name.herokuapp.com/metrics
-curl https://your-app-name.herokuapp.com/TopoOpt.gh
+curl https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/health
+curl https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/metrics
+curl https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/TopoOpt.gh
 ```
 
 ---
@@ -210,7 +210,7 @@ const API_BASE_URL = 'http://localhost:3000'
 
 // After
 const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? 'https://your-app-name.herokuapp.com'
+  ? 'https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com'
   : 'http://localhost:3000'
 ```
 
@@ -299,9 +299,9 @@ heroku run curl http://localhost:3000/health
 
 ## 🚀 **Your TopoOpt Configurator is Live!**
 
-**Visit:** https://your-app-name.herokuapp.com/topoopt
+**Visit:** https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/topoopt
 
-**API Endpoint:** https://your-app-name.herokuapp.com/solve
+**API Endpoint:** https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/solve
 
 **Performance:** <50ms cache hits, 95%+ hit rate
 

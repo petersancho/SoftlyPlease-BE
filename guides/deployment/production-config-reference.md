@@ -5,7 +5,7 @@
 ### **Current Live Setup:**
 - **Heroku App Server**: `https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com`
 - **Custom Domain**: `https://softlyplease.com` (DNS configured ✅)
-- **Rhino.Compute**: `https://compute.softlyplease.com` (Azure VM: 4.206.116.20)
+- **Rhino.Compute**: `https://compute.softlyplease.com` (Azure VM: 4.206.137.232)
 
 ### **API Endpoints (Production Only):**
 ```bash
@@ -50,13 +50,13 @@ curl -H "Authorization: Bearer prod-token-456" -X POST https://softlyplease.com/
 
 ## 🏗️ **Azure VM Setup Status**
 
-- ✅ **VM**: rhino-compute-vm724 (4.206.116.20)
+- ✅ **VM**: rhino-compute-vm724 (4.206.137.232)
 - ✅ **Rhino 8**: Installed
 - ✅ **Rhino.Compute**: Installed
 - ⏳ **Service Configuration**: Needs setup
 - ⏳ **IIS HTTPS**: Needs setup
 - ⏳ **SSL Certificate**: Needs setup
-- ⏳ **DNS**: compute.softlyplease.com → 4.206.116.20
+- ⏳ **DNS**: compute.softlyplease.com → 4.206.137.232
 - ⏳ **Heroku Integration**: COMPUTE_URL=https://compute.softlyplease.com
 
 ## 🔧 **Heroku Configuration**

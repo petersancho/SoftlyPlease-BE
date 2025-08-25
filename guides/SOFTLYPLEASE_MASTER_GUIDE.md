@@ -200,7 +200,7 @@ fetch('/solve', {
 ### **3.3 Interactive Interface**
 
 #### **GET /topoopt** - TopoOpt Test Interface
-**URL**: `https://your-app-name.herokuapp.com/topoopt`
+**URL**: `https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/topoopt`
 
 **Features**:
 - ✅ Interactive parameter sliders
@@ -668,8 +668,8 @@ heroku domains:add softlyplease.com
 heroku domains
 
 # Add CNAME records in your DNS settings:
-# www.softlyplease.com -> your-app-name.herokuapp.com
-# softlyplease.com -> your-app-name.herokuapp.com
+# www.softlyplease.com -> softlyplease-appserver-5d5d5bc6198a.herokuapp.com
+# softlyplease.com -> softlyplease-appserver-5d5d5bc6198a.herokuapp.com
 ```
 
 ### **6.3 MemCachier Setup** ⭐ **HIGHLY RECOMMENDED**
@@ -868,7 +868,7 @@ heroku ps:resize web=standard-1x
 heroku logs --tail | grep memory
 
 # Monitor memory usage
-curl https://your-app-name.herokuapp.com/metrics
+curl https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/metrics
 ```
 
 ### **8.2 Debug Commands**
@@ -984,7 +984,7 @@ git push heroku main
 
 # 4. Monitor after deployment
 heroku logs --tail
-curl https://your-app-name.herokuapp.com/health
+curl https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/health
 ```
 
 ### **9.2 Performance Best Practices**

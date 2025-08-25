@@ -29,16 +29,16 @@
 ### **1. Heroku Custom Domain Setup**
 ```bash
 # Add your domains to Heroku
-heroku domains:add www.softlyplease.com
-heroku domains:add softlyplease.com
+heroku domains:add www.softlyplease.com --app softlyplease-appserver
+heroku domains:add softlyplease.com --app softlyplease-appserver
 
 # Get DNS targets
-heroku domains
+heroku domains --app softlyplease-appserver
 
 # Example output:
 # Domain Name          DNS Target
-# softlyplease.com     your-app-name.herokuapp.com
-# www.softlyplease.com your-app-name.herokuapp.com
+# softlyplease.com     softlyplease-appserver-5d5d5bc6198a.herokuapp.com
+# www.softlyplease.com softlyplease-appserver-5d5d5bc6198a.herokuapp.com
 ```
 
 ### **2. DNS Configuration**
@@ -46,8 +46,8 @@ Add these CNAME records to your DNS settings:
 
 | **Type** | **Name** | **Target** |
 |----------|----------|------------|
-| CNAME | @ | your-app-name.herokuapp.com |
-| CNAME | www | your-app-name.herokuapp.com |
+| CNAME | @ | softlyplease-appserver-5d5d5bc6198a.herokuapp.com |
+| CNAME | www | softlyplease-appserver-5d5d5bc6198a.herokuapp.com |
 
 ---
 
@@ -56,13 +56,13 @@ Add these CNAME records to your DNS settings:
 ### **Required Variables**
 ```bash
 # Set these in Heroku dashboard or CLI
-heroku config:set NODE_ENV=production
-heroku config:set PORT=3000
-heroku config:set RHINO_COMPUTE_URL=https://your-rhino-server.com
-heroku config:set RHINO_COMPUTE_KEY=your-api-key
-heroku config:set CORS_ORIGIN=https://softlyplease.com
-heroku config:set RATE_LIMIT=1000
-heroku config:set WEB_CONCURRENCY=2
+heroku config:set NODE_ENV=production --app softlyplease-appserver
+heroku config:set PORT=3000 --app softlyplease-appserver
+heroku config:set RHINO_COMPUTE_URL=https://compute.softlyplease.com --app softlyplease-appserver
+heroku config:set APP_TOKEN=prod-token-456 --app softlyplease-appserver
+heroku config:set CORS_ORIGIN=https://softlyplease.com --app softlyplease-appserver
+heroku config:set RATE_LIMIT=1000 --app softlyplease-appserver
+heroku config:set WEB_CONCURRENCY=2 --app softlyplease-appserver
 ```
 
 ### **MemCachier Variables** (Auto-set by addon)
@@ -80,36 +80,56 @@ MEMCACHIER_PASSWORD
 ### **Production URLs** (Replace with your Heroku app)
 ```javascript
 const SOFTLYPLEASE_API = {
-  baseURL: 'https://your-app-name.herokuapp.com',
+  baseURL: 'https://softlyplease.com',
 
   // Core endpoints
   home: '/',
-  topoopt: '/topoopt',
+  definitions: '/',
   solve: '/solve',
   health: '/health',
   metrics: '/metrics',
-  view: '/view',
+  ready: '/ready',
+  version: '/version',
 
   // Definition endpoints
-  getDefinition: (name) => `/${name}`,
-  getDefinitionFile: (name) => `/definition/${name}`
+  getDefinition: (id) => `/definitions/${id}`,
+  getDefinitionFile: (id) => `/definition/${id}`,
+
+  // Legacy endpoints (for compatibility)
+  topoopt: '/topoopt',
+  view: '/view'
 }
 ```
 
 ### **Example API Calls**
 ```javascript
 // Test TopoOpt computation
-fetch('https://your-app-name.herokuapp.com/solve', {
+fetch('https://softlyplease.com/solve', {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer prod-token-456'
+  },
   body: JSON.stringify({
-    definition: 'TopoOpt.gh',
+    definitionId: 'f3997a3b7a68e0f2',
     inputs: {
       height: [750],
       width: [1500],
       depth: [500],
       num: [8],
-      'RH_IN:explode': [false]
+      smooth: [3],
+      cube: [2],
+      segment: [8],
+      pipewidth: [10],
+      round: [2],
+      tolerance: [5],
+      minr: [10],
+      maxr: [50],
+      format: ["mesh"],
+      quality: [5],
+      detail: [10],
+      preview: [true],
+      optimize: [true]
     }
   })
 })
@@ -143,7 +163,7 @@ const SoftlyPleaseTopoOpt = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('https://your-app-name.herokuapp.com/solve', {
+      const response = await fetch('https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/solve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -405,7 +425,7 @@ const trackTopoOptUsage = (action, data) => {
 // Monitor system health
 const checkSystemHealth = async () => {
   try {
-    const response = await fetch('https://your-app-name.herokuapp.com/health');
+    const response = await fetch('https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/health');
     const health = await response.json();
 
     if (health.status !== 'healthy') {

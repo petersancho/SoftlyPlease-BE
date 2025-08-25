@@ -1600,7 +1600,7 @@ REACT_APP_DEBUG=false
 **Deploy Frontend:**
 ```bash
 # Create Heroku app for frontend
-heroku create softlyplease-frontend
+heroku create softlyplease-compute
 
 # Add buildpack for React
 heroku buildpacks:set mars/create-react-app

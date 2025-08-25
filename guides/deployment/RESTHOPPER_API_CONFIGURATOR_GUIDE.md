@@ -547,8 +547,8 @@ function validateInputs(req, res, next) {
 // In src/app.js
 app.use(cors({
   origin: [
-    'https://your-domain.com',
-    'https://www.your-domain.com',
+    'https://softlyplease.com',
+    'https://www.softlyplease.com',
     process.env.CORS_ORIGIN
   ].filter(Boolean),
   credentials: true,
@@ -978,7 +978,7 @@ RHINO_COMPUTE_KEY=your_api_key
 NODE_ENV=production
 
 # Optional
-CORS_ORIGIN=https://your-domain.com
+CORS_ORIGIN=https://softlyplease.com
 MEMCACHIER_SERVERS=your-cache-server:11211
 PORT=3000
 ```

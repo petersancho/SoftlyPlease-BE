@@ -14,7 +14,7 @@ Your Azure VM has Rhino 8 and Rhino.Compute installed. This guide will configure
 ## 🔐 **Step 1: Access Your VM**
 
 1. **RDP Connection**:
-   - **Host**: `4.206.116.20`
+   - **Host**: `4.206.137.232`
    - **Username**: Your Azure VM admin username
    - **Password**: Your Azure VM admin password
 
@@ -179,7 +179,7 @@ Invoke-WebRequest -Uri "http://localhost:8081/version"
 
 1. **Add A Record**:
    - **Host**: `compute`
-   - **Value**: `4.206.116.20`
+   - **Value**: `4.206.137.232`
    - **TTL**: `300` (5 minutes)
 
 2. **Verify DNS**:
@@ -292,7 +292,7 @@ netsh http show sslcert
 - [ ] **Reverse Proxy**: Configured to forward to localhost:8081
 - [ ] **SSL**: Certificate installed and bound to port 443
 - [ ] **Cloud Zoo**: Licensing active and configured
-- [ ] **DNS**: compute.softlyplease.com → 4.206.116.20
+- [ ] **DNS**: compute.softlyplease.com → 4.206.137.232
 - [ ] **Heroku**: COMPUTE_URL updated to https://compute.softlyplease.com
 - [ ] **End-to-End**: App Server can communicate with Rhino.Compute
 

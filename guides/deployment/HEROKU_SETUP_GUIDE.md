@@ -1,6 +1,6 @@
-# Complete Heroku Setup Guide for SoftlyPlease Compute Frontend
+# Complete Heroku Setup Guide for SoftlyPlease Compute Backend
 
-This comprehensive guide will walk you through setting up and deploying the SoftlyPlease Compute Node.js frontend to Heroku. This guide is designed to be given to your developer and includes all necessary steps from account setup to production deployment.
+This comprehensive guide will walk you through setting up and deploying the SoftlyPlease Compute Node.js backend API server to Heroku. This guide is designed to be given to your developer and includes all necessary steps from account setup to production deployment.
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ This comprehensive guide will walk you through setting up and deploying the Soft
 ## Prerequisites
 
 ### System Requirements
-- **Node.js**: Version 16.x or higher (currently using 16.x)
+- **Node.js**: Version 18.x or higher (currently using 18.x)
 - **Git**: Latest version
 - **Heroku CLI**: Latest version
 - **Package Manager**: npm (comes with Node.js)

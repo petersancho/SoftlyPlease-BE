@@ -39,7 +39,7 @@
 
 ### Prerequisites
 
-- Node.js 16.x
+- Node.js 18.x (as specified in package.json)
 - Rhino 7 or 8
 - Heroku CLI (for deployment)
 - Memcached (optional, for production)
@@ -119,15 +119,22 @@ curl -X POST http://localhost:3000/solve \
 # Start development server with debug logging
 npm run start:dev
 
-# Start with hot reload (for frontend development)
+# Start with debug logging
 npm run start:debug
 
-# Run tests
+# Run health check test
 npm run test:health
+
+# Run readiness check test
 npm run test:ready
+
+# Run metrics check test
 npm run test:metrics
 
-# Lint code
+# Build TypeScript workshop engine
+npm run build:workshop
+
+# Lint code (placeholder - not yet configured)
 npm run lint
 ```
 
@@ -145,11 +152,20 @@ export PERFORMANCE_LOGGING=true
 
 The system automatically loads all `.gh` files from `assets/gh-definitions/`:
 
-- **TopoOpt.gh** - Topology optimization
-- **BeamAnalysis.gh** - Structural beam analysis
-- **Bending_gridshell.gh** - Grid shell analysis
-- **metaballTable.gh** - Metball table generation
+- **TopoOpt.gh** - Topology optimization with advanced parameters
+- **Bending_gridshell.gh** - Grid shell analysis and optimization
 - **QuadPanelAperture.gh** - Panel aperture optimization
+- **metaballTable.gh** - Metball table generation
+- **dresser3.gh** - Parametric furniture design
+- **beam_mod.gh** - Beam analysis and modification
+- **brep_union.gh** - BREP union operations
+- **delaunay.gh** - Delaunay triangulation
+- **docString.gh** - Documentation and string processing
+- **rnd_lattice.gh** - Random lattice generation
+- **rnd_node.gh** - Random node operations
+- **srf_kmeans.gh** - Surface K-means clustering
+- **value_list.gh** - Value list processing
+- **SampleGHConvertTo3dm.gh** - 3DM conversion utilities
 
 ---
 
@@ -161,17 +177,18 @@ The system automatically loads all `.gh` files from `assets/gh-definitions/`:
 # Login to Heroku
 heroku login
 
-# Create app
+# The app is already created: softlyplease-appserver
+# If you need to create a new app, use:
 heroku create softlyplease-compute
 
-# Set production environment
-heroku config:set NODE_ENV=production
-heroku config:set WEB_CONCURRENCY=2
-heroku config:set RHINO_COMPUTE_URL=https://your-rhino-compute.herokuapp.com
-heroku config:set RHINO_COMPUTE_KEY=your_api_key
+# Set production environment (already configured)
+heroku config:set NODE_ENV=production --app softlyplease-appserver
+heroku config:set WEB_CONCURRENCY=2 --app softlyplease-appserver
+heroku config:set RHINO_COMPUTE_URL=https://compute.softlyplease.com --app softlyplease-appserver
+heroku config:set APP_TOKEN=prod-token-456 --app softlyplease-appserver
 
-# Add Memcached
-heroku addons:create memcachier:dev
+# Add Memcached (if not already added)
+heroku addons:create memcachier:dev --app softlyplease-appserver
 
 # Deploy
 git push heroku main
@@ -182,39 +199,45 @@ git push heroku main
 ```bash
 # Required
 NODE_ENV=production
-RHINO_COMPUTE_URL=https://your-rhino-compute.herokuapp.com
-RHINO_COMPUTE_KEY=your_api_key
+RHINO_COMPUTE_URL=https://compute.softlyplease.com
+APP_TOKEN=prod-token-456
+CORS_ORIGIN=https://softlyplease.com,https://www.softlyplease.com
 
 # Performance
 WEB_CONCURRENCY=2
-MAX_CONCURRENT_COMPUTATIONS=5
-RATE_LIMIT=100
+COMPUTE_TIMEOUT_MS=30000
+RATE_LIMIT=1000
 
-# Caching
-MEMCACHIER_SERVERS=your-memcached-url
+# Caching (auto-configured by MemCachier addon)
+CACHE_BACKEND=memcached
 CACHE_DEFAULT_TTL=3600
 CACHE_TOPOOPT_TTL=7200
+CACHE_MAX_KEYS=5000
 
 # Monitoring
 PERFORMANCE_LOGGING=true
 SLOW_REQUEST_THRESHOLD=5000
+LOG_LEVEL=info
 ```
 
 ### Production Monitoring
 
 ```bash
 # Health checks
-curl https://your-app.herokuapp.com/health
-curl https://your-app.herokuapp.com/ready
+curl https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com/health
+curl https://softlyplease.com/health
+
+# Readiness checks
+curl https://softlyplease.com/ready
 
 # Performance metrics
-curl https://your-app.herokuapp.com/metrics
+curl https://softlyplease.com/metrics
 
 # Heroku logs
-heroku logs --tail
+heroku logs --tail --app softlyplease-appserver
 
 # Performance monitoring
-heroku addons:open papertrail  # If installed
+heroku addons:open librato --app softlyplease-appserver  # If installed
 ```
 
 ---
