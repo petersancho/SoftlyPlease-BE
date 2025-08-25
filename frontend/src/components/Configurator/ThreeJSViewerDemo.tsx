@@ -5,13 +5,13 @@ const DemoContainer = styled.div`
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
-  background: #f8f9fa;
+  background: #1a1a1a;
   border-radius: 12px;
 `
 
 const Title = styled.h1`
   text-align: center;
-  color: #2c3e50;
+  color: #ffffff;
   margin-bottom: 2rem;
   font-size: 2.5rem;
   font-weight: 700;
@@ -19,7 +19,7 @@ const Title = styled.h1`
 
 const Description = styled.p`
   text-align: center;
-  color: #6c757d;
+  color: #cccccc;
   font-size: 1.1rem;
   margin-bottom: 2rem;
   max-width: 600px;
@@ -36,7 +36,7 @@ const DemoControls = styled.div`
 `
 
 const DemoButton = styled.button<{ active?: boolean }>`
-  background: ${props => props.active ? '#007bff' : '#6c757d'};
+  background: ${props => props.active ? '#666666' : '#444444'};
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -48,7 +48,7 @@ const DemoButton = styled.button<{ active?: boolean }>`
   border: 2px solid transparent;
 
   &:hover {
-    background: ${props => props.active ? '#0056b3' : '#545b62'};
+    background: ${props => props.active ? '#888888' : '#666666'};
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
@@ -59,7 +59,7 @@ const DemoButton = styled.button<{ active?: boolean }>`
 `
 
 const ViewerSection = styled.div`
-  background: white;
+  background: #2a2a2a;
   padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -67,7 +67,7 @@ const ViewerSection = styled.div`
 `
 
 const Stats = styled.div`
-  background: #2c3e50;
+  background: #1a1a1a;
   color: white;
   padding: 1rem;
   border-radius: 8px;
@@ -86,19 +86,19 @@ const ThreeJSViewerDemo: React.FC = () => {
       width: 50,
       height: 30,
       depth: 20,
-      color: 0x4a90e2
+      color: 0x888888
     },
     sphere: {
       type: 'sphere',
       radius: 25,
-      color: 0x00ff88
+      color: 0x666666
     },
     cylinder: {
       type: 'cylinder',
       radiusTop: 20,
       radiusBottom: 20,
       height: 60,
-      color: 0xff6b6b
+      color: 0x444444
     },
     mesh: {
       type: 'mesh',
@@ -114,7 +114,7 @@ const ThreeJSViewerDemo: React.FC = () => {
         [0, 3, 7], [0, 7, 4], // left
         [1, 2, 6], [1, 6, 5]  // right
       ],
-      color: 0xf39c12
+      color: 0xaaaaaa
     },
     complex: [
       {
@@ -122,19 +122,19 @@ const ThreeJSViewerDemo: React.FC = () => {
         width: 40,
         height: 20,
         depth: 15,
-        color: 0x9b59b6
+        color: 0x777777
       },
       {
         type: 'sphere',
         radius: 12,
-        color: 0x1abc9c
+        color: 0x555555
       },
       {
         type: 'cylinder',
         radiusTop: 8,
         radiusBottom: 8,
         height: 35,
-        color: 0xe74c3c
+        color: 0x333333
       }
     ]
   }
@@ -201,7 +201,7 @@ const ThreeJSViewerDemo: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#00ff88',
+          color: '#ffffff',
           border: '1px solid #333'
         }}>
           <div style={{ textAlign: 'center' }}>

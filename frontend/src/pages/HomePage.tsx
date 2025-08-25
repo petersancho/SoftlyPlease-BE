@@ -18,7 +18,7 @@ const Header = styled.div`
 `;
 
 const Title = styled.h1`
-  color: #00ff88;
+  color: #ffffff;
   margin-bottom: 1rem;
   font-size: 2.5rem;
 `;
@@ -40,7 +40,7 @@ const StatusSection = styled.div`
 `;
 
 const StatusTitle = styled.h3`
-  color: #00ff88;
+  color: #ffffff;
   margin-bottom: 1rem;
 `;
 
@@ -58,7 +58,7 @@ const ButtonGrid = styled.div`
 `;
 
 const ConfiguratorButton = styled.a`
-  background: linear-gradient(45deg, #4CAF50, #45a049);
+  background: linear-gradient(45deg, #333333, #666666);
   color: white;
   border: none;
   padding: 15px 30px;
@@ -68,11 +68,11 @@ const ConfiguratorButton = styled.a`
   font-size: 16px;
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  box-shadow: 0 4px 15px rgba(51, 51, 51, 0.3);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 6px 20px rgba(102, 102, 102, 0.4);
   }
 `;
 

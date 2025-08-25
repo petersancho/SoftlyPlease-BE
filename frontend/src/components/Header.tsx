@@ -8,7 +8,7 @@ const HeaderContainer = styled.header`
 `;
 
 const HeaderTitle = styled.h1`
-  color: #00ff88;
+  color: #ffffff;
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;

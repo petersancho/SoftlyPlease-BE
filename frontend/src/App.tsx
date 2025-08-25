@@ -16,9 +16,9 @@ const ThreeJSViewerDemo = React.lazy(() => import('./components/Configurator/Thr
 
 const theme = {
   colors: {
-    primary: '#00ff88',
-    secondary: '#f0f0f0',
-    accent: '#00ff88',
+    primary: '#ffffff',
+    secondary: '#666666',
+    accent: '#cccccc',
     background: '#000000',
     surface: '#111111',
     surfaceLight: '#1a1a1a',
@@ -27,9 +27,9 @@ const theme = {
     textMuted: '#999999',
     border: '#333333',
     borderLight: '#444444',
-    success: '#00ff88',
-    warning: '#ffaa00',
-    error: '#ff4444',
+    success: '#888888',
+    warning: '#666666',
+    error: '#444444',
   },
   fonts: {
     primary: 'Eurostile Extended, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',

@@ -72,13 +72,13 @@ p {
 
 /* Links */
 a {
-  color: #00ff88;
+  color: #ffffff;
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 a:hover {
-  color: #00dd77;
+  color: #cccccc;
   text-decoration: underline;
 }
 
@@ -112,8 +112,8 @@ input, textarea, select {
 
 input:focus, textarea:focus, select:focus {
   outline: none;
-  border-color: #00ff88;
-  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.1);
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
 }
 
 /* Scrollbar */
