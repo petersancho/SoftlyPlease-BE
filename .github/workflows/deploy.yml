@@ -1,0 +1,45 @@
+name: Deploy to Heroku
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Deploy to Heroku
+      uses: akhileshns/heroku-deploy@v3.12.12
+      with:
+        heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+        heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+        heroku_email: ${{ secrets.HEROKU_EMAIL }}
+        appdir: "."
+      env:
+        APP_TOKEN: ${{ secrets.APP_TOKEN }}
+        RHINO_COMPUTE_KEY: ${{ secrets.RHINO_COMPUTE_KEY }}
+        NODE_ENV: production
+
+    - name: Verify deployment
+      run: |
+        echo "Deployment completed!"
+        echo "App URL: https://${{ secrets.HEROKU_APP_NAME }}.herokuapp.com"
+        echo "Test definitions endpoint:"
+        echo "curl -H 'Authorization: Bearer ${{ secrets.APP_TOKEN }}' https://${{ secrets.HEROKU_APP_NAME }}.herokuapp.com/"
