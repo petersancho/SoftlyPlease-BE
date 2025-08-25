@@ -27,7 +27,9 @@ const argIndex = process.argv.indexOf('--computeUrl')
 if (argIndex > -1)
   process.env.RHINO_COMPUTE_URL = process.argv[argIndex + 1]
 if (!process.env.RHINO_COMPUTE_URL)
-  process.env.RHINO_COMPUTE_URL = 'http://localhost:6500/' // default if nothing else exists
+  process.env.RHINO_COMPUTE_URL = process.env.NODE_ENV === 'production'
+    ? 'http://4.248.252.92/'  // Your Azure VM IP for production
+    : 'http://localhost:6500/' // default for development
 
 console.log('RHINO_COMPUTE_URL: ' + process.env.RHINO_COMPUTE_URL)
 
