@@ -144,6 +144,13 @@ if (argIndex > -1)
 if (!process.env.RHINO_COMPUTE_URL)
   process.env.RHINO_COMPUTE_URL = 'http://localhost:6500/' // Fixed to 6500 to match Rhino Compute
 
+// Register Grasshopper definitions
+const { registerDefinitions } = require('./definitions.js')
+const definitions = registerDefinitions()
+app.set('definitions', definitions)
+console.log(`📋 Registered ${definitions.length} Grasshopper definitions:`)
+definitions.forEach(def => console.log(`  • ${def.name}`))
+
 // Configure RHINO_COMPUTE_URL based on environment
 if (process.env.NODE_ENV === 'production') {
   // Use custom domain if available, otherwise construct from Heroku app name
@@ -601,9 +608,20 @@ app.get('/contact', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'))
 })
 
-// API routes for definitions - only for specific endpoints
+// API routes for definitions - specific endpoints
 app.get('/definition/:name*', require('./routes/index'))
 app.get('/definition_description', require('./routes/index'))
+
+// API route for listing all definitions (JSON)
+app.get('/api/definitions', function(req, res, next) {
+  let definitions = []
+  req.app.get('definitions').forEach( def => {
+    definitions.push({name: def.name})
+  })
+
+  res.setHeader('Content-Type', 'application/json')
+  res.send(JSON.stringify(definitions))
+})
 
 // Static file serving must come AFTER API routes for React routing to work
 app.use(express.static(path.join(__dirname, '../public')))

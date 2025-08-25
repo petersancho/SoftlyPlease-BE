@@ -124,7 +124,7 @@ const PerformancePage: React.FC = () => {
         }
 
         // Fetch definitions list
-        const definitionsResponse = await fetch('/');
+        const definitionsResponse = await fetch('/api/definitions');
         if (definitionsResponse.ok) {
           const data = await definitionsResponse.json();
           setDefinitions(data);
