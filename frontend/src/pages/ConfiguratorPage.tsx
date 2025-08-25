@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useSearchParams } from 'react-router-dom';
 
@@ -93,23 +93,7 @@ const ParameterLabel = styled.label`
   font-size: 0.9rem;
 `;
 
-const ParameterInput = styled.input`
-  width: 100%;
-  padding: 0.75rem;
-  border: 2px solid #444;
-  border-radius: 6px;
-  background: #333;
-  color: #ffffff;
-  font-size: 1rem;
-  font-family: 'Times New Roman', serif;
-  transition: all 0.3s ease;
 
-  &:focus {
-    outline: none;
-    border-color: #666;
-    box-shadow: 0 0 0 3px rgba(102, 102, 102, 0.1);
-  }
-`;
 
 const ParameterSelect = styled.select`
   width: 100%;
@@ -165,24 +149,7 @@ const ValueDisplay = styled.div`
   font-family: 'Times New Roman', serif;
 `;
 
-const ControlButton = styled.button`
-  background: linear-gradient(45deg, #666666, #888888);
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  font-family: 'Times New Roman', serif;
-  cursor: pointer;
-  margin: 1rem 0.5rem 0 0;
-  transition: all 0.3s ease;
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 102, 102, 0.3);
-  }
-`;
 
 const DefinitionSelector = styled.div`
   margin-bottom: 2rem;
@@ -207,19 +174,6 @@ const ViewerContainer = styled.div`
   border: 1px solid #333;
   position: relative;
   overflow: hidden;
-`;
-
-const ViewerPlaceholder = styled.div`
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #cccccc;
-  font-family: 'Times New Roman', serif;
-  text-align: center;
-  padding: 2rem;
 `;
 
 const ViewerTitle = styled.h3`
@@ -257,8 +211,6 @@ const ConfiguratorPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentDefinition, setCurrentDefinition] = useState(searchParams.get('definition') || 'TopoOpt.gh');
   const [parameters, setParameters] = useState<Record<string, any>>({});
-  const [isComputing, setIsComputing] = useState(false);
-  const [status, setStatus] = useState('Ready to compute');
 
   // Available definitions
   const definitions = [
@@ -290,47 +242,12 @@ const ConfiguratorPage: React.FC = () => {
       ...prev,
       [paramName]: value
     }));
+
+    // Parameter updated - could add visual feedback here if needed
+    console.log(`Parameter updated: ${paramName} = ${value}`);
   };
 
-  const handleCompute = async () => {
-    setIsComputing(true);
-    setStatus('Computing...');
 
-    try {
-      // Prepare inputs for the API call
-      const inputs: Record<string, any> = {};
-
-      // Add current parameters to inputs
-      Object.entries(parameters).forEach(([key, value]) => {
-        inputs[key] = Array.isArray(value) ? value : [value];
-      });
-
-      const response = await fetch('/solve', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          definition: currentDefinition,
-          inputs: inputs
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setStatus('✅ Computation completed successfully!');
-        console.log('Computation result:', result);
-      } else {
-        const error = await response.json();
-        setStatus(`❌ Error: ${error.message || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Computation error:', error);
-      setStatus(`❌ Network error: ${error}`);
-    } finally {
-      setIsComputing(false);
-    }
-  };
 
   const renderTopoOptControls = () => (
     <>
@@ -571,13 +488,13 @@ const ConfiguratorPage: React.FC = () => {
   return (
     <Container>
       <Header>
-        <Title>🎮 Configurator</Title>
-        <Subtitle>Interactive Grasshopper definition configuration and 3D visualization</Subtitle>
+        <Title>🎛️ Parameter Explorer</Title>
+        <Subtitle>Interactive Grasshopper definition parameter exploration and design study</Subtitle>
       </Header>
 
       <ConfiguratorLayout>
         <ControlPanel>
-          <SectionTitle>⚙️ Controls</SectionTitle>
+          <SectionTitle>🎛️ Parameters</SectionTitle>
 
           <DefinitionSelector>
             <ParameterLabel>Select Definition</ParameterLabel>
@@ -595,18 +512,9 @@ const ConfiguratorPage: React.FC = () => {
 
           {currentDefinition === 'TopoOpt.gh' ? renderTopoOptControls() : renderGenericControls()}
 
-          <div>
-            <ControlButton onClick={handleCompute} disabled={isComputing}>
-              {isComputing ? '🔄 Computing...' : '🚀 Generate Geometry'}
-            </ControlButton>
-            <ControlButton onClick={() => window.location.reload()}>
-              🔄 Reset View
-            </ControlButton>
-          </div>
-
           <StatusPanel>
-            <StatusTitle>📊 Status</StatusTitle>
-            <StatusText>{status}</StatusText>
+            <StatusTitle>🎛️ Parameter Explorer</StatusTitle>
+            <StatusText>Adjust the sliders above to explore different parameter combinations for {currentDefinition.replace('.gh', '')}</StatusText>
           </StatusPanel>
         </ControlPanel>
 
@@ -643,8 +551,8 @@ const ConfiguratorPage: React.FC = () => {
                   {currentDefinition.replace('.gh', '')} Visualizer
                 </ViewerTitle>
                 <ViewerDescription style={{ color: '#cccccc', marginBottom: '2rem' }}>
-                  Advanced Three.js 3D visualization integrated with your Grasshopper definition.
-                  Real-time rendering with interactive controls and professional graphics pipeline.
+                  Interactive parameter exploration for your Grasshopper definition.
+                  Adjust the sliders to see how different parameter values affect your design.
                 </ViewerDescription>
 
                 <div style={{
@@ -659,8 +567,8 @@ const ConfiguratorPage: React.FC = () => {
                     borderRadius: '8px',
                     textAlign: 'center'
                   }}>
-                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⚡</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>WebGL Renderer</div>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🎛️</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Parameter Control</div>
                   </div>
                   <div style={{
                     background: 'linear-gradient(135deg, #4ecdc4, #ffe66d)',
@@ -668,8 +576,8 @@ const ConfiguratorPage: React.FC = () => {
                     borderRadius: '8px',
                     textAlign: 'center'
                   }}>
-                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🎮</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Orbit Controls</div>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>📊</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Real-time Feedback</div>
                   </div>
                   <div style={{
                     background: 'linear-gradient(135deg, #ffe66d, #ff6b9d)',
@@ -677,8 +585,8 @@ const ConfiguratorPage: React.FC = () => {
                     borderRadius: '8px',
                     textAlign: 'center'
                   }}>
-                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>📊</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Real-time</div>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🎯</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Design Exploration</div>
                   </div>
                 </div>
 
@@ -690,8 +598,8 @@ const ConfiguratorPage: React.FC = () => {
                   fontSize: '0.9rem',
                   color: '#cccccc'
                 }}>
-                  💡 <strong>Pro Tip:</strong> Adjust parameters on the left panel and click "Generate Geometry"
-                  to see your computational results visualized in stunning 3D with professional-grade rendering.
+                  💡 <strong>Parameter Exploration:</strong> Use the sliders on the left to explore how different
+                  parameter values affect your Grasshopper definition. Changes are reflected immediately in the status panel.
                 </div>
               </div>
             </div>
