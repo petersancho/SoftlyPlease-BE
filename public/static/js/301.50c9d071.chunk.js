@@ -1,2 +1,0 @@
-"use strict";(self.webpackChunksoftlyplease_frontend=self.webpackChunksoftlyplease_frontend||[]).push([[301],{301:(e,t,s)=>{s.r(t),s.d(t,{default:()=>n});s(43);var l=s(579);const n=()=>(0,l.jsxs)("div",{style:{padding:"2rem",textAlign:"center"},children:[(0,l.jsx)("h1",{children:"About SoftlyPlease Compute"}),(0,l.jsx)("p",{children:"Enterprise-grade computational design platform."})]})}}]);
-//# sourceMappingURL=301.50c9d071.chunk.js.map

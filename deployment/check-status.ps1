@@ -60,14 +60,14 @@ if ($rhinoKey) {
 
 # Check Grasshopper Definitions
 Write-Host "5. Checking Grasshopper Definitions..." -ForegroundColor Yellow
-$ghFiles = Get-ChildItem -Path "src/files" -Filter "*.gh" -ErrorAction SilentlyContinue
+$ghFiles = Get-ChildItem -Path "assets/gh-definitions" -Filter "*.gh" -ErrorAction SilentlyContinue
 if ($ghFiles) {
     Write-Host "   ✅ Found $($ghFiles.Count) Grasshopper definition(s)" -ForegroundColor Green
     foreach ($file in $ghFiles) {
         Write-Host "      - $($file.Name)" -ForegroundColor Gray
     }
 } else {
-    Write-Host "   ❌ No Grasshopper definitions found in src/files/" -ForegroundColor Red
+    Write-Host "   ❌ No Grasshopper definitions found in assets/gh-definitions/" -ForegroundColor Red
 }
 
 Write-Host "==========================================" -ForegroundColor Cyan

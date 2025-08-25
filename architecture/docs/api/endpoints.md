@@ -1,1 +1,0 @@
-../../../guides/deployment/endpoints.md

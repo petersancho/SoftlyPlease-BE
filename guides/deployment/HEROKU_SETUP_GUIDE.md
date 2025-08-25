@@ -152,7 +152,7 @@ To update to Node.js 18.x, modify `package.json`:
 ### Option 1: Create New App via CLI
 ```bash
 # Create app with specific name
-heroku create softlyplease-compute-server
+heroku create softlyplease-appserver
 
 # Or let Heroku generate a name
 heroku create
@@ -161,14 +161,14 @@ heroku create
 ### Option 2: Create via Heroku Dashboard
 1. Go to [Heroku Dashboard](https://dashboard.heroku.com)
 2. Click "New" → "Create new app"
-3. Enter app name: `softlyplease-compute-server`
+3. Enter app name: `softlyplease-appserver`
 4. Choose region: United States (or Europe, depending on your needs)
 5. Click "Create app"
 
 ### Connect Local Repository to Heroku App
 ```bash
 # Add Heroku remote
-heroku git:remote -a softlyplease-compute-server
+heroku git:remote -a softlyplease-appserver
 
 # Verify remote was added
 git remote -v
@@ -316,7 +316,7 @@ heroku domains:add softlyplease.com
 **For www.softlyplease.com:**
 - **Type**: CNAME
 - **Host**: www
-- **Value**: `softlyplease-compute-server.herokuapp.com`
+- **Value**: `softlyplease-appserver.herokuapp.com`
 - **TTL**: 300
 
 **For softlyplease.com (root domain):**
@@ -342,13 +342,13 @@ nslookup www.softlyplease.com
 ### 1. Test Basic Endpoints
 ```bash
 # Test main endpoint
-curl https://softlyplease-compute-server.herokuapp.com/
+curl https://softlyplease-appserver.herokuapp.com/
 
 # Test version endpoint
-curl https://softlyplease-compute-server.herokuapp.com/version
+curl https://softlyplease-appserver.herokuapp.com/version
 
 # Test definitions endpoint
-curl https://softlyplease-compute-server.herokuapp.com/definition
+curl https://softlyplease-appserver.herokuapp.com/definition
 ```
 
 ### 2. Test with Custom Domain
@@ -599,7 +599,7 @@ heroku support
 
 ```bash
 # Create and deploy
-heroku create softlyplease-compute-server
+heroku create softlyplease-appserver
 git push heroku main
 
 # Set environment variables

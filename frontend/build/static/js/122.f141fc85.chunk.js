@@ -1,2 +1,0 @@
-"use strict";(self.webpackChunksoftlyplease_frontend=self.webpackChunksoftlyplease_frontend||[]).push([[122],{122:(e,t,s)=>{s.r(t),s.d(t,{default:()=>l});s(43);var n=s(579);const l=()=>(0,n.jsxs)("div",{style:{padding:"2rem",textAlign:"center"},children:[(0,n.jsx)("h1",{children:"Contact Us"}),(0,n.jsx)("p",{children:"Get in touch with the SoftlyPlease team."})]})}}]);
-//# sourceMappingURL=122.f141fc85.chunk.js.map

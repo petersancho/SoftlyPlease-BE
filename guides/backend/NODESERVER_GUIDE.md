@@ -247,10 +247,10 @@ npm install -g heroku
 heroku login
 
 # Create app
-heroku create softlyplease-compute-server
+heroku create softlyplease-appserver
 
 # Add remote
-heroku git:remote -a softlyplease-compute-server
+heroku git:remote -a softlyplease-appserver
 ```
 
 ### 4.2 Environment Variables
@@ -300,7 +300,7 @@ heroku domains
 
 # Configure DNS (Namecheap example):
 # A Record: @ → [Heroku IP]
-# CNAME Record: www → softlyplease-compute-server.herokuapp.com
+# CNAME Record: www → softlyplease-appserver-5d5d5bc6198a.herokuapp.com
 ```
 
 ---
@@ -315,7 +315,7 @@ heroku domains
 const API_BASE = 'http://localhost:3000'
 
 // Production
-const API_BASE = 'https://softlyplease-compute-server.herokuapp.com'
+const API_BASE = 'https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com'
 
 // Custom domain
 const API_BASE = 'https://www.softlyplease.com'
@@ -1651,17 +1651,17 @@ const GeometryViewer = lazy(() => import('./GeometryViewer'))
 **Heroku Metrics:**
 ```bash
 # Monitor dyno performance
-heroku metrics:response-time --app softlyplease-compute-server
-heroku metrics:memory --app softlyplease-compute-server
+heroku metrics:response-time --app softlyplease-appserver
+heroku metrics:memory --app softlyplease-appserver
 
 # Check dyno status
-heroku ps --app softlyplease-compute-server
+heroku ps --app softlyplease-appserver
 ```
 
 **API Monitoring:**
 ```bash
 # Monitor API response times
-heroku logs --app softlyplease-compute-server --tail | grep "response_time"
+heroku logs --app softlyplease-appserver --tail | grep "response_time"
 ```
 
 ### 11.2 Error Tracking
@@ -1669,10 +1669,10 @@ heroku logs --app softlyplease-compute-server --tail | grep "response_time"
 **Log Analysis:**
 ```bash
 # View recent errors
-heroku logs --app softlyplease-compute-server --num 100 | grep -i error
+heroku logs --app softlyplease-appserver --num 100 | grep -i error
 
 # Monitor specific endpoint
-heroku logs --app softlyplease-compute-server | grep "/solve/TopoOpt.gh"
+heroku logs --app softlyplease-appserver | grep "/solve/TopoOpt.gh"
 ```
 
 **Error Reporting:**
@@ -1702,10 +1702,10 @@ Sentry.init({
 **Configuration Backup:**
 ```bash
 # Backup Heroku config
-heroku config --app softlyplease-compute-server > config_backup.txt
+heroku config --app softlyplease-appserver > config_backup.txt
 
 # Backup app info
-heroku apps:info --app softlyplease-compute-server > app_info.txt
+heroku apps:info --app softlyplease-appserver > app_info.txt
 ```
 
 **Definition Backup:**

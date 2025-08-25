@@ -656,7 +656,7 @@ app.use(responseTime((req, res, time) => {
 **Complete Heroku Configuration:**
 ```bash
 # Create Heroku app
-heroku create softlyplease-compute-server
+heroku create softlyplease-appserver
 
 # Set production environment
 heroku config:set NODE_ENV=production

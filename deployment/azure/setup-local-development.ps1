@@ -192,7 +192,7 @@ $readme = @"
 
 ## Adding New Definitions
 
-1. Place your `.gh` files in the `src/files/` directory
+1. Place your `.gh` files in the `assets/gh-definitions/` directory
 2. Restart the App Server
 3. Test with: `curl http://localhost:3000/YourDefinition.gh`
 

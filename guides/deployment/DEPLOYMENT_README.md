@@ -6,7 +6,7 @@ This guide explains how to deploy the SoftlyPlease computational design platform
 ## Current Setup (Local Development)
 - **Rhino Compute**: Running on `http://localhost:6500/`
 - **Backend API**: Running on `http://localhost:3000/`
-- **Frontend**: Heroku app `softlyplease-compute-server`
+- **Frontend**: Heroku app `softlyplease-appserver`
 - **Domain**: `www.softlyplease.com`
 
 ## For Production Deployment
@@ -78,7 +78,7 @@ npm run restart
 
 ## Heroku Deployment
 
-Your Heroku app `softlyplease-compute-server` should have these environment variables:
+Your Heroku app `softlyplease-appserver` should have these environment variables:
 
 ```bash
 RHINO_COMPUTE_URL=http://localhost:6500/  # Update this with your actual server IP
@@ -90,7 +90,7 @@ NODE_ENV=production
 
 1. **Namecheap DNS Settings:**
    - Add A record: `www` → Your server's IP address
-   - Add CNAME record: `@` → `softlyplease-compute-server.herokuapp.com`
+   - Add CNAME record: `@` → `softlyplease-appserver.herokuapp.com`
 
 2. **Heroku Domain Settings:**
    - Add custom domain: `www.softlyplease.com`

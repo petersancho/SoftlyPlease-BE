@@ -1,12 +1,12 @@
 "use strict";
-exports.__esModule = true;
-var express = require("express");
-var fs = require("fs");
-var path = require("path");
-var router = express.Router();
+Object.defineProperty(exports, "__esModule", { value: true });
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const router = express.Router();
 // Load manifest
-var MANIFEST_PATH = path.join(__dirname, '../../gh-manifest.json');
-var manifest = [];
+const MANIFEST_PATH = path.join(__dirname, '../../gh-manifest.json');
+let manifest = [];
 try {
     if (fs.existsSync(MANIFEST_PATH)) {
         manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
@@ -16,8 +16,8 @@ catch (error) {
     console.error('❌ Failed to load manifest:', error);
 }
 // GET /definitions/:id - Returns definition metadata/schema
-router.get("/:id", function (req, res) {
-    var def = manifest.find(function (d) { return d.id === req.params.id; });
+router.get("/:id", (req, res) => {
+    const def = manifest.find(d => d.id === req.params.id);
     if (!def) {
         return res.status(404).json({ error: "Definition not found" });
     }
@@ -29,4 +29,4 @@ router.get("/:id", function (req, res) {
         inputs: def.inputs
     });
 });
-exports["default"] = router;
+exports.default = router;

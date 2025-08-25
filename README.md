@@ -9,21 +9,19 @@ SoftlyPlease-Compute/
 ├── guides/                    # 📚 Documentation and guides
 │   ├── backend/              # Backend development guides
 │   ├── deployment/           # Deployment instructions
-│   ├── frontend/             # Frontend design guides
+│   ├── guides/frontend/      # Frontend design guides
 │   ├── design/               # Design system documentation
 │   └── README.md             # Main documentation
 ├── deployment/               # 🚀 Deployment files and scripts
 │   ├── azure/                # Azure VM deployment scripts
 │   ├── heroku/               # Heroku deployment files
 │   └── Dockerfile           # Container deployment
-├── config/                   # ⚙️ Configuration files
-│   ├── environments/         # Environment-specific configs
-│   └── scripts/              # Configuration scripts
+├── tsconfig.json             # ⚙️ TypeScript configuration
+
 ├── assets/                   # 📁 Static assets
 │   ├── gh-definitions/       # Grasshopper definition files
 │   └── images/               # Image assets
-├── frontend/                 # ⚛️ React frontend application
-│   └── src/                  # TypeScript + Styled Components
+
 ├── src/                      # 🖥️ Node.js backend source code
 ├── dist/                     # 📦 Compiled backend code
 ├── compute.rhino3d-8.x/      # 🦏 Rhino Compute source code
@@ -87,7 +85,6 @@ All documentation is organized in the `guides/` folder:
 
 ### ⚛️ Frontend Development
 - **[Design Guide](guides/frontend/WEBSITE_DESIGN_GUIDES.md)** - Design system & components
-- **[Configurator Guide](guides/frontend/TOPOOPT_FRONTEND_GUIDE.md)** - UI implementation
 
 ### 📊 Monitoring & Operations
 - **[Health Checks](guides/deployment/PRODUCTION_DEPLOYMENT_SUMMARY.md)** - Monitoring setup
@@ -106,7 +103,7 @@ All documentation is organized in the `guides/` folder:
 
 ### Core Applications
 - `src/` - Main Node.js API server with workshop architecture
-- `frontend/` - React TypeScript application with design system
+- `guides/frontend/` - Frontend design guides and documentation
 - `compute.rhino3d-8.x/` - Rhino Compute engine source code
 
 ### Assets & Definitions
@@ -114,8 +111,8 @@ All documentation is organized in the `guides/` folder:
 - `assets/images/` - Website images and screenshots
 
 ### Configuration
-- `config/package.json` - Backend dependencies
-- `config/tsconfig.json` - TypeScript configuration
+- `package.json` - Backend dependencies and scripts
+- `tsconfig.json` - TypeScript configuration for workshop engine
 - `deployment/` - All deployment configurations
 
 ## 🎯 Key Features

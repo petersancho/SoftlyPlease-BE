@@ -21,14 +21,14 @@ const MANIFEST_PATH = path.join(__dirname, '../../gh-manifest.json');
 
 // Copy existing definitions to gh-defs directory
 function copyExistingDefinitions() {
-  const srcDir = path.join(__dirname, '../files');
+  const srcDir = path.join(__dirname, '../../assets/gh-definitions');
   const destDir = GH_DEFS_DIR;
 
   if (!fs.existsSync(destDir)) {
     fs.mkdirSync(destDir, { recursive: true });
   }
 
-  // Copy .gh files from src/files to gh-defs
+  // Copy .gh files from assets/gh-definitions to gh-defs
   const files = fs.readdirSync(srcDir).filter(f => f.endsWith('.gh'));
   files.forEach(file => {
     const srcPath = path.join(srcDir, file);
