@@ -273,10 +273,26 @@
             if (item.type === 'System.String') {
                 // hack for draco meshes
                 try {
-                    return rhino.DracoCompression.decompressBase64String(data)
-                } catch {} // ignore errors (maybe the string was just a string...)
+                    const decompressed = rhino.DracoCompression.decompressBase64String(data)
+                    if (decompressed) {
+                        console.log('Draco decompression successful')
+                        return decompressed
+                    }
+                } catch (e) {
+                    console.warn('Draco decompression failed:', e)
+                }
+                // If Draco fails, try treating as regular geometry string
+                try {
+                    return rhino.CommonObject.decode(JSON.parse(data))
+                } catch (e) {
+                    console.warn('Geometry decode failed:', e)
+                }
             } else if (typeof data === 'object') {
-                return rhino.CommonObject.decode(data)
+                try {
+                    return rhino.CommonObject.decode(data)
+                } catch (e) {
+                    console.warn('Object decode failed:', e)
+                }
             }
             return null
         }
