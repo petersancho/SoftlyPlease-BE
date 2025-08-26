@@ -296,7 +296,16 @@
             }
 
             #viewer {
-                height: 300px;
+                height: 500px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                margin: 20px 0;
+                background: #f8f8f8;
+            }
+
+            .viewer-section {
+                margin: 40px 0;
+                text-align: center;
             }
         }
 
@@ -469,7 +478,12 @@
 
         <div class="status" id="status" style="display: none;"></div>
 
-                <div class="main-content">
+        <div class="viewer-section">
+            <h2 style="text-align: center; margin: 30px 0; color: black; font-size: 2rem;">3D Viewer</h2>
+            <div id="viewer"></div>
+        </div>
+
+        <div class="main-content">
             <div class="definitions-panel">
                 <h2>Grasshopper Definitions</h2>
                 <div class="definition-grid" id="definitions">
@@ -574,6 +588,62 @@
         import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
         import rhino3dm from 'rhino3dm';
 
+        // Global variables for Three.js
+        let scene, camera, renderer, controls;
+        let rhino3dmModule;
+
+        // Initialize the 3D viewer
+        function initViewer() {
+            const viewerElement = document.getElementById('viewer');
+            if (!viewerElement) {
+                console.error('Viewer element not found');
+                return;
+            }
+
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf5f5f5);
+
+            // Create camera
+            const aspectRatio = viewerElement.clientWidth / viewerElement.clientHeight;
+            camera = new THREE.PerspectiveCamera(75, aspectRatio, 0.1, 1000);
+            camera.position.set(10, 10, 10);
+
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(viewerElement.clientWidth, viewerElement.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            // Add renderer to viewer element
+            viewerElement.appendChild(renderer.domElement);
+
+            // Create controls
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+
+            // Start render loop
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            console.log('3D viewer initialized');
+        }
+
         // Load definitions from the server
         async function loadDefinitions() {
             try {
@@ -610,7 +680,7 @@
                     card.innerHTML = `
                         <h3>${def.displayName}</h3>
                         <p>${def.description}</p>
-                        <a href="/solve/${def.name}" class="card-btn">Solve Definition</a>
+                        <button onclick="solveDefinition('${def.name}')" class="card-btn">Solve Definition</button>
                     `;
 
                     definitionsContainer.appendChild(card);
@@ -637,23 +707,6 @@
             document.getElementById('status').style.display = 'none';
         }
 
-        // Initialize the application
-        window.addEventListener('load', async () => {
-            await loadDefinitions();
-        });
-    </script>
-</body>
-</html>
-                    console.log('No geometry in result:', result);
-                    setTimeout(() => hideStatus(), 3000);
-                }
-
-            } catch (error) {
-                showStatus('Error solving definition: ' + error.message, 'error');
-                console.error('Error:', error);
-            }
-        }
-
         // Render geometry in the viewer
         function renderGeometry(data) {
             // Clear previous geometry
@@ -671,10 +724,10 @@
                         if (item.data) {
                             try {
                                 // Parse rhino3dm data
-                                const rhinoObject = rhino3dm.CommonObject.decode(JSON.parse(item.data));
+                                const rhinoObject = rhino3dmModule.CommonObject.decode(JSON.parse(item.data));
                                 if (rhinoObject) {
                                     // Convert to Three.js mesh
-                                    if (rhinoObject.objectType === rhino3dm.ObjectType.Mesh) {
+                                    if (rhinoObject.objectType === rhino3dmModule.ObjectType.Mesh) {
                                         const geometry = convertRhinoMeshToThree(rhinoObject);
                                         if (geometry) {
                                             const material = new THREE.MeshLambertMaterial({
@@ -685,7 +738,7 @@
                                             const mesh = new THREE.Mesh(geometry, material);
                                             scene.add(mesh);
                                         }
-                                    } else if (rhinoObject.objectType === rhino3dm.ObjectType.Brep) {
+                                    } else if (rhinoObject.objectType === rhino3dmModule.ObjectType.Brep) {
                                         // Handle Brep geometry
                                         const mesh = rhinoObject.getMesh();
                                         if (mesh) {
@@ -700,6 +753,11 @@
                                                 scene.add(meshObj);
                                             }
                                         }
+                                    } else if (rhinoObject.objectType === rhino3dmModule.ObjectType.Curve) {
+                                        // Handle curve geometry
+                                        console.log('Curve geometry detected, not rendering');
+                                    } else {
+                                        console.log('Unsupported geometry type:', rhinoObject.objectType);
                                     }
                                 }
                             } catch (error) {
@@ -761,23 +819,83 @@
             return geometry;
         }
 
-        // Status functions
-        function showStatus(message, type) {
-            const statusEl = document.getElementById('status');
-            statusEl.textContent = message;
-            statusEl.className = `status ${type}`;
-            statusEl.style.display = 'block';
-        }
+        // Solve a definition and render the result
+        async function solveDefinition(definitionName) {
+            try {
+                showStatus(`Solving ${definitionName}...`, 'loading');
 
-        function hideStatus() {
-            document.getElementById('status').style.display = 'none';
+                // Get definition inputs first to understand what parameters are needed
+                const inputsResponse = await fetch(`/solve/${definitionName}`);
+                if (!inputsResponse.ok) {
+                    throw new Error(`Failed to get definition: ${inputsResponse.status}`);
+                }
+
+                const inputsData = await inputsResponse.json();
+                console.log('Definition inputs:', inputsData);
+
+                // For now, use default values for all inputs
+                // In a real implementation, you'd want to show input controls
+                const solveData = {
+                    definition: definitionName,
+                    inputs: {}
+                };
+
+                // If the definition has inputs, try to add some reasonable defaults
+                if (inputsData.inputs && inputsData.inputs.length > 0) {
+                    inputsData.inputs.forEach(input => {
+                        // Add default values based on input type
+                        if (input.type === 'number' || input.type === 'System.Double') {
+                            solveData.inputs[input.name] = 1.0;
+                        } else if (input.type === 'integer' || input.type === 'System.Int32') {
+                            solveData.inputs[input.name] = 1;
+                        } else if (input.type === 'boolean' || input.type === 'System.Boolean') {
+                            solveData.inputs[input.name] = true;
+                        } else if (input.type === 'string' || input.type === 'System.String') {
+                            solveData.inputs[input.name] = 'default';
+                        } else {
+                            // For complex types, leave empty for now
+                            solveData.inputs[input.name] = null;
+                        }
+                    });
+                }
+
+                // Solve the definition
+                const solveResponse = await fetch('/solve', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(solveData)
+                });
+
+                if (!solveResponse.ok) {
+                    throw new Error(`Solve failed: ${solveResponse.status}`);
+                }
+
+                const result = await solveResponse.json();
+                console.log('Solve result:', result);
+
+                // Render the geometry
+                if (result.values && result.values.length > 0) {
+                    renderGeometry(result);
+                    showStatus(`${definitionName} solved successfully!`, 'success');
+                    setTimeout(() => hideStatus(), 3000);
+                } else {
+                    showStatus('No geometry in result', 'warning');
+                    setTimeout(() => hideStatus(), 3000);
+                }
+
+            } catch (error) {
+                showStatus('Error solving definition: ' + error.message, 'error');
+                console.error('Error:', error);
+            }
         }
 
         // Initialize the application
         window.addEventListener('load', async () => {
-            // Initialize rhino3dm
+            // Initialize rhino3dm first
             try {
-                rhino3dm = await rhino3dm();
+                rhino3dmModule = await rhino3dm();
                 console.log('rhino3dm initialized');
             } catch (error) {
                 console.error('Failed to initialize rhino3dm:', error);
@@ -785,16 +903,25 @@
                 return;
             }
 
+            // Initialize the 3D viewer
             initViewer();
+
+            // Load definitions
             await loadDefinitions();
         });
 
         // Handle window resize
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / 2 / 500;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth / 2, 500);
+            if (renderer && camera) {
+                const viewerElement = document.getElementById('viewer');
+                if (viewerElement) {
+                    camera.aspect = viewerElement.clientWidth / viewerElement.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(viewerElement.clientWidth, viewerElement.clientHeight);
+                }
+            }
         });
     </script>
 </body>
 </html>
+
