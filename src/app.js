@@ -97,6 +97,19 @@ app.get('*', (req, res, next) => {
   next();
 });
 
+// Serve .gh files
+app.get('*.gh', (req, res) => {
+  const fileName = req.path.split('/').pop();
+  const filePath = require('path').join(__dirname, 'files', fileName);
+  const fs = require('fs');
+
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).json({ error: "File not found", file: fileName });
+  }
+});
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404))
