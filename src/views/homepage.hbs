@@ -421,6 +421,7 @@
         <div class="architecture-section">
             <h2>System Architecture</h2>
             <p>This project uses a client-server architecture with Rhino Compute:</p>
+
             <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; font-family: monospace; font-size: 14px;">
                 <strong>Frontend (Browser):</strong><br>
                 HTML/CSS/JavaScript → Three.js → rhino3dm.js<br><br>
@@ -428,6 +429,77 @@
                 Express.js → compute-rhino3d → Rhino Compute Server<br><br>
                 <strong>Data Flow:</strong><br>
                 Input Params → POST /solve/:definition → Geometry JSON → Three.js Mesh
+            </div>
+
+            <h3>Complete Architecture: Rhino Compute → SoftlyPlease</h3>
+            <div style="background: #f0f8ff; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #4a90e2;">
+                <p><strong>🐧 Open Source:</strong> This entire architecture is open sourced on GitHub</p>
+
+                <h4>🖥️ Azure VM (Rhino Compute Server)</h4>
+                <div style="background: #e8f4fd; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 13px;">
+                    <strong>Docker Container:</strong><br>
+                    docker run -p 6500:80 mcneel/rhino.compute<br>
+                    <strong>Environment:</strong><br>
+                    RHINO_COMPUTE_URL=http://azure-vm-ip:6500<br>
+                    RHINO_COMPUTE_APIKEY=p2robot-13a6-48f3-b24e-2025computeX
+                </div>
+
+                <h4>🚀 Heroku (App Server)</h4>
+                <div style="background: #f0fff0; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 13px;">
+                    <strong>Package.json scripts:</strong><br>
+                    "start": "node ./src/bin/www"<br>
+                    "start:prod": "cross-env NODE_ENV=production PORT=80"<br><br>
+                    <strong>Procfile:</strong><br>
+                    web: node ./src/bin/www<br><br>
+                    <strong>Deployment:</strong><br>
+                    git push heroku main
+                </div>
+
+                <h4>🌐 API Endpoints</h4>
+                <div style="background: #fff8e1; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 13px;">
+                    <strong>GET /</strong> - List definition names<br>
+                    <strong>GET /definition/:name</strong> - Get definition inputs/outputs<br>
+                    <strong>POST /solve/:definition</strong> - Solve with parameters<br>
+                    <strong>GET /solve/:definition?param1=value</strong> - Solve via URL
+                </div>
+
+                <h4>🦗 Grasshopper Integration</h4>
+                <div style="background: #ffe8e8; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 13px;">
+                    <strong>Input Parameters:</strong><br>
+                    RH_in:parameterName (e.g., RH_in:radius, RH_in:height)<br><br>
+                    <strong>Output Parameters:</strong><br>
+                    RH_out:resultName (e.g., RH_out:mesh_result)<br><br>
+                    <strong>Compute Call:</strong><br>
+                    compute.grasshopper.evaluate(definitionPath, inputParams)
+                </div>
+
+                <h4>💾 Caching Strategy</h4>
+                <div style="background: #e8ffe8; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 13px;">
+                    <strong>Definition Cache:</strong> First request downloads, then cached<br>
+                    <strong>Result Cache:</strong> Memcached for common solutions<br>
+                    <strong>Browser Cache:</strong> GET requests enable browser caching<br>
+                    <strong>Hash-based IDs:</strong> MD5 hash of definition content
+                </div>
+
+                <h4>🔄 Data Pipeline</h4>
+                <div style="background: #fff0ff; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 13px;">
+                    1. Input params → Express.js routing<br>
+                    2. Cache check → memcached lookup<br>
+                    3. Rhino Compute call → evaluate(definition, params)<br>
+                    4. JSON response → rhino3dm.js parsing<br>
+                    5. Three.js mesh → scene insertion<br>
+                    6. Performance metrics → console logging
+                </div>
+
+                <h4>🏗️ Tech Stack</h4>
+                <div style="background: #f5f5f5; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 13px;">
+                    <strong>Frontend:</strong> HTML5, CSS3, JavaScript ES6+, Three.js, rhino3dm.js<br>
+                    <strong>Backend:</strong> Node.js, Express.js, compute-rhino3d, memjs<br>
+                    <strong>Infrastructure:</strong> Docker, Heroku, Azure VM<br>
+                    <strong>Protocols:</strong> REST API, WebSockets (optional), HTTP/2<br>
+                    <strong>Security:</strong> API keys, environment variables, CORS<br>
+                    <strong>Monitoring:</strong> Console logging, performance metrics, error tracking
+                </div>
             </div>
         </div>
     </div>
