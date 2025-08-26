@@ -126,9 +126,162 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Navigation Bar */
+        .nav-bar {
+            background: #1a1a1a;
+            padding: 20px 0;
+            border-bottom: 4px solid #ff6b35;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            color: #ff6b35;
+            font-size: 2rem;
+            font-weight: bold;
+            text-decoration: none;
+            font-family: 'Georgia', serif;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: normal;
+        }
+
+        .nav-links a:hover {
+            background: #ff6b35;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .nav-dropdown {
+            position: relative;
+        }
+
+        .nav-dropdown-content {
+            display: none;
+            position: absolute;
+            background: #2a2a2a;
+            min-width: 250px;
+            border-radius: 8px;
+            padding: 15px 0;
+            top: 100%;
+            left: 0;
+            z-index: 1001;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            border: 1px solid #444;
+        }
+
+        .nav-dropdown:hover .nav-dropdown-content {
+            display: block;
+        }
+
+        .nav-dropdown-content a {
+            display: block;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 0;
+            text-align: left;
+            color: #ddd;
+        }
+
+        .nav-dropdown-content a:hover {
+            background: #ff6b35;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                padding: 0 15px;
+            }
+
+            .nav-links {
+                gap: 20px;
+            }
+
+            .nav-links a {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Navigation Bar -->
+    <nav class="nav-bar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">SoftlyPlease</a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <div class="nav-dropdown">
+                    <a href="#" onclick="return false;">Interactive Examples ▼</a>
+                    <div class="nav-dropdown-content">
+                        <a href="/examples/spikyThing/">Spiky Thing - 3D Geometry</a>
+                        <a href="/examples/delaunay/">Delaunay Triangulation</a>
+                        <a href="/examples/panels/">Panels</a>
+                        <a href="/examples/metaballTable/">Metaball Table</a>
+                        <a href="/examples/bendy/">Bendy Grid Shell</a>
+                        <a href="/examples/docString/">Documentation</a>
+                        <a href="/examples/multi/">Multi Definition</a>
+                        <a href="/examples/upload/">File Upload</a>
+                        <a href="/examples/valueList/">Value List</a>
+                        <a href="/examples/">All Examples</a>
+                    </div>
+                </div>
+                <div class="nav-dropdown">
+                    <a href="#" onclick="return false;">Grasshopper Definitions ▼</a>
+                    <div class="nav-dropdown-content">
+                        <a href="/solve/BranchNodeRnd.gh">Spiky Thing</a>
+                        <a href="/solve/delaunay.gh">Delaunay Mesh</a>
+                        <a href="/solve/dresser3.gh">Dresser</a>
+                        <a href="/solve/metaballTable.gh">Metaball Table</a>
+                        <a href="/solve/Bending_gridshell.gh">Bending Grid Shell</a>
+                        <a href="/solve/docString.gh">Documentation</a>
+                        <a href="/solve/multi.gh">Multi Definition</a>
+                        <a href="/solve/upload.gh">Upload</a>
+                        <a href="/solve/value_list.gh">Value List</a>
+                        <a href="/solve/beam_mod.gh">Beam Modifier</a>
+                        <a href="/solve/brep_union.gh">BREP Union</a>
+                        <a href="/solve/rnd_lattice.gh">Random Lattice</a>
+                        <a href="/solve/rnd_node.gh">Random Node</a>
+                        <a href="/solve/srf_kmeans.gh">Surface K-means</a>
+                        <a href="/solve/QuadPanelAperture.gh">Quad Panel</a>
+                        <a href="/solve/SampleGHConvertTo3dm.gh">Convert to 3DM</a>
+                    </div>
+                </div>
+                <a href="/frontend/">3D Interface</a>
+            </div>
+        </div>
+    </nav>
+
     <div class="header">
         <h1>SoftlyPlease</h1>
         <p>Interactive Grasshopper Definition Solver</p>

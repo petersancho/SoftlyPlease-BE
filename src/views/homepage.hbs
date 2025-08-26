@@ -64,47 +64,53 @@
 
         /* Navigation Bar */
         .nav-bar {
-            background: #2c2c2c;
-            padding: 15px 0;
-            border-bottom: 3px solid #666;
+            background: #1a1a1a;
+            padding: 20px 0;
+            border-bottom: 4px solid #ff6b35;
             position: sticky;
             top: 0;
             z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
 
         .nav-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .nav-logo {
-            color: white;
-            font-size: 1.5rem;
+            color: #ff6b35;
+            font-size: 2rem;
             font-weight: bold;
             text-decoration: none;
+            font-family: 'Georgia', serif;
         }
 
         .nav-links {
             display: flex;
-            gap: 30px;
+            gap: 40px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .nav-links a {
             color: white;
             text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            transition: background 0.3s ease;
-            font-size: 0.9rem;
+            padding: 12px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: normal;
         }
 
         .nav-links a:hover {
-            background: #444;
+            background: #ff6b35;
+            color: white;
+            transform: translateY(-2px);
         }
 
         .nav-dropdown {
@@ -114,13 +120,15 @@
         .nav-dropdown-content {
             display: none;
             position: absolute;
-            background: #333;
-            min-width: 200px;
-            border-radius: 6px;
-            padding: 10px 0;
+            background: #2a2a2a;
+            min-width: 250px;
+            border-radius: 8px;
+            padding: 15px 0;
             top: 100%;
             left: 0;
             z-index: 1001;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            border: 1px solid #444;
         }
 
         .nav-dropdown:hover .nav-dropdown-content {
@@ -129,14 +137,16 @@
 
         .nav-dropdown-content a {
             display: block;
-            padding: 8px 16px;
+            padding: 12px 20px;
             border: none;
             border-radius: 0;
             text-align: left;
+            color: #ddd;
         }
 
         .nav-dropdown-content a:hover {
-            background: #555;
+            background: #ff6b35;
+            color: white;
         }
 
         .main-content {
@@ -341,6 +351,118 @@
                 height: 300px;
             }
         }
+
+        /* Showcase Section Styles */
+        .showcase-section {
+            background: #f8f8f8;
+            padding: 80px 0;
+            margin-top: 60px;
+        }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .example-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .example-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .example-card h3 {
+            color: #333;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            font-weight: normal;
+        }
+
+        .example-card p {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .card-btn {
+            display: inline-block;
+            background: #ff6b35;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: normal;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .card-btn:hover {
+            background: #e55a2b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,107,53,0.4);
+        }
+
+        .definitions-section {
+            margin-top: 80px;
+        }
+
+        .definitions-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .def-link {
+            display: block;
+            background: #333;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            text-align: center;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            font-weight: normal;
+        }
+
+        .def-link:hover {
+            background: #ff6b35;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255,107,53,0.3);
+        }
+
+        @media (max-width: 768px) {
+            .showcase-section {
+                padding: 40px 0;
+            }
+
+            .examples-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .definitions-list {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .example-card {
+                padding: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -351,43 +473,42 @@
             <div class="nav-links">
                 <a href="/">Home</a>
                 <div class="nav-dropdown">
-                    <a href="#" onclick="return false;">Examples ▼</a>
+                    <a href="#" onclick="return false;">Interactive Examples ▼</a>
                     <div class="nav-dropdown-content">
-                        <a href="/examples/spikyThing/">Spiky Thing</a>
-                        <a href="/examples/delaunay/">Delaunay</a>
+                        <a href="/examples/spikyThing/">Spiky Thing - 3D Geometry</a>
+                        <a href="/examples/delaunay/">Delaunay Triangulation</a>
                         <a href="/examples/panels/">Panels</a>
                         <a href="/examples/metaballTable/">Metaball Table</a>
-                        <a href="/examples/bendy/">Bendy</a>
+                        <a href="/examples/bendy/">Bendy Grid Shell</a>
                         <a href="/examples/docString/">Documentation</a>
-                        <a href="/examples/multi/">Multi</a>
-                        <a href="/examples/upload/">Upload</a>
+                        <a href="/examples/multi/">Multi Definition</a>
+                        <a href="/examples/upload/">File Upload</a>
                         <a href="/examples/valueList/">Value List</a>
                         <a href="/examples/">All Examples</a>
                     </div>
                 </div>
                 <div class="nav-dropdown">
-                    <a href="#" onclick="return false;">Definitions ▼</a>
+                    <a href="#" onclick="return false;">Grasshopper Definitions ▼</a>
                     <div class="nav-dropdown-content">
                         <a href="/solve/BranchNodeRnd.gh">Spiky Thing</a>
-                        <a href="/solve/delaunay.gh">Delaunay</a>
+                        <a href="/solve/delaunay.gh">Delaunay Mesh</a>
                         <a href="/solve/dresser3.gh">Dresser</a>
                         <a href="/solve/metaballTable.gh">Metaball Table</a>
-                        <a href="/solve/bendy.gh">Bendy</a>
+                        <a href="/solve/Bending_gridshell.gh">Bending Grid Shell</a>
                         <a href="/solve/docString.gh">Documentation</a>
-                        <a href="/solve/multi.gh">Multi</a>
+                        <a href="/solve/multi.gh">Multi Definition</a>
                         <a href="/solve/upload.gh">Upload</a>
                         <a href="/solve/value_list.gh">Value List</a>
-                        <a href="/solve/beam_mod.gh">Beam Mod</a>
+                        <a href="/solve/beam_mod.gh">Beam Modifier</a>
                         <a href="/solve/brep_union.gh">BREP Union</a>
                         <a href="/solve/rnd_lattice.gh">Random Lattice</a>
                         <a href="/solve/rnd_node.gh">Random Node</a>
                         <a href="/solve/srf_kmeans.gh">Surface K-means</a>
-                        <a href="/solve/Bending_gridshell.gh">Grid Shell</a>
                         <a href="/solve/QuadPanelAperture.gh">Quad Panel</a>
                         <a href="/solve/SampleGHConvertTo3dm.gh">Convert to 3DM</a>
                     </div>
                 </div>
-                <a href="/frontend/index.html">3D Interface</a>
+                <a href="/frontend/">3D Interface</a>
                 <a href="/frontend/softlyplease-interface.html">Simple Interface</a>
             </div>
         </div>
@@ -425,6 +546,89 @@
         <div class="viewer-panel">
             <h2>3D Viewer</h2>
             <div id="viewer"></div>
+        </div>
+    </div>
+
+    <!-- Showcase Section -->
+    <div class="showcase-section">
+        <div class="container">
+            <h2 style="text-align: center; margin: 50px 0 30px; color: black; font-size: 2.5rem;">Available Grasshopper Examples</h2>
+
+            <div class="examples-grid">
+                <div class="example-card">
+                    <h3>Spiky Thing</h3>
+                    <p>Generate 3D spiky geometry with parametric controls</p>
+                    <a href="/examples/spikyThing/" class="card-btn">Try It</a>
+                </div>
+
+                <div class="example-card">
+                    <h3>Delaunay Triangulation</h3>
+                    <p>Create triangulated surfaces from point clouds</p>
+                    <a href="/examples/delaunay/" class="card-btn">Try It</a>
+                </div>
+
+                <div class="example-card">
+                    <h3>Metaball Table</h3>
+                    <p>Interactive metaball visualization</p>
+                    <a href="/examples/metaballTable/" class="card-btn">Try It</a>
+                </div>
+
+                <div class="example-card">
+                    <h3>Bending Grid Shell</h3>
+                    <p>Generate bending grid shell structures</p>
+                    <a href="/examples/bendy/" class="card-btn">Try It</a>
+                </div>
+
+                <div class="example-card">
+                    <h3>Panels</h3>
+                    <p>Panel generation and analysis</p>
+                    <a href="/examples/panels/" class="card-btn">Try It</a>
+                </div>
+
+                <div class="example-card">
+                    <h3>Value List</h3>
+                    <p>Work with value list inputs</p>
+                    <a href="/examples/valueList/" class="card-btn">Try It</a>
+                </div>
+
+                <div class="example-card">
+                    <h3>Multi Definition</h3>
+                    <p>Select and solve multiple definitions</p>
+                    <a href="/examples/multi/" class="card-btn">Try It</a>
+                </div>
+
+                <div class="example-card">
+                    <h3>File Upload</h3>
+                    <p>Upload files as inputs to definitions</p>
+                    <a href="/examples/upload/" class="card-btn">Try It</a>
+                </div>
+            </div>
+
+            <div class="definitions-section">
+                <h2 style="text-align: center; margin: 60px 0 30px; color: black; font-size: 2.5rem;">All Grasshopper Definitions</h2>
+                <p style="text-align: center; margin-bottom: 40px; color: #666; font-size: 1.1rem;">
+                    Direct access to all available Grasshopper definitions for custom parameter solving
+                </p>
+
+                <div class="definitions-list">
+                    <a href="/solve/BranchNodeRnd.gh" class="def-link">Spiky Thing</a>
+                    <a href="/solve/delaunay.gh" class="def-link">Delaunay Mesh</a>
+                    <a href="/solve/dresser3.gh" class="def-link">Dresser</a>
+                    <a href="/solve/metaballTable.gh" class="def-link">Metaball Table</a>
+                    <a href="/solve/Bending_gridshell.gh" class="def-link">Bending Grid Shell</a>
+                    <a href="/solve/docString.gh" class="def-link">Documentation</a>
+                    <a href="/solve/multi.gh" class="def-link">Multi Definition</a>
+                    <a href="/solve/upload.gh" class="def-link">Upload</a>
+                    <a href="/solve/value_list.gh" class="def-link">Value List</a>
+                    <a href="/solve/beam_mod.gh" class="def-link">Beam Modifier</a>
+                    <a href="/solve/brep_union.gh" class="def-link">BREP Union</a>
+                    <a href="/solve/rnd_lattice.gh" class="def-link">Random Lattice</a>
+                    <a href="/solve/rnd_node.gh" class="def-link">Random Node</a>
+                    <a href="/solve/srf_kmeans.gh" class="def-link">Surface K-means</a>
+                    <a href="/solve/QuadPanelAperture.gh" class="def-link">Quad Panel</a>
+                    <a href="/solve/SampleGHConvertTo3dm.gh" class="def-link">Convert to 3DM</a>
+                </div>
+            </div>
         </div>
     </div>
 
