@@ -1,0 +1,266 @@
+================================================================================
+VISUAL SCREENSHOT GUIDE FOR THE DUMBEST AI AGENT
+================================================================================
+
+This guide shows you EXACTLY what each step looks like on the screen.
+
+================================================================================
+STEP 1: FIND REMOTE DESKTOP CONNECTION
+================================================================================
+
+LOOK FOR THIS ICON ON YOUR DESKTOP OR START MENU:
++-------------------+
+| [COMPUTER ICON]  |
+| Remote Desktop    |
+| Connection        |
++-------------------+
+
+OR IN START MENU:
++-------------------+
+| Windows Logo      | <-- CLICK THIS
+| Search: powershell| <-- TYPE THIS
++-------------------+
+     |
+     v
++-------------------+
+| [BLUE ICON]       |
+| Remote Desktop    |
+| Connection        | <-- CLICK THIS
++-------------------+
+
+================================================================================
+STEP 2: CONNECT TO AZURE COMPUTER
+================================================================================
+
+WHEN YOU OPEN REMOTE DESKTOP:
++-----------------------------+
+| Computer: [               ]| <-- TYPE: 4.248.252.92
+| User name: [Administrator]| <-- SHOULD BE FILLED
+| Password:  [             ]| <-- TYPE YOUR PASSWORD
+|                           |
+| [ ] Allow me to save      |
+|     credentials            |
+|                           |
+| [Connect]                 | <-- CLICK THIS BUTTON
++-----------------------------+
+
+IF IT ASKS ABOUT CERTIFICATE:
++-----------------------------+
+| The identity of the remote |
+| computer cannot be verified|
+|                           |
+| [Yes]                      | <-- CLICK YES
++-----------------------------+
+
+SUCCESS: You should see the Azure desktop background.
+
+================================================================================
+STEP 3: OPEN POWERSHELL AS ADMINISTRATOR
+================================================================================
+
+ON THE AZURE DESKTOP:
+1. Look at BOTTOM LEFT corner
+2. Click the WINDOWS FLAG logo
+3. Type: powershell
+4. Wait for "Windows PowerShell" to appear
+
+WHEN YOU SEE THIS:
++-------------------+
+| [BLUE BOX ICON]   |
+| Windows PowerShell| <-- RIGHT-CLICK THIS
++-------------------+
+
+WHEN YOU RIGHT-CLICK, SEE THIS MENU:
++-------------------+
+| Open              |
+| Run as            |
+|  Administrator    | <-- CLICK THIS OPTION
++-------------------+
+
+WHEN IT ASKS:
++-----------------------------+
+| Do you want to allow this  |
+| app to make changes to     |
+| your device?               |
+|                           |
+| [Yes]                      | <-- CLICK YES
++-----------------------------+
+
+SUCCESS: PowerShell window opens with this at the top:
++-----------------------------+
+| Administrator: Windows     |
+| PowerShell                 |
++-----------------------------+
+
+================================================================================
+STEP 4: NAVIGATE TO SCRIPTS FOLDER
+================================================================================
+
+POWERSHELL WINDOW LOOKS LIKE THIS:
++-----------------------------+
+| PS C:\Users\Administrator> | <-- This is the prompt
++-----------------------------+
+
+RIGHT-CLICK IN THE WINDOW, SELECT "Paste", TYPE:
+cd C:\Users\Administrator\Desktop\SoftlyPlease\scripts\azure
+
+AFTER YOU PRESS ENTER, IT SHOULD LOOK LIKE:
++---------------------------------------------------+
+| PS C:\Users\Administrator\Desktop\SoftlyPlease\  |
+| scripts\azure>                                    | <-- New prompt
++---------------------------------------------------+
+
+================================================================================
+STEP 5: RUN THE FIX SCRIPT
+================================================================================
+
+RIGHT-CLICK IN POWERSHELL, SELECT "Paste", TYPE:
+.\RESTART-NODEJS-FIX.ps1
+
+PRESS ENTER
+
+YOU SHOULD SEE THIS START APPEARING:
++---------------------------------------------------+
+| === SOFTLYPLEASE.COM NODE.JS FIX STARTED ===     |
+| This script will fix the dual Node.js server     |
+| issue                                             |
+|                                                   |
+| === STEP 1: CHECKING ADMINISTRATOR PRIVILEGES ===|
+| STEP 1: Checking administrator privileges...     |
+| ✅ SUCCESS: Running as Administrator              |
++---------------------------------------------------+
+
+================================================================================
+STEP 6: WATCH FOR COLORS AND SUCCESS MESSAGES
+================================================================================
+
+GOOD MESSAGES LOOK LIKE THIS:
++---------------------------------------------------+
+| ✅ SUCCESS: Running as Administrator              | <-- GREEN
+| ✅ FOUND: SoftlyPleaseAppServer service exists    | <-- GREEN
+| ✅ SUCCESS: Service stopped                       | <-- GREEN
+| ✅ SUCCESS: SoftlyPleaseAppServer is now RUNNING  | <-- GREEN
++---------------------------------------------------+
+
+WARNING MESSAGES (usually OK):
++---------------------------------------------------+
+| ⚠️  WARNING: Service is already running          | <-- YELLOW
+| ⚠️  WARNING: Cannot reach softlyplease.com       | <-- YELLOW
++---------------------------------------------------+
+
+ERROR MESSAGES (need attention):
++---------------------------------------------------+
+| ❌ ERROR: This script must be run as Admin       | <-- RED
+| ❌ PROBLEM: SoftlyPleaseAppServer service does    | <-- RED
+|    NOT exist                                      |
++---------------------------------------------------+
+
+================================================================================
+STEP 7: LOOK FOR THE FINAL SUCCESS MESSAGE
+================================================================================
+
+WHEN THE SCRIPT FINISHES, LOOK FOR THIS AT THE BOTTOM:
++---------------------------------------------------+
+| === FIX COMPLETE - FINAL STATUS ===              |
+|                                                   |
+| What we fixed:                                    |
+| ✅ Restarted Node.js AppServer service            |
+| ✅ Verified port 80 is listening                  |
+| ✅ Tested local Node.js server                    |
+| ✅ Verified dual Node.js architecture             |
+|                                                   |
+| 🎉 DUAL NODE.JS SERVERS SHOULD NOW BE WORKING!    |
+| Azure VM Node.js (port 80) + Heroku Node.js       |
+| (backup)                                          |
++---------------------------------------------------+
+
+================================================================================
+STEP 8: TEST THE WEBSITE
+================================================================================
+
+AFTER THE SCRIPT FINISHES:
+
+TEST 1: OPEN BROWSER ON AZURE COMPUTER
+- Look for Google Chrome or Edge icon
+- Click the icon
+- Type in address bar: http://localhost:80/version
+- Press Enter
+- If you see { "message": "..." } JSON text, it worked!
+
+TEST 2: OPEN BROWSER ON YOUR COMPUTER
+- Open browser
+- Type in address bar: https://softlyplease.com
+- Press Enter
+- If you see the website (not error page), it worked!
+
+================================================================================
+WHAT SUCCESS LOOKS LIKE:
+================================================================================
+
+WEBSITE WORKING:
++-----------------------------+
+| [softlyplease.com]         |
+|                            |
+| [Grasshopper Definition    |
+|  Examples]                 |
+|                            |
+| [spikyThing] [delaunay]    |
+| [BranchNodeRnd]            |
+|                            |
+| [3D Viewer]                |
++-----------------------------+
+
+API WORKING:
++-----------------------------+
+| {                          |
+|   "message": "This server  |
+|   has been turned off",   |
+|   "documentation_url":     |
+|   "https://..."           |
+| }                          |
++-----------------------------+
+
+================================================================================
+IF YOU SEE THIS INSTEAD (ERROR):
+================================================================================
+
+BAD WEBSITE:
++-----------------------------+
+| Server Error               |
+| 404 - File or directory    |
+| not found.                 |
++-----------------------------+
+
+BAD API:
++-----------------------------+
+| <!DOCTYPE html>            |
+| <html>                     |
+| <head><title>404 Not Found |
+| </title></head>            |
++-----------------------------+
+
+================================================================================
+IF NOTHING WORKS:
+================================================================================
+
+1. Take a PICTURE of the PowerShell window with your phone
+2. Show the picture to a human
+3. Say: "The Azure Node.js fix failed. Here is the error."
+4. The human will help you fix it
+
+================================================================================
+SUCCESS CHECKLIST (check each box):
+================================================================================
+
+- [ ] Found Remote Desktop Connection icon
+- [ ] Connected to 4.248.252.92
+- [ ] Opened PowerShell as Administrator
+- [ ] Navigated to scripts\azure folder
+- [ ] Ran .\RESTART-NODEJS-FIX.ps1
+- [ ] Saw green SUCCESS messages during execution
+- [ ] Saw "🎉 DUAL NODE.JS SERVERS SHOULD NOW BE WORKING!" message
+- [ ] Tested https://softlyplease.com in browser
+- [ ] Website loads without error pages
+
+If ALL boxes are checked, congratulations! You fixed it! 🎉
+================================================================================

@@ -1,0 +1,107 @@
+================================================================================
+SIMPLE FIX FOR SOFTLYPLEASE.COM - STEP BY STEP
+================================================================================
+
+PROBLEM: Dual Node.js servers not working. softlyplease.com is broken.
+
+SOLUTION: Restart the Node.js service on Azure VM.
+
+================================================================================
+EXACT STEPS TO FOLLOW (COPY AND PASTE EACH COMMAND):
+================================================================================
+
+STEP 1: CONNECT TO YOUR AZURE VM
+----------------------------------
+- Open Remote Desktop Connection
+- Connect to your Azure VM (IP: 4.248.252.92)
+- Log in with your administrator credentials
+
+STEP 2: OPEN POWERSHELL AS ADMINISTRATOR
+------------------------------------------
+- Click Start menu
+- Type "PowerShell"
+- Right-click "Windows PowerShell"
+- Select "Run as Administrator"
+- Click "Yes" if prompted
+
+STEP 3: NAVIGATE TO THE SCRIPTS FOLDER
+----------------------------------------
+Type this command and press Enter:
+cd C:\path\to\your\softlyplease\scripts\azure
+
+(Replace "C:\path\to\your\softlyplease" with the actual path)
+
+STEP 4: RUN THE FIX SCRIPT
+-----------------------------
+Type this command and press Enter:
+.\RESTART-NODEJS-FIX.ps1
+
+STEP 5: WATCH THE OUTPUT
+--------------------------
+- The script will show progress with colored text
+- Green = Good
+- Yellow = Warning (usually OK)
+- Red = Error (needs attention)
+
+STEP 6: CHECK RESULTS
+----------------------
+- Look for "SUCCESS" messages
+- If you see "🎉 DUAL NODE.JS SERVERS SHOULD NOW BE WORKING!" at the end
+- Then the fix worked!
+
+================================================================================
+IF THE SCRIPT FAILS:
+================================================================================
+
+If you see "❌ PROBLEM: SoftlyPleaseAppServer service does NOT exist":
+
+SOLUTION A - Try manual restart:
+1. Open PowerShell as Administrator
+2. Type: Get-Service SoftlyPleaseAppServer
+3. If found, type: Restart-Service SoftlyPleaseAppServer
+4. Test: curl -s https://softlyplease.com/version
+
+SOLUTION B - Reinstall the service:
+1. Run the setup script:
+   .\azure-vm-setup.ps1 -RhinoAccountsToken "your-token" -ApiKey "p2robot-13a6-48f3-b24e-2025computeX"
+
+================================================================================
+TEST THE FIX:
+================================================================================
+
+After running the script, test these URLs:
+
+1. Local test (should work immediately):
+   curl -s http://localhost:80/version
+
+2. Main domain test (may take 2-3 minutes):
+   curl -s https://softlyplease.com/version
+
+3. Open in browser:
+   https://softlyplease.com
+
+================================================================================
+WHAT THIS FIXES:
+================================================================================
+
+✅ Restarts the Node.js AppServer service on port 80
+✅ Fixes softlyplease.com (main domain)
+✅ Restores dual Node.js architecture:
+   - Azure VM Node.js server (port 80)
+   - Heroku Node.js server (backup)
+✅ Should take less than 5 minutes total
+
+================================================================================
+IF STILL BROKEN AFTER 5 MINUTES:
+================================================================================
+
+1. Check if the service is running:
+   Get-Service SoftlyPleaseAppServer
+
+2. Check the service logs (if available)
+
+3. Try restarting the entire Azure VM
+
+4. Contact support with the exact error messages
+
+================================================================================
