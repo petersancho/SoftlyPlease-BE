@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoftlyPlease - Interactive Grasshopper Examples</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .definitions {
+            display: block;
+        }
+        .definition-card {
+            display: block;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+        .definition-card:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .definition-card h3 {
+            margin: 0 0 8px 0;
+            color: #495057;
+            font-size: 1.3em;
+        }
+        .definition-card p {
+            margin: 0;
+            color: #6c757d;
+            line-height: 1.4;
+        }
+        .stats {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .stats h3 {
+            margin: 0 0 15px 0;
+            color: #1976d2;
+        }
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            min-width: 120px;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #1976d2;
+            margin: 0;
+        }
+        .stat-label {
+            margin: 5px 0 0 0;
+            color: #424242;
+            font-size: 0.9em;
+        }
+        .examples-link {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .examples-link a {
+            display: inline-block;
+            background: #4caf50;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+        .examples-link a:hover {
+            background: #388e3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SoftlyPlease</h1>
+            <p>Interactive Grasshopper Examples Powered by McNeel Rhino Compute</p>
+        </div>
+
+        <div class="examples-link">
+            <a href="/examples/">View All Interactive Examples →</a>
+        </div>
+
+        <div class="stats">
+            <h3>Platform Statistics</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">{{definitions.length}}</div>
+                    <div class="stat-label">Definitions</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Interactive</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Available</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="definitions">
+            {{#each definitions}}
+            <a href="/examples/{{this.displayName}}/" class="definition-card">
+                <h3>{{this.displayName}}</h3>
+                <p>{{this.description}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</body>
+</html>

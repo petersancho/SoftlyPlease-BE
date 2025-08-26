@@ -17,16 +17,16 @@ This repository contains the complete Rhino Compute system for softlyplease.com,
 │   │   ├── troubleshooting.md     # Common issues & solutions
 │   │   └── backup.md             # Backup & recovery procedures
 │   └── reference/                # Technical reference docs
-│
+
 ├── frontend/                      # 🌐 Website frontend
 │   ├── index.html                # Advanced 3D interface
 │   └── softlyplease-interface.html # Simple testing interface
-│
+
 ├── compute.rhino3d/              # 🦏 Rhino Compute Server
 │   ├── src/                      # Source code
 │   ├── script/                   # Installation & management scripts
 │   └── tools/                    # Development tools
-│
+
 └── compute.rhino3d.appserver/    # 🚀 Node.js API Server
     ├── src/                      # Express.js application
     ├── docs/                     # Original documentation
