@@ -1,32 +1,211 @@
-![GitHub package.json version](https://img.shields.io/github/package-json/v/mcneel/compute.rhino3d.appserver/main?label=version&style=flat-square)
-![node-current (scoped)](https://img.shields.io/badge/dynamic/json?label=node&query=engines.node&url=https%3A%2F%2Fraw.githubusercontent.com%2Fmcneel%2Fcompute.rhino3d.appserver%2Fmain%2Fpackage.json&style=flat-square&color=dark-green)
+# Rhino Compute AppServer - Production Ready
 
-# Rhino Compute AppServer
-A node.js server acting as a bridge between client apps and private compute.rhino3d servers.
+A professional, production-ready Rhino Compute AppServer with custom domain support, interactive Grasshopper examples, and enterprise-grade architecture.
 
-This app is intended to host one or more custom grasshopper definitions and serve as the API that client applications can call to have definitions solved with modified input parameters.
+## 🚀 Quick Start
 
-## Features
-- **Easy to get started**: fork/clone this repo and run it locally for testing or push to a service like Heroku for a production web server
-- **Easy to customize**: fork this repo, place your custom grasshopper definitions in the files directory and you now have a custom AppServer for your definitions.
-- **Caching**: Assuming definitions produce the same results when the same set of inputs are provided, the appserver caches all results in memory for faster response times.
-- **Timings**: Server-timing headers are returned to the client to help diagnose bottlenecks in the definition solving process.
+Get your Rhino Compute AppServer running in under 30 minutes:
 
-## Getting Started
-1. Fork this repo
-2. Follow the [installation guide](docs/installation.md) to test and debug on your computer
-3. Follow the [Heroku hosting guide](docs/heroku.md) to push your customized AppServer to Heroku for a production web server
+```bash
+# 1. Clone the repository
+git clone https://github.com/your-username/compute-sp.git
+cd compute-sp
 
-## How and What Video
-- A workshop on using the appserver can be found at https://vimeo.com/442079095 - also [slides](https://docs.google.com/presentation/d/1nCbd87iA_D2ZCwoSirOYK3har6XUJHDUEIkt635btUU)
-- AECTECH 2020 workshop: https://youtu.be/At4BaIuEE3c - [slides](https://docs.google.com/presentation/d/1uY6DcYpBNrgxk8sbHHv1gy3IZWRmO7QF1rUT1XOl3s0/edit?usp=drivesdk)
+# 2. Set up Azure VM (run as Administrator)
+./scripts/azure/azure-vm-setup.ps1 -RhinoAccountsToken "YOUR_TOKEN" -ApiKey "YOUR_API_KEY"
 
-## Examples
-When we have our testing server up and running, you can visit to see various samples:
+# 3. Deploy to Heroku
+./scripts/heroku/heroku-deploy.sh
 
-https://compute-rhino3d-appserver.herokuapp.com/examples/
+# 4. Test your setup
+curl https://yourdomain.com/?format=json
+```
 
-----
-## Other Information
-- [API Endpoints](docs/endpoints.md) the server supports
-- [Client Code](docs/clientcode.md) example for calling the AppServer
+## 📋 What You Get
+
+✅ **Professional AppServer** - Node.js/Express with Handlebars templates  
+✅ **Interactive Examples** - Real-time Grasshopper parameter manipulation  
+✅ **Custom Domain** - Your own domain (e.g., softlyplease.com)  
+✅ **Enterprise Caching** - Memcached and in-memory caching  
+✅ **SSL Security** - Automatic HTTPS certificates  
+✅ **Production Ready** - Monitoring, logging, and error handling  
+
+## 🏗️ Architecture
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Web Browser   │───▶│  Heroku AppServer │───▶│ Azure VM Rhino  │
+│  (Custom Domain) │    │   (Node.js/Express) │    │   Compute Server │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+```
+
+## 📁 Repository Structure
+
+```
+compute-sp/
+├── README.md                    # This file
+├── package.json                 # Dependencies and scripts
+├── Procfile                     # Heroku deployment
+├── Dockerfile                   # Container support
+├── src/                         # Application source code
+│   ├── app.js                  # Main Express application
+│   ├── routes/                 # API endpoints
+│   ├── views/                  # Handlebars templates
+│   ├── examples/               # Interactive examples
+│   └── files/                  # Grasshopper definitions
+├── docs/                        # Documentation
+│   └── setup/                  # Setup guides
+│       ├── SETUP-GUIDE.md      # Comprehensive setup guide
+│       └── QUICK-START.md      # 30-minute quick start
+└── scripts/                     # Automation scripts
+    ├── azure/                  # Azure VM setup
+    │   └── azure-vm-setup.ps1  # Complete VM automation
+    ├── heroku/                 # Heroku deployment
+    │   └── heroku-deploy.sh    # Automated deployment
+    └── config-template.js      # Configuration template
+```
+
+## 🔧 Prerequisites
+
+- **Azure Account** - For Windows VM hosting
+- **Heroku Account** - For AppServer deployment
+- **Custom Domain** - Your own domain name
+- **Rhino 7 License** - For Rhino Compute server
+- **Git Repository** - For version control
+
+## 📚 Documentation
+
+- **[Quick Start Guide](docs/setup/QUICK-START.md)** - Get running in 30 minutes
+- **[Complete Setup Guide](docs/setup/SETUP-GUIDE.md)** - Comprehensive documentation
+- **[Azure VM Setup](scripts/azure/azure-vm-setup.ps1)** - Automated VM configuration
+- **[Heroku Deployment](scripts/heroku/heroku-deploy.sh)** - Automated deployment
+
+## 🎯 Key Features
+
+### AppServer
+- **Server-side rendering** with Handlebars templates
+- **RESTful API** for Grasshopper definition solving
+- **Automatic caching** for performance optimization
+- **Professional UI** with responsive design
+
+### Rhino Compute Integration
+- **Real-time solving** of Grasshopper definitions
+- **Geometry processing** via Rhino Compute server
+- **3D visualization** with Three.js integration
+- **Parameter manipulation** with live updates
+
+### Production Features
+- **Custom domain support** with SSL certificates
+- **Enterprise caching** with memcached
+- **Monitoring and logging** for production use
+- **Error handling** and graceful degradation
+
+## 🚨 Common Issues & Solutions
+
+### Authentication Errors
+```bash
+# Check environment variables
+heroku config --app your-app-name
+
+# Verify API key format
+curl -H "RhinoComputeKey: YOUR_KEY" "http://YOUR_VM_IP:80/version"
+```
+
+### Connection Timeouts
+```powershell
+# On Azure VM, check service status
+Get-Service -Name "compute.geometry"
+
+# Check firewall rules
+Get-NetFirewallRule -DisplayName "*Rhino*"
+```
+
+### Heroku Build Failures
+```bash
+# Check build logs
+heroku logs --tail --app your-app-name
+
+# Verify Node.js version in package.json
+```
+
+## 🔄 Maintenance
+
+### Update Rhino Compute
+```powershell
+# On Azure VM
+Stop-Service -Name "compute.geometry"
+# Download new version and replace files
+Start-Service -Name "compute.geometry"
+```
+
+### Update AppServer
+```bash
+# Deploy changes
+git add .
+git commit -m "Update description"
+git push heroku main
+```
+
+### Monitor Performance
+```bash
+# Check Heroku metrics
+heroku ps --app your-app-name
+
+# View logs
+heroku logs --tail --app your-app-name
+```
+
+## 📊 Performance & Scaling
+
+- **Caching Strategy** - Multi-level caching for optimal performance
+- **Load Balancing** - Support for multiple Azure VMs
+- **CDN Integration** - Browser caching and edge optimization
+- **Database Options** - MongoDB and Redis support ready
+
+## 🔒 Security Features
+
+- **API Key Authentication** - Secure access to Rhino Compute
+- **HTTPS Enforcement** - Automatic SSL certificate management
+- **CORS Configuration** - Controlled cross-origin access
+- **Rate Limiting** - Protection against abuse
+- **Security Headers** - Helmet.js integration
+
+## 💰 Cost Optimization
+
+- **Azure VM**: ~$0.20/hour for t2.medium
+- **Heroku**: Free tier available for development
+- **Custom Domain**: Annual registration fee
+- **SSL Certificates**: Free with Heroku
+
+## 🆘 Support & Resources
+
+- **Documentation**: Complete guides in `docs/setup/`
+- **Scripts**: Automated setup in `scripts/`
+- **Examples**: Working examples in `src/examples/`
+- **Community**: Open source with active development
+
+## 🎉 Success Indicators
+
+Your setup is working when:
+- ✅ Homepage loads at your custom domain
+- ✅ Interactive examples respond to parameter changes
+- ✅ No H12 timeouts in Heroku logs
+- ✅ Azure VM responds to external requests
+- ✅ SSL certificates are active
+
+## 📈 Next Steps
+
+1. **Customize Examples** - Modify the interactive interfaces
+2. **Add Definitions** - Include your own Grasshopper files
+3. **Optimize Caching** - Configure memcached for your needs
+4. **Scale Up** - Add more Azure VMs for load balancing
+5. **Monitor & Alert** - Set up production monitoring
+
+---
+
+**Setup Time**: 30 minutes  
+**Maintenance**: Monthly  
+**Production Ready**: ✅ Yes  
+**Enterprise Grade**: ✅ Yes  
+
+Built with ❤️ for the Rhino community
