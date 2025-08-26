@@ -46,10 +46,39 @@ router.get('/',  function(req, res, next) {
     res.setHeader('Content-Type', 'application/json')
     res.send(JSON.stringify(definitions))
   } else {
+    // Prepare definitions with display names and descriptions
+    const definitionsWithInfo = definitions.map(def => {
+      const descriptions = {
+        'BranchNodeRnd.gh': 'Generate parametric spiky spheres with adjustable radius, count, and length parameters. Real-time 3D visualization.',
+        'delaunay.gh': 'Create Delaunay triangulation from point clouds. Perfect for mesh generation from scattered data points.',
+        'dresser3.gh': 'Interactive furniture design tool with width, height, and depth controls. Explore parametric furniture design.',
+        'metaballTable.gh': 'Dynamic table design using metaball algorithms. Interactive point manipulation with real-time updates.',
+        'bendy.gh': 'Physics-based deformation using Kangaroo solver. Explore structural bending and material behavior.',
+        'docString.gh': 'Advanced example showing how to return complete Rhino documents from Grasshopper definitions.',
+        'multi.gh': 'Dynamic file selection interface allowing you to switch between different Grasshopper definitions.',
+        'upload.gh': 'File upload capability demonstration. Shows how to process external files as input parameters.',
+        'valueList.gh': 'Working with value lists as input parameters. Demonstrates dropdown and selection interfaces.',
+        'beam_mod.gh': 'Structural beam analysis and modification tools. Explore engineering applications.',
+        'brep_union.gh': 'Boolean operations on solid geometry. Perfect for architectural modeling and design.',
+        'rnd_lattice.gh': 'Generate random lattice structures. Great for exploring algorithmic architectural forms.',
+        'rnd_node.gh': 'Node-based random geometry generation with customizable parameters.',
+        'srf_kmeans.gh': 'Surface analysis using K-means clustering. Advanced computational geometry techniques.',
+        'Bending_gridshell.gh': 'Grid shell bending analysis and visualization. Structural engineering applications.',
+        'QuadPanelAperture.gh': 'Quad panel systems with aperture control. Architectural facade design tools.',
+        'SampleGHConvertTo3dm.gh': 'Conversion utilities for Grasshopper to Rhino file formats. File processing examples.'
+      };
+      
+      return {
+        ...def,
+        displayName: def.name.replace('.gh', ''),
+        description: descriptions[def.name] || 'Interactive Grasshopper definition with real-time parameter control.'
+      };
+    });
+
     // Serve the homepage for browser requests (default)
     res.render('homepage', {
       title: 'SoftlyPlease - Interactive Grasshopper Examples',
-      definitions: definitions
+      definitions: definitionsWithInfo
     });
   }
 })

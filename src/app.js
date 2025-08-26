@@ -52,8 +52,14 @@ console.log('Server Port:', config.server.port)
 console.log('Environment:', config.server.env)
 console.log('===================================================')
 
-app.set('view engine', 'hbs');
+app.set('view engine', 'hbs')
 app.set('views', './src/views')
+
+// Register Handlebars helpers
+const hbs = require('hbs')
+hbs.registerHelper('replace', function(str, oldStr, newStr) {
+  return str.replace(oldStr, newStr)
+})
 
 // Routes for this app
 app.use('/examples', express.static(__dirname + '/examples'))
@@ -66,7 +72,7 @@ app.use('/', require('./routes/index'))
 
 // ref: https://github.com/expressjs/express/issues/3589
 // remove line when express@^4.17
-express.static.mime.types["wasm"] = "application/wasm";
+express.static.mime.types['wasm'] = 'application/wasm'
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -79,7 +85,7 @@ app.use(function(err, req, res, next) {
   res.locals.message = err.message
   console.error(err)
   res.locals.error = req.app.get('env') === 'development' ? err : {}
-  data = { message: err.message }
+  const data = { message: err.message }
   if (req.app.get('env') === 'development')
   {
     data.stack = err.stack

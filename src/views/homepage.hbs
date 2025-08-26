@@ -140,11 +140,11 @@
             <a href="/examples/">View All Interactive Examples →</a>
         </div>
 
-        <div id="stats" class="stats" style="display: none;">
+        <div id="stats" class="stats">
             <h3>Platform Statistics</h3>
             <div class="stats-grid">
                 <div class="stat-item">
-                    <div class="stat-number" id="definition-count">0</div>
+                    <div class="stat-number">{{definitions.length}}</div>
                     <div class="stat-label">Definitions</div>
                 </div>
                 <div class="stat-item">
@@ -159,77 +159,13 @@
         </div>
 
         <div id="definitions" class="examples-grid">
-            <div class="loading">Loading Grasshopper definitions...</div>
+            {{#each definitions}}
+            <a href="/examples/{{this.displayName}}/" class="example-card">
+                <h3>{{this.displayName}}</h3>
+                <p>{{this.description}}</p>
+            </a>
+            {{/each}}
         </div>
-
-        <div id="error" class="error" style="display: none;"></div>
     </div>
-
-    <script>
-        // Descriptions for each definition
-        const descriptions = {
-            'BranchNodeRnd.gh': 'Generate parametric spiky spheres with adjustable radius, count, and length parameters. Real-time 3D visualization.',
-            'delaunay.gh': 'Create Delaunay triangulation from point clouds. Perfect for mesh generation from scattered data points.',
-            'dresser3.gh': 'Interactive furniture design tool with width, height, and depth controls. Explore parametric furniture design.',
-            'metaballTable.gh': 'Dynamic table design using metaball algorithms. Interactive point manipulation with real-time updates.',
-            'bendy.gh': 'Physics-based deformation using Kangaroo solver. Explore structural bending and material behavior.',
-            'docString.gh': 'Advanced example showing how to return complete Rhino documents from Grasshopper definitions.',
-            'multi.gh': 'Dynamic file selection interface allowing you to switch between different Grasshopper definitions.',
-            'upload.gh': 'File upload capability demonstration. Shows how to process external files as input parameters.',
-            'valueList.gh': 'Working with value lists as input parameters. Demonstrates dropdown and selection interfaces.',
-            'beam_mod.gh': 'Structural beam analysis and modification tools. Explore engineering applications.',
-            'brep_union.gh': 'Boolean operations on solid geometry. Perfect for architectural modeling and design.',
-            'rnd_lattice.gh': 'Generate random lattice structures. Great for exploring algorithmic architectural forms.',
-            'rnd_node.gh': 'Node-based random geometry generation with customizable parameters.',
-            'srf_kmeans.gh': 'Surface analysis using K-means clustering. Advanced computational geometry techniques.',
-            'Bending_gridshell.gh': 'Grid shell bending analysis and visualization. Structural engineering applications.',
-            'QuadPanelAperture.gh': 'Quad panel systems with aperture control. Architectural facade design tools.',
-            'SampleGHConvertTo3dm.gh': 'Conversion utilities for Grasshopper to Rhino file formats. File processing examples.'
-        };
-
-        async function loadDefinitions() {
-            try {
-                const response = await fetch('/?format=json');
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const definitions = await response.json();
-
-                // Update stats
-                document.getElementById('definition-count').textContent = definitions.length;
-                document.getElementById('stats').style.display = 'block';
-
-                // Create definition cards
-                const definitionsContainer = document.getElementById('definitions');
-                definitionsContainer.innerHTML = '';
-
-                definitions.forEach(definition => {
-                    const card = document.createElement('a');
-                    card.className = 'example-card';
-                    card.href = `/examples/${definition.name.replace('.gh', '')}/`;
-
-                    const description = descriptions[definition.name] || 'Interactive Grasshopper definition with real-time parameter control.';
-
-                    card.innerHTML = `
-                        <h3>${definition.name.replace('.gh', '')}</h3>
-                        <p>${description}</p>
-                    `;
-
-                    definitionsContainer.appendChild(card);
-                });
-
-            } catch (error) {
-                console.error('Error loading definitions:', error);
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('error').textContent = `Failed to load definitions: ${error.message}`;
-                document.getElementById('definitions').innerHTML = '<div class="loading">Failed to load definitions. Please check the console for details.</div>';
-            }
-        }
-
-        // Load definitions when page loads
-        document.addEventListener('DOMContentLoaded', loadDefinitions);
-    </script>
 </body>
 </html>
