@@ -26,10 +26,19 @@ app.use(compression())
 const argIndex = process.argv.indexOf('--computeUrl')
 if (argIndex > -1)
   process.env.RHINO_COMPUTE_URL = process.argv[argIndex + 1]
-if (!process.env.RHINO_COMPUTE_URL)
+// Configure compute server URL
+if (!process.env.RHINO_COMPUTE_URL) {
   process.env.RHINO_COMPUTE_URL = process.env.NODE_ENV === 'production'
-    ? 'http://4.248.252.92/'  // Your Azure VM IP for production
+    ? (process.env.RHINO_COMPUTE_URL || 'http://4.248.252.92/')  // Your Azure VM IP for production
     : 'http://localhost:6500/' // default for development
+}
+
+// Log configuration for debugging
+if (process.env.NODE_ENV === 'production') {
+  console.log('🚀 Production mode - Using compute server:', process.env.RHINO_COMPUTE_URL)
+} else {
+  console.log('🔧 Development mode - Using compute server:', process.env.RHINO_COMPUTE_URL)
+}
 
 console.log('RHINO_COMPUTE_URL: ' + process.env.RHINO_COMPUTE_URL)
 

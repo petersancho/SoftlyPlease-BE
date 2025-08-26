@@ -102,7 +102,9 @@ requests while the child processes are launching.")]
 
                     if (port > 0)
                     {
-                        b.UseUrls($"http://localhost:{port}");
+                        // Use environment variable if set, otherwise default to all interfaces
+                        var urls = Environment.GetEnvironmentVariable("RHINO_COMPUTE_URLS") ?? $"http://0.0.0.0:{port}";
+                        b.UseUrls(urls);
                         ComputeChildren.ParentPort = port;
                     }
 

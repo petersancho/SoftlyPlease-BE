@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoftlyPlease - Interactive Grasshopper</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            color: black;
+        }
+        .header {
+            text-align: center;
+            background: #f8f8f8;
+            color: black;
+            padding: 40px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 30px;
+        }
+        .definitions {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .definition-card {
+            background: #f8f8f8;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .definition-card:hover {
+            border-color: #666;
+            background: #f0f0f0;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .definition-card.selected {
+            border-color: #333;
+            background: #e0e0e0;
+        }
+        .parameters {
+            background: #f8f8f8;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            margin-bottom: 30px;
+        }
+        .parameter {
+            margin-bottom: 15px;
+        }
+        .parameter label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: normal;
+        }
+        .parameter input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            background: white;
+            color: black;
+            font-size: 16px;
+        }
+        .solve-btn {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        .solve-btn:hover {
+            background: #555;
+        }
+        .results {
+            background: #f8f8f8;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            min-height: 200px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.loading {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #999;
+        }
+        .status.success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #4caf50;
+        }
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #f44336;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ddd;
+            border-top: 3px solid #333;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>SoftlyPlease</h1>
+        <p>Interactive Grasshopper Definition Solver</p>
+    </div>
+
+    <div id="status" class="status" style="display: none;"></div>
+
+    <div class="definitions" id="definitions"></div>
+
+    <div class="parameters" id="parameters" style="display: none;">
+        <h2>Parameters</h2>
+        <div id="parameterInputs"></div>
+        <button class="solve-btn" onclick="solveDefinition()">Solve Definition</button>
+    </div>
+
+    <div class="results" id="results" style="display: none;">
+        <h2>Results</h2>
+        <pre id="resultsContent"></pre>
+    </div>
+
+    <script>
+        let selectedDefinition = null;
+
+        async function loadDefinitions() {
+            try {
+                showStatus('Loading definitions...', 'loading');
+
+                const response = await fetch('https://softlyplease.com/');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const definitions = await response.json();
+
+                const container = document.getElementById('definitions');
+                container.innerHTML = '';
+
+                definitions.forEach(def => {
+                    const card = document.createElement('div');
+                    card.className = 'definition-card';
+                    card.onclick = () => selectDefinition(def.name);
+
+                    card.innerHTML = `
+                        <h3>${def.name.replace('.gh', '')}</h3>
+                        <p>Click to select this definition</p>
+                    `;
+
+                    container.appendChild(card);
+                });
+
+                showStatus(`Loaded ${definitions.length} definitions successfully!`, 'success');
+                setTimeout(() => hideStatus(), 3000);
+
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+                console.error('Error loading definitions:', error);
+            }
+        }
+
+        async function selectDefinition(name) {
+            selectedDefinition = name;
+
+            // Update UI
+            document.querySelectorAll('.definition-card').forEach(card => {
+                card.classList.remove('selected');
+                if (card.querySelector('h3').textContent === name.replace('.gh', '')) {
+                    card.classList.add('selected');
+                }
+            });
+
+            // Load definition details
+            try {
+                showStatus('Loading definition details...', 'loading');
+
+                const response = await fetch(`https://softlyplease.com/definition/${name}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const details = await response.json();
+
+                const paramsContainer = document.getElementById('parameterInputs');
+                paramsContainer.innerHTML = '';
+
+                if (details.inputs && details.inputs.length > 0) {
+                    details.inputs.forEach(input => {
+                        const paramDiv = document.createElement('div');
+                        paramDiv.className = 'parameter';
+
+                        paramDiv.innerHTML = `
+                            <label for="${input.name}">${input.name} (${input.type})</label>
+                            <input type="number" id="${input.name}" placeholder="Enter value"
+                                   step="any" value="${input.default || 50}">
+                        `;
+
+                        paramsContainer.appendChild(paramDiv);
+                    });
+                } else {
+                    // Default parameters if no inputs defined
+                    paramsContainer.innerHTML = `
+                        <div class="parameter">
+                            <label for="param1">Parameter 1</label>
+                            <input type="number" id="param1" value="50">
+                        </div>
+                        <div class="parameter">
+                            <label for="param2">Parameter 2</label>
+                            <input type="number" id="param2" value="100">
+                        </div>
+                    `;
+                }
+
+                document.getElementById('parameters').style.display = 'block';
+                showStatus('Definition loaded! Enter parameters and click Solve.', 'success');
+                setTimeout(() => hideStatus(), 3000);
+
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+                console.error('Error loading definition:', error);
+            }
+        }
+
+        async function solveDefinition() {
+            if (!selectedDefinition) {
+                showStatus('Please select a definition first!', 'error');
+                return;
+            }
+
+            try {
+                showStatus('Solving definition...', 'loading');
+
+                // Collect parameters
+                const parameters = {};
+                document.querySelectorAll('#parameterInputs input').forEach(input => {
+                    const value = parseFloat(input.value);
+                    if (!isNaN(value)) {
+                        parameters[input.id] = value;
+                    }
+                });
+
+                console.log('Sending parameters:', parameters);
+
+                // Send solve request
+                const response = await fetch(`https://softlyplease.com/solve/${selectedDefinition}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(parameters)
+                });
+
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const result = await response.json();
+                console.log('Result:', result);
+
+                // Show results
+                document.getElementById('resultsContent').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('results').style.display = 'block';
+
+                showStatus('Definition solved successfully!', 'success');
+                setTimeout(() => hideStatus(), 5000);
+
+            } catch (error) {
+                showStatus('Error solving definition: ' + error.message, 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            statusEl.style.display = 'block';
+
+            if (type === 'loading') {
+                statusEl.innerHTML = '<div class="spinner"></div>' + message;
+            }
+        }
+
+        function hideStatus() {
+            document.getElementById('status').style.display = 'none';
+        }
+
+        // Load definitions when page loads
+        window.addEventListener('load', loadDefinitions);
+
+        // Auto-reload definitions every 30 seconds
+        setInterval(loadDefinitions, 30000);
+    </script>
+</body>
+</html>

@@ -5,19 +5,65 @@
         <link rel="icon" href="data:,">
         <title>{{name}}</title>
         <style>
+            * {
+                font-family: 'Times New Roman', serif;
+            }
             body {
                 margin: 0;
-                font-family: Arial, Helvetica, sans-serif;
+                background: white;
+                color: black;
             }
             canvas { width: 100%; height: 100%; }
             input[type=range] { width: 100%; }
+            input[type=number] {
+                width: 100%;
+                padding: 8px;
+                border: 2px solid #ccc;
+                border-radius: 5px;
+                background: white;
+                color: black;
+            }
+            input[type=checkbox] { margin-left: 10px; }
             #container { position: relative; }
             #container canvas, #overlay { position: absolute; }
-            #overlay { z-index: 1; width: 100%; }
-            #overlay div { padding: 5px; }
+            #overlay {
+                z-index: 1;
+                width: 100%;
+                background: rgba(248, 248, 248, 0.9);
+                padding: 20px;
+                border-bottom: 1px solid #ddd;
+            }
+            #overlay div {
+                padding: 10px;
+                margin-bottom: 10px;
+                background: white;
+                border-radius: 5px;
+                border: 1px solid #ddd;
+            }
+            #overlay label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: normal;
+            }
+            #overlay button {
+                background: #333;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+            }
+            #overlay button:hover {
+                background: #555;
+            }
+            #overlay button:disabled {
+                background: #999;
+                cursor: not-allowed;
+            }
             #loader {
-                border: 5px solid #f3f3f3; /* Light grey */
-                border-top: 5px solid #3d3d3d; /* Grey */
+                border: 5px solid #ddd;
+                border-top: 5px solid #333;
                 border-radius: 50%;
                 width: 40px;
                 height: 40px;
@@ -146,8 +192,8 @@ function init() {
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000)
     camera.position.set(1, -1, 1) // like perspective view
 
-    // very light grey for background, like rhino
-    scene.background = new THREE.Color('whitesmoke')
+    // white background
+    scene.background = new THREE.Color('white')
 
     // create the renderer and add it to the html
     renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -159,11 +205,11 @@ function init() {
     controls = new OrbitControls(camera, renderer.domElement)
 
     // add a directional light
-    const directionalLight = new THREE.DirectionalLight( 0xffffff )
-    directionalLight.intensity = 2
+    const directionalLight = new THREE.DirectionalLight( 0x999999 )
+    directionalLight.intensity = 1.5
     scene.add( directionalLight )
 
-    const ambientLight = new THREE.AmbientLight()
+    const ambientLight = new THREE.AmbientLight(0x666666, 0.8)
     scene.add( ambientLight )
 
     // handle changes in the window size
