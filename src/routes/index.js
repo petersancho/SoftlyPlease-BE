@@ -33,13 +33,21 @@ function setComputeParams (){
  * used to call '/:definition_name` for details about a specific definition
  */
 router.get('/',  function(req, res, next) {
-  let definitions = []
-  req.app.get('definitions').forEach( def => {
-    definitions.push({name: def.name})
-  })
+  // If requesting JSON format, return JSON data
+  if (req.query.format === 'json') {
+    let definitions = []
+    req.app.get('definitions').forEach( def => {
+      definitions.push({name: def.name})
+    })
 
-  res.setHeader('Content-Type', 'application/json')
-  res.send(JSON.stringify(definitions))
+    res.setHeader('Content-Type', 'application/json')
+    res.send(JSON.stringify(definitions))
+  } else {
+    // Otherwise, serve the HTML homepage
+    res.render('homepage', {
+      title: 'SoftlyPlease - Interactive Grasshopper Definitions'
+    })
+  }
 })
 
 function describeDefinition(definition, req, res, next){
