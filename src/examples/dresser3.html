@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoftlyPlease - 3D Dresser</title>
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.156.1/build/three.module.js",
+                "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.156.1/examples/jsm/controls/OrbitControls.js",
+                "three/examples/jsm/loaders/3DMLoader": "https://unpkg.com/three@0.156.1/examples/jsm/loaders/3DMLoader.js",
+                "rhino3dm": "https://unpkg.com/rhino3dm@8.0.0-beta/rhino3dm.module.js"
+            }
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Times New Roman', serif;
+        }
+
+        body {
+            background: white;
+            min-height: 100vh;
+            color: black;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            color: black;
+            font-weight: normal;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .nav-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #333;
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .nav-link:hover {
+            background: #555;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .parameters-panel {
+            background: #f8f8f8;
+            border-radius: 10px;
+            padding: 30px;
+            border: 1px solid #ddd;
+        }
+
+        .parameters-panel h2 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .parameter {
+            margin-bottom: 25px;
+        }
+
+        .parameter label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: normal;
+        }
+
+        .parameter input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            background: white;
+            color: black;
+            font-size: 1rem;
+        }
+
+        .parameter input:focus {
+            outline: none;
+            border-color: #666;
+        }
+
+        .solve-btn {
+            width: 100%;
+            padding: 15px;
+            background: #333;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: normal;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .solve-btn:hover {
+            background: #555;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .solve-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .viewer-panel {
+            grid-column: 1 / -1;
+            background: #f8f8f8;
+            border-radius: 10px;
+            padding: 30px;
+            border: 1px solid #ddd;
+            margin-top: 30px;
+        }
+
+        .viewer-panel h2 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        #viewer {
+            width: 100%;
+            height: 600px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: normal;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="../" class="nav-link">← Back to Examples</a>
+
+    <div class="container">
+        <div class="header">
+            <h1>SoftlyPlease</h1>
+            <p>Interactive 3D Dresser Design</p>
+        </div>
+
+        <div class="main-content">
+            <div class="parameters-panel">
+                <h2>Design Parameters</h2>
+
+                <div class="parameter">
+                    <label for="width">Width (cm)</label>
+                    <input type="number" id="width" value="100" min="50" max="300" step="10">
+                </div>
+
+                <div class="parameter">
+                    <label for="height">Height (cm)</label>
+                    <input type="number" id="height" value="200" min="100" max="400" step="10">
+                </div>
+
+                <div class="parameter">
+                    <label for="depth">Depth (cm)</label>
+                    <input type="number" id="depth" value="50" min="30" max="150" step="5">
+                </div>
+
+                <button id="solve-btn" class="solve-btn">Generate 3D Model</button>
+            </div>
+        </div>
+
+        <div class="viewer-panel">
+            <h2>3D Preview</h2>
+            <div id="viewer">
+                <div class="loading">Click "Generate 3D Model" to see your design</div>
+            </div>
+            <div id="status" class="status info">Ready to generate</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+        import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader.js';
+        import rhino3dm from 'rhino3dm';
+
+        // Initialize Three.js scene
+        let scene, camera, renderer, controls;
+        let rhino, rhino3dmLoader;
+
+        // API Configuration
+        const API_BASE_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:3000'
+            : 'https://softlyplease-appserver.herokuapp.com';
+
+        // Initialize the scene
+        async function init() {
+            // Initialize rhino3dm
+            rhino = await rhino3dm();
+            rhino3dmLoader = new Rhino3dmLoader();
+            rhino3dmLoader.setLibraryPath('https://unpkg.com/rhino3dm@8.0.0-beta/');
+
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xffffff);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(200, 150, 200);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(100, 100, 50);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+
+            // Grid
+            const gridHelper = new THREE.GridHelper(400, 20, 0x888888, 0xcccccc);
+            scene.add(gridHelper);
+
+            document.getElementById('viewer').innerHTML = '';
+            document.getElementById('viewer').appendChild(renderer.domElement);
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Generate model function
+        async function generateModel() {
+            const solveBtn = document.getElementById('solve-btn');
+            const statusDiv = document.getElementById('status');
+
+            // Get parameters
+            const width = parseFloat(document.getElementById('width').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const depth = parseFloat(document.getElementById('depth').value);
+
+            // Update UI
+            solveBtn.disabled = true;
+            solveBtn.textContent = 'Generating...';
+            statusDiv.className = 'status info';
+            statusDiv.textContent = 'Sending request to server...';
+
+            try {
+                // Make API request
+                const response = await fetch(`${API_BASE_URL}/solve/dresser3.gh`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        inputs: {
+                            width: width,
+                            height: height,
+                            depth: depth
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                statusDiv.className = 'status success';
+                statusDiv.textContent = `Model generated successfully! (${result.computation_time}ms)`;
+
+                // Process and display the 3D model
+                if (result.outputs && result.outputs.geometry) {
+                    await displayGeometry(result.outputs.geometry);
+                }
+
+            } catch (error) {
+                console.error('Error generating model:', error);
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                solveBtn.disabled = false;
+                solveBtn.textContent = 'Generate 3D Model';
+            }
+        }
+
+        // Display geometry in the viewer
+        async function displayGeometry(geometryData) {
+            try {
+                // Clear previous geometry
+                scene.children = scene.children.filter(child =>
+                    child.type === 'AmbientLight' ||
+                    child.type === 'DirectionalLight' ||
+                    child.type === 'GridHelper'
+                );
+
+                // Convert base64 to ArrayBuffer
+                const geometryBuffer = Uint8Array.from(atob(geometryData), c => c.charCodeAt(0));
+
+                // Load the geometry
+                rhino3dmLoader.parse(geometryBuffer, function(object) {
+                    if (object && object.children) {
+                        object.children.forEach(child => {
+                            if (child.geometry) {
+                                const material = new THREE.MeshLambertMaterial({
+                                    color: 0x8B4513,
+                                    transparent: true,
+                                    opacity: 0.9
+                                });
+                                const mesh = new THREE.Mesh(child.geometry, material);
+                                mesh.castShadow = true;
+                                mesh.receiveShadow = true;
+                                scene.add(mesh);
+                            }
+                        });
+
+                        // Fit camera to object
+                        const box = new THREE.Box3().setFromObject(object);
+                        const center = box.getCenter(new THREE.Vector3());
+                        const size = box.getSize(new THREE.Vector3());
+
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        const fov = camera.fov * (Math.PI / 180);
+                        let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+                        cameraZ *= 2.5;
+
+                        camera.position.set(center.x + cameraZ, center.y + cameraZ, center.z + cameraZ);
+                        camera.lookAt(center);
+                        controls.target.copy(center);
+                        controls.update();
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error displaying geometry:', error);
+                throw error;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('solve-btn').addEventListener('click', generateModel);
+
+        // Initialize when page loads
+        init();
+    </script>
+</body>
+</html>
