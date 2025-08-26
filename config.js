@@ -7,14 +7,14 @@ const config = {
   // Rhino Compute Server Configuration
   rhino: {
     url: process.env.RHINO_COMPUTE_URL || 'http://4.248.252.92:6500/',
-    apiKey: process.env.RHINO_COMPUTE_APIKEY || 'softlyplease-secure-key-2024',
+    apiKey: process.env.RHINO_COMPUTE_APIKEY || 'p2robot-13a6-48f3-b24e-2025computeX',
     timeout: 30000,
     retries: 3
   },
 
   // AppServer Configuration
   server: {
-    port: process.env.PORT || 3000,
+    port: process.env.PORT || (process.env.NODE_ENV === 'production' ? 80 : 3000),
     host: process.env.HOST || '0.0.0.0',
     env: process.env.NODE_ENV || 'development',
     concurrency: process.env.WEB_CONCURRENCY || 1
@@ -48,8 +48,8 @@ const config = {
 
   // Bootstrap Configuration (for VM deployment)
   bootstrap: {
-    computeUrl: process.env.COMPUTE_URL || 'http://0.0.0.0:80',
-    appServerUrl: process.env.APPSERVER_URL || 'http://localhost:3000',
+    computeUrl: process.env.COMPUTE_URL || 'http://localhost:6500',
+    appServerUrl: process.env.APPSERVER_URL || 'http://localhost:80',
     networkInterface: '0.0.0.0'
   }
 };
