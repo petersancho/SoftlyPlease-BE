@@ -41,7 +41,8 @@ function collectParams (req, res, next){
     res.locals.params.inputs = req.query
     break
   case 'POST':
-    res.locals.params = req.body
+    res.locals.params.definition = req.body.definition
+    res.locals.params.inputs = req.body.inputs || {}
     break
   default:
     next()
@@ -51,9 +52,13 @@ function collectParams (req, res, next){
   let definitionName = res.locals.params.definition
   if (definitionName===undefined)
     definitionName = res.locals.params.pointer
+
   definition = req.app.get('definitions').find(o => o.name === definitionName)
-  if(!definition)
-    throw new Error('Definition not found on server.')
+  if(!definition) {
+    const error = new Error(`Definition '${definitionName}' not found on server.`)
+    error.status = 404
+    throw error
+  }
 
   //replace definition data with object that includes definition hash
   res.locals.params.definition = definition
@@ -108,23 +113,18 @@ function commonSolve (req, res, next){
   const timePostStart = performance.now()
 
   // set general headers
-  // what is the proper max-age, 31536000 = 1 year, 86400 = 1 day
   res.setHeader('Cache-Control', 'public, max-age=31536000')
   res.setHeader('Content-Type', 'application/json')
 
   if(res.locals.cacheResult !== null) {
-    //send
-    //console.log(res.locals.cacheResult)
     const timespanPost = Math.round(performance.now() - timePostStart)
     res.setHeader('Server-Timing', `cacheHit;dur=${timespanPost}`)
     res.send(res.locals.cacheResult)
     return
   } else {
     //solve
-    //console.log('solving')
-    // set parameters
     let trees = []
-    if(res.locals.params.inputs !== undefined) { //TODO: handle no inputs
+    if(res.locals.params.inputs !== undefined && Object.keys(res.locals.params.inputs).length > 0) {
       for (let [key, value] of Object.entries(res.locals.params.inputs)) {
         let param = new compute.Grasshopper.DataTree(key)
         param.append([0], Array.isArray(value) ? value : [value])
@@ -139,54 +139,41 @@ function commonSolve (req, res, next){
       }
     }
 
+    // If no inputs provided, add a minimal default input to prevent compute errors
+    if(trees.length === 0) {
+      let param = new compute.Grasshopper.DataTree('default')
+      param.append([0], [1])
+      trees.push(param)
+    }
+
     let fullUrl = req.protocol + '://' + req.get('host')
     let definitionPath = `${fullUrl}/definition/${definition.id}`
     const timePreComputeServerCall = performance.now()
-    let computeServerTiming = null
 
     // call compute server
     compute.Grasshopper.evaluateDefinition(definitionPath, trees, false).then( (response) => {
-        
-      // Throw error if response not ok
+
       if(!response.ok) {
-        throw new Error(response.statusText)
-      } else {
-        computeServerTiming = response.headers
-        return response.text()
+        const errorMsg = `Compute server error: ${response.status} ${response.statusText}`
+        console.error(errorMsg)
+        throw new Error(errorMsg)
       }
 
-    }).then( (result) => {
-      // Note: IIS does not send these headers which was causing an issue with the appserver response
-      /*const timeComputeServerCallComplete = performance.now()
+      return response.text()
 
-      let computeTimings = computeServerTiming.get('server-timing')
-      let sum = 0
-      computeTimings.split(',').forEach(element => {
-        let t = element.split('=')[1].trim()
-        sum += Number(t)
-      })
-      const timespanCompute = timeComputeServerCallComplete - timePreComputeServerCall
-      const timespanComputeNetwork = Math.round(timespanCompute - sum)
-      const timespanSetup = Math.round(timePreComputeServerCall - timePostStart)
-      const timing = `setup;dur=${timespanSetup}, ${computeTimings}, network;dur=${timespanComputeNetwork}`
-        
+    }).then( (result) => {
+      // Cache the result
       if(mc !== null) {
-        //set memcached
-        mc.set(res.locals.cacheKey, result, {expires:0}, function(err, val){
-          console.log(err)
-          console.log(val)
-        })
+        mc.set(res.locals.cacheKey, result, {expires:0})
       } else {
-        //set node-cache
         cache.set(res.locals.cacheKey, result)
       }
 
-      res.setHeader('Server-Timing', timing)*/
-      
       const r = JSON.parse(result)
       delete r.pointer
       res.send(JSON.stringify(r))
-    }).catch( (error) => { 
+    }).catch( (error) => {
+      console.error('Solve error:', error)
       next(error)
     })
   }

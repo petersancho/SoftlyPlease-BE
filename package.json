@@ -33,9 +33,9 @@
   "engines": {
     "node": "16.x"
   },
-  "main": "./bin/www",
+  "main": "./src/bin/www",
   "bin": {
-    "compute-rhino3d-appserver": ".src/bin/www"
+    "compute-rhino3d-appserver": "./src/bin/www"
   },
   "scripts": {
     "start": "node ./src/bin/www",
@@ -67,3 +67,4 @@
     "cross-env": "^7.0.3"
   }
 }
+

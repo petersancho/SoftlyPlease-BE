@@ -73,3 +73,4 @@ async function getParams(definitionUrl) {
 }
 
 module.exports = { registerDefinitions, getParams }
+
