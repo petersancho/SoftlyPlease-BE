@@ -4,16 +4,25 @@ const compression = require('compression')
 const logger = require('morgan')
 const cors = require('cors')
 
+// Load McNeel AppServer configuration
+const config = require('../config')
+
 // create express web server app
 const app = express()
 
 // log requests to the terminal when running in a local debug setup
-if(process.env.NODE_ENV !== 'production')
+if(config.server.env !== 'production')
   app.use(logger('dev'))
 
 app.use(express.json({limit: '10mb'}))
 app.use(express.urlencoded({ extended: false }))
-app.use(cors())
+
+// Configure CORS with McNeel standards
+app.use(cors({
+  origin: config.cors.origin,
+  credentials: config.cors.credentials
+}))
+
 app.use(compression())
 
 // Define URL for our compute server
@@ -26,10 +35,22 @@ app.use(compression())
 const argIndex = process.argv.indexOf('--computeUrl')
 if (argIndex > -1)
   process.env.RHINO_COMPUTE_URL = process.argv[argIndex + 1]
+// McNeel Rhino Compute AppServer Configuration
+// Set RHINO_COMPUTE_URL to point to your Rhino Compute server
+// For local development: http://localhost:6500/
+// For VM deployment: http://your-vm-ip:6500/
 if (!process.env.RHINO_COMPUTE_URL)
-  process.env.RHINO_COMPUTE_URL = 'http://localhost:6500/' // default if nothing else exists
+  process.env.RHINO_COMPUTE_URL = config.rhino.url
 
-console.log('RHINO_COMPUTE_URL: ' + process.env.RHINO_COMPUTE_URL)
+if (!process.env.RHINO_COMPUTE_APIKEY)
+  process.env.RHINO_COMPUTE_APIKEY = config.rhino.apiKey
+
+console.log('=== McNeel Rhino Compute AppServer Configuration ===')
+console.log('RHINO_COMPUTE_URL:', process.env.RHINO_COMPUTE_URL)
+console.log('RHINO_COMPUTE_APIKEY:', process.env.RHINO_COMPUTE_APIKEY ? '***configured***' : 'not set')
+console.log('Server Port:', config.server.port)
+console.log('Environment:', config.server.env)
+console.log('===================================================')
 
 app.set('view engine', 'hbs');
 app.set('views', './src/views')
