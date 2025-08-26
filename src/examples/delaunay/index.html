@@ -4,9 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SoftlyPlease - Delaunay Triangulation</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/rhino3dm@0.15.0-beta/rhino3dm.min.js"></script>
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.156.1/build/three.module.js",
+                "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.156.1/examples/jsm/controls/OrbitControls.js",
+                "three/examples/jsm/loaders/3DMLoader": "https://unpkg.com/three@0.156.1/examples/jsm/loaders/3DMLoader.js",
+                "rhino3dm": "https://unpkg.com/rhino3dm@8.0.0-beta/rhino3dm.module.js"
+            }
+        }
+    </script>
     <style>
         * {
             margin: 0;
@@ -233,9 +241,13 @@
             <div id="viewer"></div>
         </div>
     </div>
-    <script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+        import rhino3dm from 'rhino3dm';
+
         let scene, camera, renderer, controls;
-        let rhino3dm = null;
+        let rhino = null;
 
         // Initialize Three.js scene
         function initViewer() {
@@ -307,36 +319,108 @@
         // Render geometry in the viewer
         function renderGeometry(data) {
             // Clear previous geometry
-            scene.children = scene.children.filter(child => child.type === 'Light');
+            scene.children = scene.children.filter(child => child.type === 'Light' || child.type === 'Mesh' || child.type === 'Line');
 
-            // Add new geometry (simplified example)
-            data.forEach(item => {
-                if (item.type === 'mesh') {
-                    const geometry = new THREE.BufferGeometry();
-                    // Convert rhino3dm mesh to Three.js geometry
-                    // This is a simplified example - you'll need to adapt based on your data structure
+            if (!data || !data.values || data.values.length === 0) {
+                console.log('No geometry data to render');
+                return;
+            }
 
-                    const material = new THREE.MeshLambertMaterial({
-                        color: 0x666666,
-                        transparent: true,
-                        opacity: 0.8
+            // Process each output value
+            data.values.forEach((value, index) => {
+                if (value.InnerTree && value.InnerTree['{0;0}']) {
+                    value.InnerTree['{0;0}'].forEach(item => {
+                        if (item.data) {
+                            try {
+                                // Parse rhino3dm data
+                                const rhinoObject = rhino.CommonObject.decode(JSON.parse(item.data));
+                                if (rhinoObject) {
+                                    // Convert to Three.js mesh
+                                    if (rhinoObject.objectType === rhino.ObjectType.Mesh) {
+                                        const geometry = convertRhinoMeshToThree(rhinoObject);
+                                        if (geometry) {
+                                            const material = new THREE.MeshLambertMaterial({
+                                                color: new THREE.Color().setHSL(index * 0.1, 0.7, 0.5),
+                                                transparent: true,
+                                                opacity: 0.8
+                                            });
+                                            const mesh = new THREE.Mesh(geometry, material);
+                                            scene.add(mesh);
+                                        }
+                                    } else if (rhinoObject.objectType === rhino.ObjectType.Brep) {
+                                        // Handle Brep geometry
+                                        const mesh = rhinoObject.getMesh();
+                                        if (mesh) {
+                                            const geometry = convertRhinoMeshToThree(mesh);
+                                            if (geometry) {
+                                                const material = new THREE.MeshLambertMaterial({
+                                                    color: new THREE.Color().setHSL(index * 0.1, 0.7, 0.5),
+                                                    transparent: true,
+                                                    opacity: 0.8
+                                                });
+                                                const meshObj = new THREE.Mesh(geometry, material);
+                                                scene.add(meshObj);
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (error) {
+                                console.error('Error parsing geometry:', error);
+                            }
+                        }
                     });
-
-                    const mesh = new THREE.Mesh(geometry, material);
-                    scene.add(mesh);
                 }
             });
 
             // Fit camera to scene
-            const box = new THREE.Box3().setFromObject(scene);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
+            if (scene.children.length > 2) { // More than just lights
+                const box = new THREE.Box3().setFromObject(scene);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
 
-            camera.position.copy(center);
-            camera.position.add(new THREE.Vector3(size.x, size.y, size.z));
-            camera.lookAt(center);
-            controls.target.copy(center);
-            controls.update();
+                if (size.length() > 0) {
+                    camera.position.copy(center);
+                    camera.position.add(new THREE.Vector3(size.x * 2, size.y * 2, size.z * 2));
+                    camera.lookAt(center);
+                    controls.target.copy(center);
+                    controls.update();
+                }
+            }
+        }
+
+        // Convert Rhino mesh to Three.js geometry
+        function convertRhinoMeshToThree(rhinoMesh) {
+            const vertices = [];
+            const faces = [];
+
+            // Get vertices
+            for (let i = 0; i < rhinoMesh.vertices().count; i++) {
+                const vertex = rhinoMesh.vertices().get(i);
+                vertices.push(vertex.x, vertex.y, vertex.z);
+            }
+
+            // Get faces
+            for (let i = 0; i < rhinoMesh.faces().count; i++) {
+                const face = rhinoMesh.faces().get(i);
+                if (face.isQuad) {
+                    // Convert quad to two triangles
+                    faces.push(face.a, face.b, face.c);
+                    faces.push(face.a, face.c, face.d);
+                } else {
+                    faces.push(face.a, face.b, face.c);
+                }
+            }
+
+            if (vertices.length === 0 || faces.length === 0) {
+                return null;
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setIndex(faces);
+            geometry.computeVertexNormals();
+
+            return geometry;
         }
 
         // Status functions
@@ -352,7 +436,17 @@
         }
 
         // Initialize the application
-        window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
+            // Initialize rhino3dm
+            try {
+                rhino = await rhino3dm();
+                console.log('rhino3dm initialized');
+            } catch (error) {
+                console.error('Failed to initialize rhino3dm:', error);
+                showStatus('Failed to initialize 3D viewer', 'error');
+                return;
+            }
+
             initViewer();
             showStatus('Ready to generate Delaunay triangulation! Adjust points and click Generate.', 'success');
         });

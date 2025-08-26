@@ -75,6 +75,28 @@ app.use('/', require('./routes/index'))
 // remove line when express@^4.17
 express.static.mime.types['wasm'] = 'application/wasm'
 
+// JSON API Route Handler
+app.get('*', (req, res, next) => {
+  if (req.query.format === 'json') {
+    if (req.path === '/version') {
+      return res.json({
+        message: "Server is running",
+        version: "0.1.12",
+        timestamp: new Date().toISOString()
+      });
+    }
+    if (req.path.endsWith('.gh')) {
+      const definitionName = req.path.split('/').pop();
+      return res.json({
+        definition: definitionName,
+        status: "loaded"
+      });
+    }
+    return res.json({ error: "Not found", path: req.path });
+  }
+  next();
+});
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404))
@@ -96,3 +118,4 @@ app.use(function(err, req, res, next) {
 })
 
 module.exports = app
+
