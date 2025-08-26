@@ -36,22 +36,23 @@ function registerDefinitions() {
   return definitions
 }
 
-async function getParams(definitionPath) {
+async function getParams(definition) {
   // TODO: set and forget!
   compute.url = process.env.RHINO_COMPUTE_URL
   compute.apiKey = process.env.RHINO_COMPUTE_KEY
 
-  console.log('Getting params for definition:', definitionPath)
+  console.log('Getting params for definition:', definition.name)
   console.log('Rhino Compute URL:', process.env.RHINO_COMPUTE_URL)
   console.log('API Key set:', !!process.env.RHINO_COMPUTE_KEY)
 
-  // Instead of passing a URL, read the file directly and encode it
+  // Read the definition file directly and encode it
   const fs = require('fs')
-  const path = require('path')
 
   try {
+    console.log('Reading definition file:', definition.path)
+
     // Read the definition file
-    const definitionContent = fs.readFileSync(definitionPath)
+    const definitionContent = fs.readFileSync(definition.path)
     const base64Content = definitionContent.toString('base64')
 
     console.log('Definition file read successfully, size:', definitionContent.length)

@@ -23,10 +23,8 @@ router.get('/', async(req, res, next) => {
     let data
     try {
 
-      let fullUrl = req.protocol + '://' + req.get('host')
-      let definitionPath = `${fullUrl}/definition/${definition.id}`
-
-      data = await getParams(definitionPath)
+      // Pass the definition object instead of a URL to avoid circular dependency
+      data = await getParams(definition)
     } catch (err) {
       console.log(err)
       next(err)
