@@ -17,15 +17,28 @@ let router = express.Router()
  */
 router.get('/:id', function(req, res, next) {
   let definition = req.app.get('definitions').find(o => o.id === req.params.id)
+
+  if (!definition) {
+    return res.status(404).send('Definition not found')
+  }
+
+  // Set headers to allow cross-origin access for Rhino Compute
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, RhinoComputeKey')
+
   const options = {
     headers: {
       'x-timestamp': Date.now(),
       'x-sent': true
     }
   }
+
   res.sendFile(definition.path, options, (error) => {
-    if(error !== undefined)
-      console.log(error)
+    if(error !== undefined) {
+      console.log('Error serving definition:', error)
+      res.status(500).send('Error serving definition')
+    }
   })
 })
 
