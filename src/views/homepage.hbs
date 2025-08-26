@@ -8,6 +8,23 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/rhino3dm@0.15.0-beta/rhino3dm.min.js"></script>
     <style>
+        /* Hide scrollbar for clean look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
         * {
             margin: 0;
             padding: 0;
@@ -43,6 +60,83 @@
             font-size: 1.2rem;
             opacity: 0.9;
             margin-bottom: 30px;
+        }
+
+        /* Navigation Bar */
+        .nav-bar {
+            background: #2c2c2c;
+            padding: 15px 0;
+            border-bottom: 3px solid #666;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .nav-links a:hover {
+            background: #444;
+        }
+
+        .nav-dropdown {
+            position: relative;
+        }
+
+        .nav-dropdown-content {
+            display: none;
+            position: absolute;
+            background: #333;
+            min-width: 200px;
+            border-radius: 6px;
+            padding: 10px 0;
+            top: 100%;
+            left: 0;
+            z-index: 1001;
+        }
+
+        .nav-dropdown:hover .nav-dropdown-content {
+            display: block;
+        }
+
+        .nav-dropdown-content a {
+            display: block;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 0;
+            text-align: left;
+        }
+
+        .nav-dropdown-content a:hover {
+            background: #555;
         }
 
         .main-content {
@@ -250,10 +344,59 @@
     </style>
 </head>
 <body>
+    <!-- Navigation Bar -->
+    <nav class="nav-bar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">SoftlyPlease</a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <div class="nav-dropdown">
+                    <a href="#" onclick="return false;">Examples ▼</a>
+                    <div class="nav-dropdown-content">
+                        <a href="/examples/spikyThing/">Spiky Thing</a>
+                        <a href="/examples/delaunay/">Delaunay</a>
+                        <a href="/examples/panels/">Panels</a>
+                        <a href="/examples/metaballTable/">Metaball Table</a>
+                        <a href="/examples/bendy/">Bendy</a>
+                        <a href="/examples/docString/">Documentation</a>
+                        <a href="/examples/multi/">Multi</a>
+                        <a href="/examples/upload/">Upload</a>
+                        <a href="/examples/valueList/">Value List</a>
+                        <a href="/examples/">All Examples</a>
+                    </div>
+                </div>
+                <div class="nav-dropdown">
+                    <a href="#" onclick="return false;">Definitions ▼</a>
+                    <div class="nav-dropdown-content">
+                        <a href="/solve/BranchNodeRnd.gh">Spiky Thing</a>
+                        <a href="/solve/delaunay.gh">Delaunay</a>
+                        <a href="/solve/dresser3.gh">Dresser</a>
+                        <a href="/solve/metaballTable.gh">Metaball Table</a>
+                        <a href="/solve/bendy.gh">Bendy</a>
+                        <a href="/solve/docString.gh">Documentation</a>
+                        <a href="/solve/multi.gh">Multi</a>
+                        <a href="/solve/upload.gh">Upload</a>
+                        <a href="/solve/value_list.gh">Value List</a>
+                        <a href="/solve/beam_mod.gh">Beam Mod</a>
+                        <a href="/solve/brep_union.gh">BREP Union</a>
+                        <a href="/solve/rnd_lattice.gh">Random Lattice</a>
+                        <a href="/solve/rnd_node.gh">Random Node</a>
+                        <a href="/solve/srf_kmeans.gh">Surface K-means</a>
+                        <a href="/solve/Bending_gridshell.gh">Grid Shell</a>
+                        <a href="/solve/QuadPanelAperture.gh">Quad Panel</a>
+                        <a href="/solve/SampleGHConvertTo3dm.gh">Convert to 3DM</a>
+                    </div>
+                </div>
+                <a href="/frontend/index.html">3D Interface</a>
+                <a href="/frontend/softlyplease-interface.html">Simple Interface</a>
+            </div>
+        </div>
+    </nav>
+
     <div class="container">
         <div class="header">
             <h1>SoftlyPlease</h1>
-            <p>Interactive Grasshopper Definitions</p>
+            <p>Interactive Grasshopper Definitions - All Pages Available on softlyplease.com</p>
         </div>
 
         <div class="status" id="status" style="display: none;"></div>
