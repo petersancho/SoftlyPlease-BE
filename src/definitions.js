@@ -41,11 +41,20 @@ async function getParams(definitionUrl) {
   compute.url = process.env.RHINO_COMPUTE_URL
   compute.apiKey = process.env.RHINO_COMPUTE_KEY
 
+  console.log('Attempting to fetch definition from:', definitionUrl)
+  console.log('Rhino Compute URL:', process.env.RHINO_COMPUTE_URL)
+  console.log('API Key set:', !!process.env.RHINO_COMPUTE_KEY)
+
   const response = await compute.computeFetch('io', { 'pointer': definitionUrl }, false)
-  
+
+  console.log('Response status:', response.status)
+  console.log('Response ok:', response.ok)
+
   // throw error if response not ok
   if(!response.ok) {
-    throw new Error(response.statusText)
+    const errorText = await response.text()
+    console.error('Response error details:', errorText)
+    throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
   }
 
   let result = await response.json()
