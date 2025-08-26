@@ -1,211 +1,189 @@
-# Rhino Compute AppServer - Production Ready
+# SoftlyPlease.com - Rhino Compute System
 
-A professional, production-ready Rhino Compute AppServer with custom domain support, interactive Grasshopper examples, and enterprise-grade architecture.
+## 📋 Repository Overview
 
-## 🚀 Quick Start
-
-Get your Rhino Compute AppServer running in under 30 minutes:
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/your-username/compute-sp.git
-cd compute-sp
-
-# 2. Set up Azure VM (run as Administrator)
-./scripts/azure/azure-vm-setup.ps1 -RhinoAccountsToken "YOUR_TOKEN" -ApiKey "YOUR_API_KEY"
-
-# 3. Deploy to Heroku
-./scripts/heroku/heroku-deploy.sh
-
-# 4. Test your setup
-curl https://yourdomain.com/?format=json
-```
-
-## 📋 What You Get
-
-✅ **Professional AppServer** - Node.js/Express with Handlebars templates  
-✅ **Interactive Examples** - Real-time Grasshopper parameter manipulation  
-✅ **Custom Domain** - Your own domain (e.g., softlyplease.com)  
-✅ **Enterprise Caching** - Memcached and in-memory caching  
-✅ **SSL Security** - Automatic HTTPS certificates  
-✅ **Production Ready** - Monitoring, logging, and error handling  
-
-## 🏗️ Architecture
-
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Web Browser   │───▶│  Heroku AppServer │───▶│ Azure VM Rhino  │
-│  (Custom Domain) │    │   (Node.js/Express) │    │   Compute Server │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
+This repository contains the complete Rhino Compute system for softlyplease.com, including the server infrastructure, API bridge, and comprehensive documentation.
 
 ## 📁 Repository Structure
 
 ```
-compute-sp/
-├── README.md                    # This file
-├── package.json                 # Dependencies and scripts
-├── Procfile                     # Heroku deployment
-├── Dockerfile                   # Container support
-├── src/                         # Application source code
-│   ├── app.js                  # Main Express application
-│   ├── routes/                 # API endpoints
-│   ├── views/                  # Handlebars templates
-│   ├── examples/               # Interactive examples
-│   └── files/                  # Grasshopper definitions
-├── docs/                        # Documentation
-│   └── setup/                  # Setup guides
-│       ├── SETUP-GUIDE.md      # Comprehensive setup guide
-│       └── QUICK-START.md      # 30-minute quick start
-└── scripts/                     # Automation scripts
-    ├── azure/                  # Azure VM setup
-    │   └── azure-vm-setup.ps1  # Complete VM automation
-    ├── heroku/                 # Heroku deployment
-    │   └── heroku-deploy.sh    # Automated deployment
-    └── config-template.js      # Configuration template
+├── docs/                          # 📚 Documentation
+│   ├── guides/                    # Setup and operation guides
+│   │   ├── initial-setup.md       # Complete setup instructions
+│   │   ├── system-architecture.md # Technical architecture
+│   │   ├── quick-reference.md     # Essential commands
+│   │   └── RHINO-COMPUTE-MASTER-GUIDE.md # Ultimate guide
+│   ├── operations/                # Maintenance & troubleshooting
+│   │   ├── troubleshooting.md     # Common issues & solutions
+│   │   └── backup.md             # Backup & recovery procedures
+│   └── reference/                # Technical reference docs
+
+├── frontend/                      # 🌐 Website frontend
+│   ├── index.html                # Advanced 3D interface
+│   └── softlyplease-interface.html # Simple testing interface
+
+├── compute.rhino3d/              # 🦏 Rhino Compute Server
+│   ├── src/                      # Source code
+│   ├── script/                   # Installation & management scripts
+│   └── tools/                    # Development tools
+
+└── compute.rhino3d.appserver/    # 🚀 Node.js API Server
+    ├── src/                      # Express.js application
+    ├── docs/                     # Original documentation
+    └── deploy-to-heroku.ps1     # Heroku deployment script
 ```
 
-## 🔧 Prerequisites
+## 🏗️ System Architecture
 
-- **Azure Account** - For Windows VM hosting
-- **Heroku Account** - For AppServer deployment
-- **Custom Domain** - Your own domain name
-- **Rhino 7 License** - For Rhino Compute server
-- **Git Repository** - For version control
+```
+softlyplease.com (Frontend)
+        ↓
+  AppServer on Heroku (Node.js)
+        ↓
+Rhino Compute on Azure VM (Windows)
+        ↓
+    Rhino + Grasshopper
+```
 
-## 📚 Documentation
+## 🚀 Quick Start
 
-- **[Quick Start Guide](docs/setup/QUICK-START.md)** - Get running in 30 minutes
-- **[Complete Setup Guide](docs/setup/SETUP-GUIDE.md)** - Comprehensive documentation
-- **[Azure VM Setup](scripts/azure/azure-vm-setup.ps1)** - Automated VM configuration
-- **[Heroku Deployment](scripts/heroku/heroku-deploy.sh)** - Automated deployment
+### 1. Initial Setup
+Follow the [Initial Setup Guide](docs/guides/initial-setup.md) for complete installation.
 
-## 🎯 Key Features
+### 2. Daily Operations
+Use the [Quick Reference Guide](docs/guides/quick-reference.md) for common tasks.
 
-### AppServer
-- **Server-side rendering** with Handlebars templates
-- **RESTful API** for Grasshopper definition solving
-- **Automatic caching** for performance optimization
-- **Professional UI** with responsive design
+### 3. Troubleshooting
+Check the [Troubleshooting Guide](docs/operations/troubleshooting.md) for common issues.
 
-### Rhino Compute Integration
-- **Real-time solving** of Grasshopper definitions
-- **Geometry processing** via Rhino Compute server
-- **3D visualization** with Three.js integration
-- **Parameter manipulation** with live updates
+## 📊 Current Configuration
 
-### Production Features
-- **Custom domain support** with SSL certificates
-- **Enterprise caching** with memcached
-- **Monitoring and logging** for production use
-- **Error handling** and graceful degradation
+- **Rhino Compute Server**: `http://4.248.252.92:6500`
+- **AppServer**: `https://softlyplease-appserver.herokuapp.com`
+- **API Key**: `softlyplease-secure-key-2024`
+- **Authentication**: `RhinoComputeKey` header
 
-## 🚨 Common Issues & Solutions
+## 🔧 Key Components
 
-### Authentication Errors
+### 🦏 Rhino Compute Server (Azure VM)
+- **Location**: `compute.rhino3d/`
+- **Purpose**: Headless Rhino execution with Grasshopper
+- **Port**: 6500 (API), 5000 (compute.geometry)
+- **Setup**: [Installation Guide](docs/guides/initial-setup.md#step-3-rhino-compute-installation)
+
+### 🚀 AppServer (Heroku)
+- **Location**: `compute.rhino3d.appserver/`
+- **Purpose**: Node.js API bridge between frontend and Rhino Compute
+- **Features**: Caching, error handling, request routing
+- **Setup**: [Heroku Deployment](docs/guides/initial-setup.md#step-5-heroku-deployment)
+
+### 🌐 Frontend (Website)
+- **Location**: `frontend/`
+- **Purpose**: User interface for interacting with definitions
+- **Files**: `index.html` (3D interface), `softlyplease-interface.html` (simple interface)
+
+## 📚 Available Documentation
+
+### Setup & Installation
+- **[RHINO-COMPUTE-MASTER-GUIDE.md](docs/guides/RHINO-COMPUTE-MASTER-GUIDE.md)** - The ultimate 2,000+ line comprehensive guide
+- **[Initial Setup Guide](docs/guides/initial-setup.md)** - Step-by-step setup instructions
+- **[System Architecture](docs/guides/system-architecture.md)** - Technical overview and components
+
+### Operations & Maintenance
+- **[Quick Reference](docs/guides/quick-reference.md)** - Essential commands and procedures
+- **[Troubleshooting Guide](docs/operations/troubleshooting.md)** - Common issues and solutions
+- **[Backup Procedures](docs/operations/backup.md)** - Data protection and recovery
+
+## 🦗 Grasshopper Definitions
+
+The system includes 14 pre-configured Grasshopper definitions:
+
+- `beam_mod.gh` - Beam modification
+- `Bending_gridshell.gh` - Grid shell bending analysis
+- `BranchNodeRnd.gh` - Branch node randomization
+- `brep_union.gh` - BREP union operations
+- `delaunay.gh` - Delaunay triangulation
+- `docString.gh` - Documentation string processing
+- `dresser3.gh` - Dresser design
+- `metaballTable.gh` - Metaball table generation
+- `QuadPanelAperture.gh` - Quad panel with apertures
+- `rnd_lattice.gh` - Random lattice generation
+- `rnd_node.gh` - Random node placement
+- `SampleGHConvertTo3dm.gh` - Convert to 3DM format
+- `srf_kmeans.gh` - Surface K-means clustering
+- `value_list.gh` - Value list processing
+
+## 🚨 Emergency Procedures
+
+### System Down
 ```bash
-# Check environment variables
-heroku config --app your-app-name
+# Check status
+curl -s https://softlyplease-appserver.herokuapp.com/health
 
-# Verify API key format
-curl -H "RhinoComputeKey: YOUR_KEY" "http://YOUR_VM_IP:80/version"
+# Restart services
+heroku restart --app softlyplease-appserver
+# (VM) Restart-Service rhino.compute
 ```
 
-### Connection Timeouts
-```powershell
-# On Azure VM, check service status
-Get-Service -Name "compute.geometry"
-
-# Check firewall rules
-Get-NetFirewallRule -DisplayName "*Rhino*"
-```
-
-### Heroku Build Failures
+### API Key Issues
 ```bash
-# Check build logs
-heroku logs --tail --app your-app-name
-
-# Verify Node.js version in package.json
+# Rotate API key
+NEW_KEY="softlyplease-secure-key-$(date +%s)"
+heroku config:set RHINO_COMPUTE_KEY="$NEW_KEY"
+# Update Azure VM environment variable
 ```
 
-## 🔄 Maintenance
+### Recovery
+See [Backup Procedures](docs/operations/backup.md) for complete recovery instructions.
 
-### Update Rhino Compute
-```powershell
-# On Azure VM
-Stop-Service -Name "compute.geometry"
-# Download new version and replace files
-Start-Service -Name "compute.geometry"
-```
+## 🔄 Regular Maintenance
 
-### Update AppServer
-```bash
-# Deploy changes
-git add .
-git commit -m "Update description"
-git push heroku main
-```
+### Daily
+- [ ] Check system health endpoints
+- [ ] Review error logs
+- [ ] Commit code changes
 
-### Monitor Performance
-```bash
-# Check Heroku metrics
-heroku ps --app your-app-name
+### Weekly
+- [ ] Create Azure VM snapshot
+- [ ] Test backup restoration
+- [ ] Update dependencies
 
-# View logs
-heroku logs --tail --app your-app-name
-```
+### Monthly
+- [ ] Review costs and usage
+- [ ] Update documentation
+- [ ] Test disaster recovery
 
-## 📊 Performance & Scaling
+## 📞 Support Resources
 
-- **Caching Strategy** - Multi-level caching for optimal performance
-- **Load Balancing** - Support for multiple Azure VMs
-- **CDN Integration** - Browser caching and edge optimization
-- **Database Options** - MongoDB and Redis support ready
+- **Heroku Support**: [help.heroku.com](https://help.heroku.com)
+- **Azure Support**: [portal.azure.com](https://portal.azure.com) → Help + Support
+- **Rhino Support**: [discourse.mcneel.com](https://discourse.mcneel.com)
 
-## 🔒 Security Features
+## 📋 Setup Checklist
 
-- **API Key Authentication** - Secure access to Rhino Compute
-- **HTTPS Enforcement** - Automatic SSL certificate management
-- **CORS Configuration** - Controlled cross-origin access
-- **Rate Limiting** - Protection against abuse
-- **Security Headers** - Helmet.js integration
+- [ ] **Azure VM** created and configured
+- [ ] **Windows Server** installed and updated
+- [ ] **Rhino 7** installed and licensed
+- [ ] **Rhino Compute** installed and running
+- [ ] **Heroku App** created and configured
+- [ ] **AppServer** deployed and connected
+- [ ] **Definitions** uploaded and accessible
+- [ ] **Frontend** integrated and tested
+- [ ] **Monitoring** set up and configured
+- [ ] **Backups** automated and tested
 
-## 💰 Cost Optimization
+## 🎯 Next Steps
 
-- **Azure VM**: ~$0.20/hour for t2.medium
-- **Heroku**: Free tier available for development
-- **Custom Domain**: Annual registration fee
-- **SSL Certificates**: Free with Heroku
-
-## 🆘 Support & Resources
-
-- **Documentation**: Complete guides in `docs/setup/`
-- **Scripts**: Automated setup in `scripts/`
-- **Examples**: Working examples in `src/examples/`
-- **Community**: Open source with active development
-
-## 🎉 Success Indicators
-
-Your setup is working when:
-- ✅ Homepage loads at your custom domain
-- ✅ Interactive examples respond to parameter changes
-- ✅ No H12 timeouts in Heroku logs
-- ✅ Azure VM responds to external requests
-- ✅ SSL certificates are active
-
-## 📈 Next Steps
-
-1. **Customize Examples** - Modify the interactive interfaces
-2. **Add Definitions** - Include your own Grasshopper files
-3. **Optimize Caching** - Configure memcached for your needs
-4. **Scale Up** - Add more Azure VMs for load balancing
-5. **Monitor & Alert** - Set up production monitoring
+1. **Review** the [Master Guide](docs/guides/RHINO-COMPUTE-MASTER-GUIDE.md) for complete understanding
+2. **Follow** the [Initial Setup Guide](docs/guides/initial-setup.md) if setting up from scratch
+3. **Use** the [Quick Reference](docs/guides/quick-reference.md) for daily operations
+4. **Monitor** using the [Troubleshooting Guide](docs/operations/troubleshooting.md)
 
 ---
 
-**Setup Time**: 30 minutes  
-**Maintenance**: Monthly  
-**Production Ready**: ✅ Yes  
-**Enterprise Grade**: ✅ Yes  
+**Repository Status**: ✅ Organized and Documented
+**System Status**: ✅ Operational
+**Documentation**: ✅ Comprehensive
+**Last Updated**: December 2024
 
-Built with ❤️ for the Rhino community
+*This repository contains everything needed to run, maintain, and recover the Rhino Compute system for softlyplease.com.*
