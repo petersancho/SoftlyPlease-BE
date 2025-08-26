@@ -38,20 +38,19 @@ router.get('/',  function(req, res, next) {
     definitions.push({name: def.name})
   })
 
-  // Check if this is a browser request (HTML) or API request (JSON)
-  const acceptHeader = req.headers.accept || '';
-  const isBrowserRequest = acceptHeader.includes('text/html') || acceptHeader.includes('*/*');
+  // Check if JSON format is explicitly requested
+  const forceJson = req.query.format === 'json';
 
-  if (isBrowserRequest && !req.headers['x-requested-with']) {
-    // Serve the homepage for browser requests
+  if (forceJson) {
+    // Serve JSON for API requests
+    res.setHeader('Content-Type', 'application/json')
+    res.send(JSON.stringify(definitions))
+  } else {
+    // Serve the homepage for browser requests (default)
     res.render('homepage', {
       title: 'SoftlyPlease - Interactive Grasshopper Examples',
       definitions: definitions
     });
-  } else {
-    // Serve JSON for API requests
-    res.setHeader('Content-Type', 'application/json')
-    res.send(JSON.stringify(definitions))
   }
 })
 
