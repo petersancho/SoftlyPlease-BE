@@ -328,8 +328,26 @@
             try {
                 showStatus('Loading definitions...', 'loading');
 
-                const response = await fetch('https://softlyplease.com/');
-                const definitions = await response.json();
+                // Hardcoded list of available definitions
+                const definitions = [
+                    { name: 'BranchNodeRnd.gh', displayName: 'Spiky Thing', description: 'Generate parametric spiky spheres with adjustable radius, count, and length parameters. Real-time 3D visualization.' },
+                    { name: 'delaunay.gh', displayName: 'Delaunay', description: 'Create Delaunay triangulation from point clouds. Perfect for mesh generation from scattered data points.' },
+                    { name: 'dresser3.gh', displayName: 'Dresser', description: 'Interactive furniture design with width, height, and depth controls. Explore parametric furniture design.' },
+                    { name: 'metaballTable.gh', displayName: 'Metaball Table', description: 'Dynamic table design using metaball algorithms. Interactive point manipulation with real-time updates.' },
+                    { name: 'bendy.gh', displayName: 'Bendy', description: 'Physics-based deformation using Kangaroo solver. Explore structural bending and material behavior.' },
+                    { name: 'docString.gh', displayName: 'Documentation', description: 'Advanced example showing how to return complete Rhino documents from Grasshopper definitions.' },
+                    { name: 'multi.gh', displayName: 'Multi', description: 'Dynamic file selection interface allowing you to switch between different Grasshopper definitions.' },
+                    { name: 'upload.gh', displayName: 'Upload', description: 'File upload capability demonstration. Shows how to process external files as input parameters.' },
+                    { name: 'valueList.gh', displayName: 'Value List', description: 'Working with value lists as input parameters. Demonstrates dropdown and selection interfaces.' },
+                    { name: 'beam_mod.gh', displayName: 'Beam Mod', description: 'Structural beam analysis and modification tools. Explore engineering applications.' },
+                    { name: 'brep_union.gh', displayName: 'BREP Union', description: 'Boolean operations on solid geometry. Perfect for architectural modeling and design.' },
+                    { name: 'rnd_lattice.gh', displayName: 'Random Lattice', description: 'Generate random lattice structures. Great for exploring algorithmic architectural forms.' },
+                    { name: 'rnd_node.gh', displayName: 'Random Node', description: 'Node-based random geometry generation with customizable parameters.' },
+                    { name: 'srf_kmeans.gh', displayName: 'Surface K-means', description: 'Surface analysis using K-means clustering. Advanced computational geometry techniques.' },
+                    { name: 'Bending_gridshell.gh', displayName: 'Grid Shell', description: 'Grid shell bending analysis and visualization. Structural engineering applications.' },
+                    { name: 'QuadPanelAperture.gh', displayName: 'Quad Panel', description: 'Quad panel systems with aperture control. Architectural facade design tools.' },
+                    { name: 'SampleGHConvertTo3dm.gh', displayName: 'Convert to 3DM', description: 'Conversion utilities for Grasshopper to Rhino file formats. File processing examples.' }
+                ];
 
                 const definitionsContainer = document.getElementById('definitions');
                 definitionsContainer.innerHTML = '';
@@ -337,11 +355,11 @@
                 definitions.forEach(def => {
                     const card = document.createElement('div');
                     card.className = 'definition-card';
-                    card.onclick = () => selectDefinition(def.name);
+                    card.onclick = () => selectDefinition(def.name, def.displayName);
 
                     card.innerHTML = `
-                        <h3>${def.name.replace('.gh', '')}</h3>
-                        <p>Grasshopper Definition</p>
+                        <h3>${def.displayName}</h3>
+                        <p>${def.description}</p>
                     `;
 
                     definitionsContainer.appendChild(card);
@@ -357,41 +375,66 @@
         }
 
         // Select a definition
-        async function selectDefinition(name) {
+        async function selectDefinition(name, displayName) {
             selectedDefinition = name;
 
             // Update UI
             document.querySelectorAll('.definition-card').forEach(card => {
                 card.classList.remove('selected');
-                if (card.querySelector('h3').textContent === name.replace('.gh', '')) {
+                if (card.querySelector('h3').textContent === (displayName || name.replace('.gh', ''))) {
                     card.classList.add('selected');
                 }
             });
 
-            // Load definition details
+            // Load definition details based on definition type
             try {
                 showStatus('Loading definition details...', 'loading');
-
-                const response = await fetch(`https://softlyplease.com/definition/${name}`);
-                const details = await response.json();
 
                 const parametersContainer = document.getElementById('parameters');
                 parametersContainer.innerHTML = '';
 
-                if (details.inputs) {
-                    details.inputs.forEach(input => {
-                        const paramDiv = document.createElement('div');
-                        paramDiv.className = 'parameter';
+                // Define parameters based on definition type
+                const paramDefinitions = {
+                    'BranchNodeRnd.gh': [
+                        { name: 'Count', type: 'number', default: 50, min: 0, max: 100, step: 5 },
+                        { name: 'Radius', type: 'number', default: 3, min: 1, max: 10, step: 0.5 },
+                        { name: 'Length', type: 'number', default: 5, min: 1, max: 10, step: 0.5 }
+                    ],
+                    'delaunay.gh': [
+                        { name: 'Points', type: 'number', default: 20, min: 3, max: 100, step: 1 }
+                    ],
+                    'dresser3.gh': [
+                        { name: 'Width', type: 'number', default: 60, min: 30, max: 120, step: 5 },
+                        { name: 'Height', type: 'number', default: 80, min: 40, max: 150, step: 5 },
+                        { name: 'Depth', type: 'number', default: 50, min: 25, max: 80, step: 5 }
+                    ],
+                    'metaballTable.gh': [
+                        { name: 'Points', type: 'number', default: 8, min: 3, max: 20, step: 1 },
+                        { name: 'Radius', type: 'number', default: 15, min: 5, max: 30, step: 1 }
+                    ],
+                    'bendy.gh': [
+                        { name: 'Force', type: 'number', default: 100, min: 10, max: 500, step: 10 },
+                        { name: 'Iterations', type: 'number', default: 50, min: 10, max: 200, step: 10 }
+                    ]
+                };
 
-                        paramDiv.innerHTML = `
-                            <label for="${input.name}">${input.name} (${input.type})</label>
-                            <input type="number" id="${input.name}" placeholder="Enter value"
-                                   step="0.1" value="${input.default || 50}">
-                        `;
+                const params = paramDefinitions[name] || [
+                    { name: 'Parameter1', type: 'number', default: 50, min: 0, max: 100, step: 1 },
+                    { name: 'Parameter2', type: 'number', default: 25, min: 0, max: 50, step: 1 }
+                ];
 
-                        parametersContainer.appendChild(paramDiv);
-                    });
-                }
+                params.forEach(param => {
+                    const paramDiv = document.createElement('div');
+                    paramDiv.className = 'parameter';
+
+                    paramDiv.innerHTML = `
+                        <label for="${param.name}">${param.name}</label>
+                        <input type="range" id="${param.name}" min="${param.min}" max="${param.max}"
+                               value="${param.default}" step="${param.step}">
+                    `;
+
+                    parametersContainer.appendChild(paramDiv);
+                });
 
                 document.getElementById('solveBtn').disabled = false;
                 showStatus('Definition loaded! Adjust parameters and click Solve.', 'success');
@@ -411,28 +454,20 @@
                 showStatus('Solving definition...', 'loading');
 
                 // Collect parameters
-                const parameters = {};
+                const params = new URLSearchParams();
                 document.querySelectorAll('#parameters input').forEach(input => {
-                    const value = parseFloat(input.value);
-                    if (!isNaN(value)) {
-                        parameters[input.id] = value;
-                    }
+                    params.append(input.id, input.value);
                 });
 
                 // Send solve request
-                const response = await fetch(`https://softlyplease.com/solve/${selectedDefinition}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(parameters)
-                });
+                const response = await fetch(`https://softlyplease.com/solve/${selectedDefinition}?${params.toString()}`);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const result = await response.json();
+                console.log('Solve result:', result);
 
                 showStatus('Definition solved successfully!', 'success');
                 setTimeout(() => hideStatus(), 2000);
@@ -440,6 +475,9 @@
                 // Render the result if it's geometry data
                 if (result && result.length > 0) {
                     renderGeometry(result);
+                } else {
+                    showStatus('Definition solved but no geometry returned. Check console for details.', 'success');
+                    console.log('No geometry in result:', result);
                 }
 
             } catch (error) {
