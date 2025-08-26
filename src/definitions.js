@@ -36,31 +36,46 @@ function registerDefinitions() {
   return definitions
 }
 
-async function getParams(definitionUrl) {
+async function getParams(definitionPath) {
   // TODO: set and forget!
   compute.url = process.env.RHINO_COMPUTE_URL
   compute.apiKey = process.env.RHINO_COMPUTE_KEY
 
-  console.log('Attempting to fetch definition from:', definitionUrl)
+  console.log('Getting params for definition:', definitionPath)
   console.log('Rhino Compute URL:', process.env.RHINO_COMPUTE_URL)
   console.log('API Key set:', !!process.env.RHINO_COMPUTE_KEY)
 
-  const response = await compute.computeFetch('io', { 'pointer': definitionUrl }, false)
+  // Instead of passing a URL, read the file directly and encode it
+  const fs = require('fs')
+  const path = require('path')
 
-  console.log('Response status:', response.status)
-  console.log('Response ok:', response.ok)
+  try {
+    // Read the definition file
+    const definitionContent = fs.readFileSync(definitionPath)
+    const base64Content = definitionContent.toString('base64')
 
-  // throw error if response not ok
-  if(!response.ok) {
-    const errorText = await response.text()
-    console.error('Response error details:', errorText)
-    throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
-  }
+    console.log('Definition file read successfully, size:', definitionContent.length)
 
-  let result = await response.json()
+    // Send the base64 encoded content directly
+    const response = await compute.computeFetch('io', {
+      'content': base64Content,
+      'type': 'base64'
+    }, false)
 
-  // json returned by /io is PascalCase and looks weird in javascript
-  result = camelcaseKeys(result, {deep: true})
+    console.log('Response status:', response.status)
+    console.log('Response ok:', response.ok)
+
+    // throw error if response not ok
+    if(!response.ok) {
+      const errorText = await response.text()
+      console.error('Response error details:', errorText)
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
+    }
+
+    let result = await response.json()
+
+    // json returned by /io is PascalCase and looks weird in javascript
+    result = camelcaseKeys(result, {deep: true})
 
   let inputs = result.inputs === undefined ? result.inputNames : result.inputs
   
@@ -78,7 +93,12 @@ async function getParams(definitionUrl) {
           }
   } )
 
-  return { description, inputs, outputs, view }
+    return { description, inputs, outputs, view }
+
+  } catch (error) {
+    console.error('Error reading definition file or API call:', error)
+    throw error
+  }
 }
 
 module.exports = { registerDefinitions, getParams }
