@@ -38,8 +38,21 @@ router.get('/',  function(req, res, next) {
     definitions.push({name: def.name})
   })
 
-  res.setHeader('Content-Type', 'application/json')
-  res.send(JSON.stringify(definitions))
+  // Check if this is a browser request (HTML) or API request (JSON)
+  const acceptHeader = req.headers.accept || '';
+  const isBrowserRequest = acceptHeader.includes('text/html') || acceptHeader.includes('*/*');
+
+  if (isBrowserRequest && !req.headers['x-requested-with']) {
+    // Serve the homepage for browser requests
+    res.render('homepage', {
+      title: 'SoftlyPlease - Interactive Grasshopper Examples',
+      definitions: definitions
+    });
+  } else {
+    // Serve JSON for API requests
+    res.setHeader('Content-Type', 'application/json')
+    res.send(JSON.stringify(definitions))
+  }
 })
 
 function describeDefinition(definition, req, res, next){

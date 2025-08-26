@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoftlyPlease - Interactive Grasshopper Examples</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 40px 0;
+        }
+        .header h1 {
+            font-size: 3em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header p {
+            font-size: 1.2em;
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .example-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            color: #333;
+            display: block;
+        }
+        .example-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+        .example-card h3 {
+            margin: 0 0 10px 0;
+            color: #4a5568;
+            font-size: 1.2em;
+        }
+        .example-card p {
+            margin: 0;
+            color: #718096;
+            line-height: 1.5;
+        }
+        .examples-link {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .examples-link a {
+            display: inline-block;
+            background: #48bb78;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+        .examples-link a:hover {
+            background: #38a169;
+        }
+        .stats {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stats h3 {
+            margin: 0 0 15px 0;
+            color: #4a5568;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 6px;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 0;
+        }
+        .stat-label {
+            margin: 5px 0 0 0;
+            color: #718096;
+            font-size: 0.9em;
+        }
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            margin: 40px 0;
+        }
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 4px solid #c53030;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SoftlyPlease</h1>
+            <p>Interactive Grasshopper Examples Powered by McNeel Rhino Compute</p>
+        </div>
+
+        <div class="examples-link">
+            <a href="/examples/">View All Interactive Examples →</a>
+        </div>
+
+        <div id="stats" class="stats" style="display: none;">
+            <h3>Platform Statistics</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number" id="definition-count">0</div>
+                    <div class="stat-label">Definitions</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Interactive</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Available</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="definitions" class="examples-grid">
+            <div class="loading">Loading Grasshopper definitions...</div>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Descriptions for each definition
+        const descriptions = {
+            'BranchNodeRnd.gh': 'Generate parametric spiky spheres with adjustable radius, count, and length parameters. Real-time 3D visualization.',
+            'delaunay.gh': 'Create Delaunay triangulation from point clouds. Perfect for mesh generation from scattered data points.',
+            'dresser3.gh': 'Interactive furniture design tool with width, height, and depth controls. Explore parametric furniture design.',
+            'metaballTable.gh': 'Dynamic table design using metaball algorithms. Interactive point manipulation with real-time updates.',
+            'bendy.gh': 'Physics-based deformation using Kangaroo solver. Explore structural bending and material behavior.',
+            'docString.gh': 'Advanced example showing how to return complete Rhino documents from Grasshopper definitions.',
+            'multi.gh': 'Dynamic file selection interface allowing you to switch between different Grasshopper definitions.',
+            'upload.gh': 'File upload capability demonstration. Shows how to process external files as input parameters.',
+            'valueList.gh': 'Working with value lists as input parameters. Demonstrates dropdown and selection interfaces.',
+            'beam_mod.gh': 'Structural beam analysis and modification tools. Explore engineering applications.',
+            'brep_union.gh': 'Boolean operations on solid geometry. Perfect for architectural modeling and design.',
+            'rnd_lattice.gh': 'Generate random lattice structures. Great for exploring algorithmic architectural forms.',
+            'rnd_node.gh': 'Node-based random geometry generation with customizable parameters.',
+            'srf_kmeans.gh': 'Surface analysis using K-means clustering. Advanced computational geometry techniques.',
+            'Bending_gridshell.gh': 'Grid shell bending analysis and visualization. Structural engineering applications.',
+            'QuadPanelAperture.gh': 'Quad panel systems with aperture control. Architectural facade design tools.',
+            'SampleGHConvertTo3dm.gh': 'Conversion utilities for Grasshopper to Rhino file formats. File processing examples.'
+        };
+
+        async function loadDefinitions() {
+            try {
+                const response = await fetch('/');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const definitions = await response.json();
+
+                // Update stats
+                document.getElementById('definition-count').textContent = definitions.length;
+                document.getElementById('stats').style.display = 'block';
+
+                // Create definition cards
+                const definitionsContainer = document.getElementById('definitions');
+                definitionsContainer.innerHTML = '';
+
+                definitions.forEach(definition => {
+                    const card = document.createElement('a');
+                    card.className = 'example-card';
+                    card.href = `/examples/${definition.name.replace('.gh', '')}/`;
+
+                    const description = descriptions[definition.name] || 'Interactive Grasshopper definition with real-time parameter control.';
+
+                    card.innerHTML = `
+                        <h3>${definition.name.replace('.gh', '')}</h3>
+                        <p>${description}</p>
+                    `;
+
+                    definitionsContainer.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error('Error loading definitions:', error);
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = `Failed to load definitions: ${error.message}`;
+                document.getElementById('definitions').innerHTML = '<div class="loading">Failed to load definitions. Please check the console for details.</div>';
+            }
+        }
+
+        // Load definitions when page loads
+        document.addEventListener('DOMContentLoaded', loadDefinitions);
+    </script>
+</body>
+</html>
