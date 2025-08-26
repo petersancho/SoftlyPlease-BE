@@ -12,7 +12,7 @@ const router = express.Router()
 const getParams = require('../definitions.js').getParams
 
 /**
- * Show list of available definitions
+ * Show homepage with available definitions
  */
 router.get('/', async(req, res, next) => {
   view = {
@@ -32,10 +32,17 @@ router.get('/', async(req, res, next) => {
       next(err)
     }
     if(data)
-      if(data.view) { view.definitions.push({ name: definition.name }) }
-    
+      if(data.view) {
+        // Add description if available
+        const description = data.description || 'Interactive Grasshopper definition with real-time parameter control.'
+        view.definitions.push({
+          name: definition.name,
+          description: description
+        })
+      }
+
   }
-  res.render('list', view)
+  res.render('homepage', view)
 })
 
 /**
