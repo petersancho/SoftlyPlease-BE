@@ -1,1 +1,1 @@
-web: node test-heroku.js
+web: node ./src/bin/www
