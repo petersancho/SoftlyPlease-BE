@@ -6,6 +6,11 @@ async function getVersion() {
   // Use COMPUTE_URL as primary, fallback to RHINO_COMPUTE_URL for backward compatibility
   let computeUrl = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL
 
+  // Add http:// protocol if not present
+  if (!computeUrl.startsWith('http://') && !computeUrl.startsWith('https://')) {
+    computeUrl = 'http://' + computeUrl
+  }
+
   // Clean the URL by removing default port :80 if present
   computeUrl = computeUrl.replace(':80/', '/').replace(':80', '')
 
