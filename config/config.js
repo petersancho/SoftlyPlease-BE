@@ -15,7 +15,7 @@ const config = {
       // Clean the URL by removing default port :80 if present
       return url.replace(':80/', '/').replace(':80', '')
     })(),
-    apiKey: process.env.RHINO_COMPUTE_KEY || 'p2robot-13a6-48f3-b24e-2025computeX',
+    apiKey: process.env.RHINO_COMPUTE_KEY || process.env.RHINO_COMPUTE_APIKEY || 'p2robot-13a6-48f3-b24e-2025computeX',
     timeout: 30000,
     retries: 3
   },

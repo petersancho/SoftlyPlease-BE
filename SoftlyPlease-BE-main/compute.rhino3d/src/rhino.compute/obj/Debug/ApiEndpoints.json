@@ -1,0 +1,66 @@
+[
+  {
+    "ContainingType": "rhino.compute.ReverseProxyModule",
+    "Method": "ReverseProxyGet",
+    "RelativePath": "{*uri}",
+    "HttpMethod": "GET",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "rhino.compute.ReverseProxyModule",
+    "Method": "ReverseProxyPost",
+    "RelativePath": "{*uri}",
+    "HttpMethod": "POST",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "rhino.compute.ReverseProxyModule",
+    "Method": "ReverseProxyGrasshopper",
+    "RelativePath": "grasshopper",
+    "HttpMethod": "POST",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "rhino.compute.ReverseProxyModule",
+    "Method": "LaunchChildren",
+    "RelativePath": "launch",
+    "HttpMethod": "GET",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ]
+  }
+]

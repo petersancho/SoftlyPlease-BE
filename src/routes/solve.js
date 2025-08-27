@@ -24,7 +24,14 @@ if(process.env.MEMCACHIER_SERVERS !== undefined) {
 
 function computeParams (req, res, next){
   // Use configuration from config.js
-  compute.url = config.rhino.url
+  let baseUrl = config.rhino.url
+
+  // Ensure URL ends with slash for proper concatenation
+  if (!baseUrl.endsWith('/')) {
+    baseUrl += '/'
+  }
+
+  compute.url = baseUrl
   const apiKey = config.rhino.apiKey
 
   // Set the API key and auth token
