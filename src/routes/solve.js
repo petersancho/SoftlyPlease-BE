@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const compute = require('compute-rhino3d')
 const {performance} = require('perf_hooks')
+const config = require('../../config/config')
 
 const NodeCache = require('node-cache')
 const cache = new NodeCache()
@@ -22,19 +23,23 @@ if(process.env.MEMCACHIER_SERVERS !== undefined) {
 }
 
 function computeParams (req, res, next){
-  compute.url = process.env.RHINO_COMPUTE_URL || 'http://4.248.252.92:80/'
-  // Try RHINO_COMPUTE_KEY first (user preference), then fall back to APIKEY
-  // Try apiKey method first (for Azure VM setup)
-  const apiKey = process.env.RHINO_COMPUTE_KEY || process.env.RHINO_COMPUTE_APIKEY || 'p2robot-13a6-48f3-b24e-2025computeX'
+  // Use configuration from config.js
+  compute.url = config.rhino.url
+  const apiKey = config.rhino.apiKey
+
+  // Set the API key and auth token
   compute.apiKey = apiKey
-  // Also set authToken as fallback
   compute.authToken = apiKey
+
+  // For JWT tokens, we need to set the authorization header
+  compute.headers = {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json'
+  }
+
   console.log('Compute config - URL:', compute.url)
-  console.log('Using API Key method for Azure VM authentication')
+  console.log('Using JWT Bearer token from config.js')
   console.log('API Key length:', apiKey.length, 'chars')
-  console.log('Environment variables:')
-  console.log('- RHINO_COMPUTE_KEY:', process.env.RHINO_COMPUTE_KEY ? 'SET (' + process.env.RHINO_COMPUTE_KEY.length + ' chars)' : 'NOT SET')
-  console.log('- RHINO_COMPUTE_APIKEY:', process.env.RHINO_COMPUTE_APIKEY ? 'SET (' + process.env.RHINO_COMPUTE_APIKEY.length + ' chars)' : 'NOT SET')
   next()
 }
 

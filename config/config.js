@@ -7,7 +7,8 @@ const config = {
   // Rhino Compute Server Configuration
   rhino: {
     url: process.env.RHINO_COMPUTE_URL || 'http://4.248.252.92:80/',
-    apiKey: process.env.RHINO_COMPUTE_APIKEY || 'p2robot-13a6-48f3-b24e-2025computeX',
+    // Use the RawOAuth2Token from the decoded auth response
+    apiKey: process.env.RHINO_COMPUTE_APIKEY || 'eyJhbGciOiJIUzI1NiJ9.eyJjIjoxLCJwIjoxLCJiNjRpdiI6ImJSSWR0UUd2N2dGYTJQZ2RUNGVjV3c9PSIsImI2NGN0IjoiYXovUFdrZG94bTZ2Y1hzaTBaa2c4bTEyZVQ0VlpzandabCtncnNIOUp5bkdPNU13VzN5NVM1WHBrbXNMQi9WYlIvd1lpa3J2WHBGY1dtdTdKUWczK2V2ZEdlUVZiWDRiNDdYZERVVVBpYzg9IiwiaWF0IjoxNzU0MjQ4MDU1fQ.7AfeslbQIyqkF5UxHjjFPZnn3xubjDqCD_MoUYXVmiE',
     timeout: 30000,
     retries: 3
   },
@@ -29,7 +30,9 @@ const config = {
 
   // CORS Configuration
   cors: {
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV === 'production'
+      ? 'https://softlyplease.com'
+      : '*'),
     credentials: true
   },
 
@@ -49,7 +52,9 @@ const config = {
   // Bootstrap Configuration (for VM deployment)
   bootstrap: {
     computeUrl: process.env.COMPUTE_URL || 'http://4.248.252.92:80',
-    appServerUrl: process.env.APPSERVER_URL || 'http://localhost:80',
+    appServerUrl: process.env.APPSERVER_URL || (process.env.NODE_ENV === 'production'
+      ? 'https://softlyplease-appserver.herokuapp.com'
+      : 'http://localhost:3000'),
     networkInterface: '0.0.0.0'
   }
 };
