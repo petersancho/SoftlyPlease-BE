@@ -1,16 +1,15 @@
 /* eslint no-undef: "off", no-unused-vars: "off" */
 
-import { RhinoCompute } from 'rhinocompute'
+// Note: RhinoCompute is loaded via CDN script tag in HTML
+// Note: Definition is handled by the appserver internally
 
 // set up loader for converting the results to threejs
 const loader = new Rhino3dmLoader()
 loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta2/' )
 
-// Note: Definition is handled by the appserver internally
-
 // Slider variables - will be initialized after DOM is ready
 let thickness_slider, minr_slider, maxr_slider, square_slider, strutsize_slider
-let segment_slider, links_slider, cubecorners_slider, smooth_slider
+let segment_slider, links_slider, cubecorners_slider, smooth_slider, brep_input
 
 // Function to initialize sliders after DOM is ready
 function initializeSliders() {
@@ -25,6 +24,7 @@ function initializeSliders() {
   links_slider = document.getElementById('links')
   cubecorners_slider = document.getElementById('cubecorners')
   smooth_slider = document.getElementById('smooth')
+  brep_input = document.getElementById('brep')
 
   // Check if all sliders exist
   const sliders = [thickness_slider, minr_slider, maxr_slider, square_slider, strutsize_slider,
@@ -134,10 +134,25 @@ async function compute(){
       }
     }
 
+    // Handle brep parameter - create default cube if no file uploaded
+    let brepData = null
+    if (brep_input.files && brep_input.files.length > 0) {
+      console.log('🐛 DEBUG: Using uploaded 3DM file:', brep_input.files[0].name)
+      // For now, we'll use a default cube - file upload handling would need more complex implementation
+      console.log('⚠️ WARNING: File upload not fully implemented yet, using default cube geometry')
+    } else {
+      console.log('🐛 DEBUG: No file uploaded, using default cube geometry')
+    }
+    
+    // Create default cube brep data (this would typically be a serialized brep)
+    // For now, we'll let Grasshopper use its default geometry or create a simple box
+    brepData = "default_cube" // Placeholder - Grasshopper definition should handle this
+
     // Prepare parameters for the appserver /solve endpoint
     const parameters = {
       definition: 'topological-optimization.ghx',
       inputs: {
+        'RH_IN:brep': [brepData],
         'RH_IN:links': [links_slider.valueAsNumber],
         'RH_IN:minr': [minr_slider.valueAsNumber],
         'RH_IN:maxr': [maxr_slider.valueAsNumber],

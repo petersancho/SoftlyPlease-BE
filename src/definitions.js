@@ -37,16 +37,9 @@ function registerDefinitions() {
 }
 
 async function getParams(definitionUrl) {
-  // Use configuration from config.js
-  const config = require('../config/config')
-  compute.url = config.rhino.url
-  const apiKey = config.rhino.apiKey
-
-  // Set the API key and auth token
-  compute.apiKey = apiKey
-  compute.authToken = apiKey
-
-  console.log('Definitions compute config - URL:', compute.url, 'Auth Token length:', compute.authToken ? compute.authToken.length : 'null')
+  // TODO: set and forget!
+  compute.url = process.env.RHINO_COMPUTE_URL
+  compute.apiKey = process.env.RHINO_COMPUTE_KEY
 
   const response = await compute.computeFetch('io', { 'pointer': definitionUrl }, false)
   
@@ -80,4 +73,3 @@ async function getParams(definitionUrl) {
 }
 
 module.exports = { registerDefinitions, getParams }
-
