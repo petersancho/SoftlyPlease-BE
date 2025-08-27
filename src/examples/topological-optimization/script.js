@@ -77,26 +77,49 @@ async function compute(){
 
     // DEBUG: Check server connectivity and available definitions
     try {
-      console.log('Checking server connectivity...')
+      console.log('🔍 Checking server connectivity...')
       const healthResponse = await fetch('/')
-      console.log('Server health response:', healthResponse.status)
+      console.log('✅ Server health response:', healthResponse.status, healthResponse.statusText)
 
       const defsResponse = await fetch('/?format=json')
       const defs = await defsResponse.json()
-      console.log('Available definitions:', defs)
+      console.log('📋 Available definitions:', defs)
+      console.log('📊 Total definitions found:', defs.length)
 
       // Check if our definition exists
       const ourDef = defs.find(d => d.name === 'topological-optimization.gh')
-      console.log('Our definition found:', ourDef)
+      console.log('🎯 Our definition found:', ourDef)
 
       if (ourDef) {
+        console.log('✅ Definition is loaded on server!')
         // Try to get definition details
         const detailResponse = await fetch(`/topological-optimization.gh?format=json`)
         const details = await detailResponse.json()
-        console.log('Definition details:', details)
+        console.log('📝 Definition details:', details)
+      } else {
+        console.error('❌ topological-optimization.gh NOT found in server definitions!')
+        console.log('Available .gh files:', defs.filter(d => d.name.endsWith('.gh')).map(d => d.name))
       }
+
+      // Test Rhino Compute connectivity
+      console.log('🔗 Testing Rhino Compute connectivity...')
+      try {
+        const computeTest = await fetch('/definition/topological-optimization.gh')
+        console.log('🔗 Rhino Compute test response:', computeTest.status, computeTest.statusText)
+        if (computeTest.status === 200) {
+          console.log('✅ Rhino Compute server is accessible!')
+        } else {
+          console.error('❌ Rhino Compute server not accessible! Status:', computeTest.status)
+          const errorText = await computeTest.text()
+          console.error('Error details:', errorText)
+        }
+      } catch (computeError) {
+        console.error('❌ Cannot connect to Rhino Compute server:', computeError.message)
+      }
+
     } catch (defError) {
-      console.error('Error checking server:', defError)
+      console.error('❌ Error checking server:', defError.message)
+      console.error('Full error:', defError)
     }
 
   const request = {
