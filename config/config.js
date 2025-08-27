@@ -7,7 +7,7 @@ const config = {
   // Rhino Compute Server Configuration
   rhino: {
     url: 'http://softlyplease.canadacentral.cloudapp.azure.com:6500',
-    apiKey: process.env.RHINO_COMPUTE_KEY || process.env.RHINO_COMPUTE_APIKEY || 'p2robot-13a6-48f3-b24e-2025computeX',
+    apiKey: null, // No authentication required
     timeout: 30000,
     retries: 3
   },

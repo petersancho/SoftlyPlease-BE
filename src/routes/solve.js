@@ -186,8 +186,25 @@ function commonSolve (req, res, next){
       const r = JSON.parse(result)
       delete r.pointer
       res.send(JSON.stringify(r))
-    }).catch( (error) => { 
-      next(error)
+    }).catch( (error) => {
+      console.error('=== SPIKY THING DEBUG ===')
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+      console.error('Compute URL:', compute.url)
+      console.error('API Key exists:', !!apiKey)
+      console.error('Definition name:', definition ? definition.name : 'null')
+      console.error('========================')
+      
+      // Send detailed error to client
+      res.status(500).json({
+        error: error.message,
+        details: {
+          computeUrl: compute.url,
+          hasApiKey: !!apiKey,
+          definitionName: definition ? definition.name : 'null',
+          timestamp: new Date().toISOString()
+        }
+      })
     })
   }
 }
