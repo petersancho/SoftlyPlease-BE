@@ -1,10 +1,13 @@
 /* eslint no-undef: "off", no-unused-vars: "off" */
 
+import { RhinoCompute } from 'rhinocompute'
+
 // set up loader for converting the results to threejs
 const loader = new Rhino3dmLoader()
 loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta2/' )
 
-const definition = 'topological-optimization.gh'
+// reference the definition
+const definitionName = 'topological-optimization.gh'
 
 // setup input change events
 const tolerance_slider = document.getElementById( 'tolerance' )
@@ -34,9 +37,14 @@ const links_slider = document.getElementById( 'links' )
 links_slider.addEventListener( 'mouseup', onSliderChange, false )
 links_slider.addEventListener( 'touchend', onSliderChange, false )
 
-let doc
+// globals
+let definition, doc
 let scene, camera, renderer, controls
 let rhino
+
+// Setup RhinoCompute authentication
+RhinoCompute.url = 'http://4.248.252.92:80'
+RhinoCompute.apiKey = 'p2robot-13a6-48f3-b24e-2025computeX'
 
 async function initializeRhino() {
   if (!rhino) {
@@ -60,51 +68,75 @@ async function initializeRhino() {
   return rhino
 }
 
-
-
-init()
-compute()
-
-/**
- * Call appserver
- */
-async function compute(){
-  try {
-    // Initialize rhino3dm if not already done
-    await initializeRhino()
-
-    // construct url for GET /solve/definition.gh?name=value(&...)
-    const url = new URL('/solve/' + definition, window.location.origin)
-    url.searchParams.append('RH_IN:tolerance', tolerance_slider.valueAsNumber)
-    url.searchParams.append('RH_IN:round', round_slider.valueAsNumber)
-    url.searchParams.append('RH_IN:pipe_width', pipe_width_slider.valueAsNumber)
-    url.searchParams.append('RH_IN:segment', segment_slider.valueAsNumber)
-    url.searchParams.append('RH_IN:cube', cube_checkbox.checked)
-    url.searchParams.append('RH_IN:smooth', smooth_slider.valueAsNumber)
-    url.searchParams.append('RH_IN:min_r', min_r_slider.valueAsNumber)
-    url.searchParams.append('RH_IN:max_R', max_R_slider.valueAsNumber)
-    url.searchParams.append('RH_IN:links', links_slider.valueAsNumber)
-
-    console.log('Request URL:', url.toString())
-
-    const response = await fetch(url)
-
-    if(!response.ok) {
-      console.error('Response status:', response.status)
-      console.error('Response headers:', Object.fromEntries(response.headers.entries()))
-      const errorText = await response.text()
-      console.error('Error response body:', errorText)
-      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
-    }
-
-    const responseText = await response.text()
-    collectResults(responseText)
-
-  } catch(error){
-    console.error('Compute error:', error)
-  }
+// Load the .gh definition file
+async function loadDefinition() {
+  let url = definitionName
+  let res = await fetch(url)
+  let buffer = await res.arrayBuffer()
+  definition = new Uint8Array(buffer)
+  console.log('Loaded definition:', definitionName)
 }
 
+init()
+loadDefinition().then(() => {
+  compute()
+})
+
+/**
+ * Call RhinoCompute
+ */
+async function compute(){
+  // format data
+  let param1 = new RhinoCompute.Grasshopper.DataTree('tolerance')
+  param1.append([0], [tolerance_slider.valueAsNumber])
+
+  let param2 = new RhinoCompute.Grasshopper.DataTree('round')
+  param2.append([0], [round_slider.valueAsNumber])
+
+  let param3 = new RhinoCompute.Grasshopper.DataTree('pipe_width')
+  param3.append([0], [pipe_width_slider.valueAsNumber])
+
+  let param4 = new RhinoCompute.Grasshopper.DataTree('segment')
+  param4.append([0], [segment_slider.valueAsNumber])
+
+  let param5 = new RhinoCompute.Grasshopper.DataTree('cube')
+  param5.append([0], [cube_checkbox.checked])
+
+  let param6 = new RhinoCompute.Grasshopper.DataTree('smooth')
+  param6.append([0], [smooth_slider.valueAsNumber])
+
+  let param7 = new RhinoCompute.Grasshopper.DataTree('min_r')
+  param7.append([0], [min_r_slider.valueAsNumber])
+
+  let param8 = new RhinoCompute.Grasshopper.DataTree('max_R')
+  param8.append([0], [max_R_slider.valueAsNumber])
+
+  let param9 = new RhinoCompute.Grasshopper.DataTree('links')
+  param9.append([0], [links_slider.valueAsNumber])
+
+  // Add all params to an array
+  let trees = []
+  trees.push(param1)
+  trees.push(param2)
+  trees.push(param3)
+  trees.push(param4)
+  trees.push(param5)
+  trees.push(param6)
+  trees.push(param7)
+  trees.push(param8)
+  trees.push(param9)
+
+  // Call RhinoCompute
+  const res = await RhinoCompute.Grasshopper.evaluateDefinition(definition, trees)
+
+  collectResults(res)
+}
+
+function onChange() {
+  // show spinner
+  document.getElementById('loader').style.display = 'block'
+  compute()
+}
 
 // from https://stackoverflow.com/a/21797381
 function _base64ToArrayBuffer(base64) {
