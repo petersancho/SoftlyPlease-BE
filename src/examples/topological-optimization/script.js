@@ -4,6 +4,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader'
 import rhino3dm from 'rhino3dm'
 
+// global variables
+let scene, camera, renderer, controls, rhino
+
 // set up loader for converting the results to threejs
 const loader = new Rhino3dmLoader()
 loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta/' )
@@ -40,11 +43,13 @@ links_slider.addEventListener( 'touchend', onSliderChange, false )
 
 let _threeMesh, _threeMaterial, doc
 
-const rhino = await rhino3dm()
-console.log('Loaded rhino3dm.')
-
-init()
-compute()
+// initialize rhino3dm
+rhino3dm().then(function(rhino3dm) {
+  rhino = rhino3dm
+  console.log('Loaded rhino3dm.')
+  init()
+  compute()
+})
 
 /**
  * Call appserver
@@ -55,7 +60,6 @@ async function compute(){
 
   // initialise 'data' object that will be used by compute()
   const data = {
-    definition: definition,
     inputs: {
       'tolerance':tolerance_slider.valueAsNumber,
       'round':round_slider.valueAsNumber,
@@ -117,18 +121,23 @@ function showSpinner( enable ){
  */
 function loadScene( result ){
 
-  doc = new rhino.File3dm()
+  // clear objects from scene
+  scene.children = scene.children.filter(child => child.userData.background)
+
+  // check if result has values
+  if (!result.values || result.values.length === 0) {
+    console.error('No values in result')
+    return
+  }
 
   // set up loader for converting the results to threejs
   const loader = new Rhino3dmLoader()
   loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta/' )
 
-  // load rhino doc
-  const buffer = base64ToArrayBuffer(result.values[0].InnerTree['{0;0}'][0].data)
+  // load rhino doc from base64 data
+  const data = result.values[0].InnerTree['{0;0}'][0].data
+  const buffer = base64ToArrayBuffer(data)
   loader.parse( buffer, function ( object ) {
-
-      // clear objects from scene
-      scene.children = scene.children.filter(child => child.userData.background)
 
       // add object to scene
       scene.add( object )
@@ -170,6 +179,7 @@ function init(){
 
   renderer = new THREE.WebGLRenderer( { antialias: true } )
   renderer.setSize( window.innerWidth, window.innerHeight )
+  canvas.innerHTML = ''
   canvas.appendChild( renderer.domElement )
 
   // add light
