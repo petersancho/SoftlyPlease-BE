@@ -8,7 +8,7 @@ import rhino3dm from 'rhino3dm'
 const loader = new Rhino3dmLoader()
 loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta/' )
 
-const definition = 'Topological-Optimization.gh'
+const definition = 'Topological-Optimization'
 
 // setup input change events
 const tolerance_slider = document.getElementById( 'tolerance' )
@@ -77,27 +77,24 @@ async function compute(){
 
   showSpinner(true)
 
-  // initialise 'data' object that will be used by compute()
-  const data = {
-    definition: definition,
-    inputs: {
-      'tolerance':tolerance_slider.valueAsNumber,
-      'round':round_slider.valueAsNumber,
-      'pipe_width':pipe_width_slider.valueAsNumber,
-      'segment':segment_slider.valueAsNumber,
-      'cube':cube_checkbox.checked,
-      'smooth':smooth_slider.valueAsNumber,
-      'min_r':min_r_slider.valueAsNumber,
-      'max_R':max_R_slider.valueAsNumber,
-      'links':links_slider.valueAsNumber
-    }
+  // initialise 'inputs' object (definition comes from URL path)
+  const inputs = {
+    'tolerance':tolerance_slider.valueAsNumber,
+    'round':round_slider.valueAsNumber,
+    'pipe_width':pipe_width_slider.valueAsNumber,
+    'segment':segment_slider.valueAsNumber,
+    'cube':cube_checkbox.checked,
+    'smooth':smooth_slider.valueAsNumber,
+    'min_r':min_r_slider.valueAsNumber,
+    'max_R':max_R_slider.valueAsNumber,
+    'links':links_slider.valueAsNumber
   }
 
-  console.log('Data to send:', data)
+  console.log('Inputs to send:', inputs)
 
   const request = {
     'method':'POST',
-    'body': JSON.stringify(data),
+    'body': JSON.stringify({inputs: inputs}),
     'headers': {'Content-Type': 'application/json'}
   }
 
@@ -107,7 +104,7 @@ async function compute(){
 
   try {
     console.log('Sending request to server...')
-    const response = await fetch( '/solve/topological-optimization', {
+    const response = await fetch( `/solve/${definition}`, {
       ...request,
       signal: controller.signal
     } )
