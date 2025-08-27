@@ -87,54 +87,69 @@ loadDefinition().then(() => {
  * Call RhinoCompute
  */
 async function compute(){
-  // format data - using "RH_IN:" prefixes to match Grasshopper group names
-  let param1 = new RhinoCompute.Grasshopper.DataTree('RH_IN:brep')
-  param1.append([0], [''])  // Empty string for now - this would typically be geometry data
+  try {
+    // format data - using "RH_IN:" prefixes to match Grasshopper group names
+    // Note: RH_IN:brep expects geometry data, but we'll skip it for now since we don't have geometry input
+    // let param1 = new RhinoCompute.Grasshopper.DataTree('RH_IN:brep')
+    // param1.append([0], [''])  // Empty string for now - this would typically be geometry data
 
-  let param2 = new RhinoCompute.Grasshopper.DataTree('RH_IN:links')
-  param2.append([0], [links_slider.valueAsNumber])
+    let param2 = new RhinoCompute.Grasshopper.DataTree('RH_IN:links')
+    param2.append([0], [links_slider.valueAsNumber])
 
-  let param3 = new RhinoCompute.Grasshopper.DataTree('RH_IN:minr')
-  param3.append([0], [minr_slider.valueAsNumber])
+    let param3 = new RhinoCompute.Grasshopper.DataTree('RH_IN:minr')
+    param3.append([0], [minr_slider.valueAsNumber])
 
-  let param4 = new RhinoCompute.Grasshopper.DataTree('RH_IN:maxr')
-  param4.append([0], [maxr_slider.valueAsNumber])
+    let param4 = new RhinoCompute.Grasshopper.DataTree('RH_IN:maxr')
+    param4.append([0], [maxr_slider.valueAsNumber])
 
-  let param5 = new RhinoCompute.Grasshopper.DataTree('RH_IN:thickness')
-  param5.append([0], [thickness_slider.valueAsNumber])
+    let param5 = new RhinoCompute.Grasshopper.DataTree('RH_IN:thickness')
+    param5.append([0], [thickness_slider.valueAsNumber])
 
-  let param6 = new RhinoCompute.Grasshopper.DataTree('RH_IN:square')
-  param6.append([0], [square_slider.valueAsNumber])
+    let param6 = new RhinoCompute.Grasshopper.DataTree('RH_IN:square')
+    param6.append([0], [square_slider.valueAsNumber])
 
-  let param7 = new RhinoCompute.Grasshopper.DataTree('RH_IN:strutsize')
-  param7.append([0], [strutsize_slider.valueAsNumber])
+    let param7 = new RhinoCompute.Grasshopper.DataTree('RH_IN:strutsize')
+    param7.append([0], [strutsize_slider.valueAsNumber])
 
-  let param8 = new RhinoCompute.Grasshopper.DataTree('RH_IN:segment')
-  param8.append([0], [segment_slider.valueAsNumber])
+    let param8 = new RhinoCompute.Grasshopper.DataTree('RH_IN:segment')
+    param8.append([0], [segment_slider.valueAsNumber])
 
-  let param9 = new RhinoCompute.Grasshopper.DataTree('RH_IN:cubecorners')
-  param9.append([0], [cubecorners_slider.valueAsNumber])
+    let param9 = new RhinoCompute.Grasshopper.DataTree('RH_IN:cubecorners')
+    param9.append([0], [cubecorners_slider.valueAsNumber])
 
-  let param10 = new RhinoCompute.Grasshopper.DataTree('RH_IN:smooth')
-  param10.append([0], [smooth_slider.valueAsNumber])
+    let param10 = new RhinoCompute.Grasshopper.DataTree('RH_IN:smooth')
+    param10.append([0], [smooth_slider.valueAsNumber])
 
-  // Add all params to an array
-  let trees = []
-  trees.push(param1)
-  trees.push(param2)
-  trees.push(param3)
-  trees.push(param4)
-  trees.push(param5)
-  trees.push(param6)
-  trees.push(param7)
-  trees.push(param8)
-  trees.push(param9)
-  trees.push(param10)
+    // Add all params to an array
+    let trees = []
+    trees.push(param2)
+    trees.push(param3)
+    trees.push(param4)
+    trees.push(param5)
+    trees.push(param6)
+    trees.push(param7)
+    trees.push(param8)
+    trees.push(param9)
+    trees.push(param10)
 
-  // Call RhinoCompute
-  const res = await RhinoCompute.Grasshopper.evaluateDefinition(definition, trees)
+    console.log('Sending parameters to RhinoCompute:', {
+      url: RhinoCompute.url,
+      apiKey: RhinoCompute.apiKey ? '***' + RhinoCompute.apiKey.slice(-4) : 'undefined',
+      trees: trees.length,
+      parameters: ['links', 'minr', 'maxr', 'thickness', 'square', 'strutsize', 'segment', 'cubecorners', 'smooth']
+    });
 
-  collectResults(res)
+    // Call RhinoCompute
+    const res = await RhinoCompute.Grasshopper.evaluateDefinition(definition, trees)
+
+    console.log('RhinoCompute response received:', res);
+    collectResults(res)
+
+  } catch (error) {
+    console.error('Error in compute():', error)
+    showSpinner(false)
+    alert('Error: ' + error.message)
+  }
 }
 
 function onChange() {
