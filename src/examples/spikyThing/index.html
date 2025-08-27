@@ -62,6 +62,21 @@
                   <div><button id="downloadButton" disabled>Download</button></div>
                 </form>
 <!-- /////////////////////////////////////////////////////////////////////////// -->
+                <!-- Debug panel for development -->
+                <div id="debug-panel" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.9); color: white; padding: 15px; font-size: 11px; max-width: 350px; z-index: 1000; border-radius: 8px; font-family: monospace;">
+                  <div style="color: #00ff00; font-weight: bold; margin-bottom: 8px;">🔧 Spiky Thing Debug Panel</div>
+                  <div><strong>Status:</strong> <span id="status" style="color: #ffff00;">Initializing...</span></div>
+                  <div><strong>Request:</strong> <span id="request-info" style="color: #ffffff;">No request yet</span></div>
+                  <div><strong>Response:</strong> <span id="response-info" style="color: #ffffff;">No response yet</span></div>
+                  <div><strong>Render:</strong> <span id="render-info" style="color: #ffffff;">No geometry rendered</span></div>
+                  <hr style="border: 1px solid #333; margin: 8px 0;">
+                  <div style="font-size: 10px; color: #cccccc;">
+                    <div>• Appserver: ✅ Running</div>
+                    <div>• Three.js: ✅ Loaded & Ready</div>
+                    <div>• Rhino3dm: ✅ Initialized</div>
+                    <div>• Parameters: <span id="params-status" style="color: #ff6600;">⏳ Testing...</span></div>
+                  </div>
+                </div>
             </div>
         </div>
 
@@ -102,6 +117,9 @@ let scene, camera, renderer, controls
 const rhino = await rhino3dm()
 console.log('Loaded rhino3dm.')
 
+updateDebugStatus('Initializing Three.js scene...')
+updateParamsStatus('⏳ Initializing...', '#ffff00')
+
 init()
 compute()
 
@@ -114,6 +132,48 @@ controlsForm.addEventListener('submit', (e) => {
   e.preventDefault()
   return false
 })
+
+// Debug functions
+function updateDebugStatus(message) {
+  const statusEl = document.getElementById('status')
+  if (statusEl) {
+    statusEl.textContent = message
+    console.log('Debug Status:', message)
+  }
+}
+
+function updateRequestInfo(info) {
+  const infoEl = document.getElementById('request-info')
+  if (infoEl) {
+    infoEl.textContent = info
+    console.log('Request Info:', info)
+  }
+}
+
+function updateResponseInfo(info) {
+  const infoEl = document.getElementById('response-info')
+  if (infoEl) {
+    infoEl.textContent = info
+    console.log('Response Info:', info)
+  }
+}
+
+function updateRenderInfo(info) {
+  const infoEl = document.getElementById('render-info')
+  if (infoEl) {
+    infoEl.textContent = info
+    console.log('Render Info:', info)
+  }
+}
+
+function updateParamsStatus(status, color = '#ffffff') {
+  const statusEl = document.getElementById('params-status')
+  if (statusEl) {
+    statusEl.textContent = status
+    statusEl.style.color = color
+    console.log('Params Status:', status)
+  }
+}
 
   /////////////////////////////////////////////////////////////////////////////
  //                            HELPER  FUNCTIONS                            //
@@ -193,14 +253,23 @@ function init() {
  * Call appserver
  */
 async function compute() {
+  updateDebugStatus('Building request...')
+
   // construct url for GET /solve/definition.gh?name=value(&...)
   const url = new URL('/solve/' + data.definition, window.location.origin)
   console.log(url)
   Object.keys(data.inputs).forEach(key => url.searchParams.append(key, data.inputs[key]))
   console.log(url.toString())
 
+  updateRequestInfo(`URL: ${url.toString()}`)
+  updateDebugStatus('Sending request to Rhino Compute...')
+
   try {
+    const startTime = performance.now()
     const response = await fetch(url)
+    const endTime = performance.now()
+
+    updateResponseInfo(`Response: ${response.status} (${(endTime - startTime).toFixed(0)}ms)`)
 
     if(!response.ok) {
       // TODO: check for errors in response json
@@ -210,10 +279,13 @@ async function compute() {
     const responseJson = await response.json()
     console.log(responseJson)
 
+    updateDebugStatus('Processing Rhino Compute response...')
     collectResults(responseJson)
 
   } catch(error) {
     console.error(error)
+    updateDebugStatus(`Error: ${error.message}`)
+    updateParamsStatus('❌ Error', '#ff4444')
   }
 }
 
@@ -250,8 +322,13 @@ function collectResults(responseJson) {
     if (doc.objects().count < 1) {
       console.error('No rhino objects to load!')
       showSpinner(false)
+      updateRenderInfo('No geometry objects found')
+      updateParamsStatus('❌ No geometry', '#ff4444')
       return
     }
+
+    updateRenderInfo(`Found ${doc.objects().count} objects`)
+    updateParamsStatus('✅ Parameters working', '#00ff00')
 
     // hack (https://github.com/mcneel/rhino3dm/issues/353)
     const sphereAttrs = new rhino.ObjectAttributes()
@@ -283,6 +360,9 @@ function collectResults(responseJson) {
         // hide spinner and enable download button
         showSpinner(false)
         downloadButton.disabled = false
+
+        updateDebugStatus('Geometry rendered successfully!')
+        updateRenderInfo(`Rendered ${scene.children.length} objects`)
 
         // zoom to extents
         zoomCameraToSelection(camera, controls, scene.children)
@@ -322,6 +402,9 @@ function onSliderChange (event) {
     event.preventDefault()
   }
 
+  updateDebugStatus('Slider changed - updating geometry...')
+  updateParamsStatus('🔄 Computing...', '#ffff00')
+
   showSpinner(true)
   // get slider values
   let inputs = {}
@@ -339,6 +422,7 @@ function onSliderChange (event) {
     }
   }
 
+  console.log('New slider values:', inputs)
   data.inputs = inputs
 
   compute()
