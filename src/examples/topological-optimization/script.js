@@ -42,11 +42,21 @@ let rhino
 async function initializeRhino() {
   if (!rhino) {
     // Wait for rhino3dm to be available (loaded by script tag)
-    while (typeof rhino3dm === 'undefined') {
-      await new Promise(resolve => setTimeout(resolve, 100))
+    if (typeof rhino3dm === 'undefined') {
+      console.log('Waiting for rhino3dm to load...')
+      await new Promise(resolve => {
+        const checkRhino3dm = () => {
+          if (typeof rhino3dm !== 'undefined') {
+            resolve()
+          } else {
+            setTimeout(checkRhino3dm, 100)
+          }
+        }
+        checkRhino3dm()
+      })
     }
     rhino = await rhino3dm()
-    console.log('Loaded rhino3dm.')
+    console.log('Loaded rhino3dm successfully.')
   }
   return rhino
 }
@@ -135,7 +145,7 @@ function collectResults(responseText) {
 
   // set up loader for converting the results to threejs
   const loader = new Rhino3dmLoader()
-  loader.setLibraryPath('https://unpkg.com/rhino3dm@8.0.0-beta3/')
+  loader.setLibraryPath('https://unpkg.com/rhino3dm@8.0.0-beta2/')
 
   // const lineMat = new THREE.LineBasicMaterial({color: new THREE.Color('black')});
   // load rhino doc into three.js scene
