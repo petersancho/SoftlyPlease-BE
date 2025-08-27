@@ -1,17 +1,21 @@
 /* eslint no-undef: "off", no-unused-vars: "off" */
 /**
- * ULTRA-SIMPLE DEMO MODE - No external dependencies that can fail
- * This creates a basic 3D scene immediately using only Three.js global
+ * Rhino Compute Grasshopper Solver - Real topological optimization
+ * Uses the rhino.geometry REST API to solve Grasshopper definitions
  */
 
 // Global variables
-let scene, camera, renderer
-let animationId
+let scene, camera, renderer, controls
+let rhino3dm = null
+let isRhinoComputeWorking = false
 
-// Initialize immediately when DOM is ready
+// Definition name
+const definition = 'topological-optimization.gh'
+
+// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
   init()
-  createSimpleDemo()
+  testRhinoCompute()
 })
 
 // Add loading status indicator
@@ -31,6 +35,7 @@ function updateLoadingStatus(message) {
       font-family: monospace;
       font-size: 12px;
       z-index: 1000;
+      max-width: 300px;
     `
     document.body.appendChild(statusElement)
   }
@@ -45,24 +50,51 @@ function hideLoadingStatus() {
   }
 }
 
-function init() {
-  updateLoadingStatus('Starting 3D demo...')
+// Test if rhino compute is working
+async function testRhinoCompute() {
+  updateLoadingStatus('Testing rhino compute connection...')
 
-  // Create scene
+  try {
+    const response = await fetch('/solve/' + definition + '?thickness=0.5&min_r=0.1&square=0.5&strutsize=0.2&segment=8&links=4&cubecorners=0.3&smooth=0.7&max_r=0.8')
+
+    if (response.ok) {
+      const data = await response.text()
+      if (data && data.length > 100) { // Probably got real data
+        isRhinoComputeWorking = true
+        updateLoadingStatus('✅ Rhino compute working!')
+        compute() // Start with real computation
+        return
+      }
+    }
+  } catch (error) {
+    console.warn('Rhino compute test failed:', error)
+  }
+
+  // If we get here, rhino compute is not working
+  isRhinoComputeWorking = false
+  updateLoadingStatus('🔄 Using demo mode (rhino compute unavailable)')
+  setTimeout(() => {
+    createDemoMode()
+    hideLoadingStatus()
+  }, 1000)
+}
+
+function init() {
+  updateLoadingStatus('Initializing 3D scene...')
+
+  // Rhino models are z-up, so set this as the default
+  THREE.Object3D.DefaultUp = new THREE.Vector3(0, 0, 1)
+
   scene = new THREE.Scene()
   scene.background = new THREE.Color(0x1a1a1a)
 
-  // Create camera
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-  camera.position.set(5, 5, 5)
+  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000)
+  camera.position.set(50, 50, 50)
 
-  // Create renderer
   renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(window.innerWidth, window.innerHeight)
   renderer.shadowMap.enabled = true
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
-  // Add to DOM
   const container = document.querySelector('#container') || document.body
   container.appendChild(renderer.domElement)
 
@@ -75,10 +107,9 @@ function init() {
   directionalLight.castShadow = true
   scene.add(directionalLight)
 
-  // Simple orbit controls (basic implementation)
-  setupSimpleControls()
+  // Orbit controls
+  controls = new THREE.OrbitControls(camera, renderer.domElement)
 
-  // Handle window resize
   window.addEventListener('resize', function() {
     camera.aspect = window.innerWidth / window.innerHeight
     camera.updateProjectionMatrix()
@@ -86,73 +117,192 @@ function init() {
   })
 
   animate()
-  updateLoadingStatus('✅ 3D Demo Ready!')
-  setTimeout(() => hideLoadingStatus(), 2000)
+  updateLoadingStatus('3D scene initialized')
 }
 
-function setupSimpleControls() {
-  let isDragging = false
-  let previousMousePosition = { x: 0, y: 0 }
+// Main compute function
+async function compute() {
+  if (!isRhinoComputeWorking) {
+    createDemoMode()
+    return
+  }
 
-  renderer.domElement.addEventListener('mousedown', function(e) {
-    isDragging = true
-    previousMousePosition = { x: e.clientX, y: e.clientY }
-  })
+  try {
+    updateLoadingStatus('Solving Grasshopper definition...')
 
-  renderer.domElement.addEventListener('mousemove', function(e) {
-    if (!isDragging) return
+    // Get slider values
+    const params = {
+      thickness: parseFloat(document.getElementById('thickness')?.value || 50) / 100,
+      min_r: parseFloat(document.getElementById('min_r')?.value || 10) / 100,
+      square: parseFloat(document.getElementById('square')?.value || 50) / 100,
+      strutsize: parseFloat(document.getElementById('strutsize')?.value || 10) / 10,
+      segment: parseInt(document.getElementById('segment')?.value || 6),
+      links: parseInt(document.getElementById('links')?.value || 4),
+      cubecorners: parseInt(document.getElementById('cubecorners')?.value || 0),
+      smooth: parseFloat(document.getElementById('smooth')?.value || 50) / 10,
+      max_r: parseFloat(document.getElementById('max_r')?.value || 500)
+    }
 
-    const deltaX = e.clientX - previousMousePosition.x
-    const deltaY = e.clientY - previousMousePosition.y
+    // Build URL with parameters
+    const url = new URL('/solve/' + definition, window.location.origin)
+    Object.keys(params).forEach(key => {
+      url.searchParams.append(key, params[key])
+    })
 
-    // Rotate camera around scene
-    const radius = Math.sqrt(camera.position.x ** 2 + camera.position.y ** 2 + camera.position.z ** 2)
-    let theta = Math.atan2(camera.position.x, camera.position.z)
-    let phi = Math.acos(camera.position.y / radius)
+    console.log('Solving with params:', params)
 
-    theta -= deltaX * 0.01
-    phi += deltaY * 0.01
-    phi = Math.max(0.1, Math.min(Math.PI - 0.1, phi))
+    const response = await fetch(url)
 
-    camera.position.x = radius * Math.sin(phi) * Math.sin(theta)
-    camera.position.y = radius * Math.cos(phi)
-    camera.position.z = radius * Math.sin(phi) * Math.cos(theta)
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
 
-    camera.lookAt(0, 0, 0)
-    previousMousePosition = { x: e.clientX, y: e.clientY }
-  })
+    const responseText = await response.text()
+    console.log('Raw response:', responseText.substring(0, 200) + '...')
 
-  renderer.domElement.addEventListener('mouseup', function() {
-    isDragging = false
-  })
+    // Process the rhino compute response
+    await collectResults(responseText)
 
-  // Mouse wheel zoom
-  renderer.domElement.addEventListener('wheel', function(e) {
-    e.preventDefault()
-    const zoomSpeed = 0.1
-    const radius = Math.sqrt(camera.position.x ** 2 + camera.position.y ** 2 + camera.position.z ** 2)
-    const newRadius = Math.max(2, Math.min(20, radius + e.deltaY * zoomSpeed * 0.01))
-
-    const ratio = newRadius / radius
-    camera.position.multiplyScalar(ratio)
-  })
+  } catch (error) {
+    console.error('Compute error:', error)
+    updateLoadingStatus('❌ Compute failed, switching to demo mode')
+    isRhinoComputeWorking = false
+    setTimeout(() => createDemoMode(), 1000)
+  }
 }
 
-function createSimpleDemo() {
-  updateLoadingStatus('Creating 3D structure...')
+// Process rhino compute results
+async function collectResults(responseText) {
+  try {
+    // Clear previous objects
+    scene.traverse(child => {
+      if (Object.prototype.hasOwnProperty.call(child.userData, 'objectType') && child.userData.objectType === 'File3dm') {
+        scene.remove(child)
+      }
+    })
 
-  // Create a simple parametric structure
+    updateLoadingStatus('Processing rhino geometry...')
+
+    // The response is base64 encoded rhino file
+    const arr = base64ToArrayBuffer(responseText)
+
+    // Load rhino3dm if not already loaded
+    if (!rhino3dm) {
+      rhino3dm = await import('https://unpkg.com/rhino3dm@8.0.0-beta/rhino3dm.module.js')
+    }
+
+    const doc = rhino3dm.File3dm.fromByteArray(arr)
+
+    if (doc.objects().count < 1) {
+      console.warn('No rhino objects to load')
+      updateLoadingStatus('⚠️ No geometry in response')
+      return
+    }
+
+    console.log(`Loading ${doc.objects().count} rhino objects`)
+
+    // Convert rhino objects to Three.js
+    const rhinoObjects = []
+    for (let i = 0; i < doc.objects().count; i++) {
+      const rhinoObject = doc.objects().get(i)
+      if (rhinoObject.geometry) {
+        rhinoObjects.push(rhinoObject.geometry)
+      }
+    }
+
+    // Create Three.js meshes from rhino geometry
+    const threeObjects = rhinoObjects.map((rhinoGeometry, index) => {
+      if (rhinoGeometry.type === 'Mesh') {
+        const threeGeometry = rhinoMeshToThreeMesh(rhinoGeometry)
+        const material = new THREE.MeshLambertMaterial({
+          color: new THREE.Color().setHSL(index / rhinoObjects.length, 0.7, 0.5),
+          transparent: true,
+          opacity: 0.8
+        })
+        const mesh = new THREE.Mesh(threeGeometry, material)
+        mesh.castShadow = true
+        mesh.receiveShadow = true
+        return mesh
+      }
+      return null
+    }).filter(obj => obj !== null)
+
+    // Add to scene
+    threeObjects.forEach(obj => scene.add(obj))
+
+    // Zoom to fit
+    if (threeObjects.length > 0) {
+      zoomCameraToSelection(camera, controls, threeObjects)
+    }
+
+    updateLoadingStatus(`✅ Loaded ${threeObjects.length} meshes!`)
+    setTimeout(() => hideLoadingStatus(), 2000)
+
+    // Setup slider listeners
+    setupSliderListeners()
+
+  } catch (error) {
+    console.error('Error processing rhino results:', error)
+    updateLoadingStatus('❌ Error processing geometry')
+    throw error
+  }
+}
+
+// Convert rhino mesh to Three.js mesh
+function rhinoMeshToThreeMesh(rhinoMesh) {
+  const threeGeometry = new THREE.BufferGeometry()
+
+  // Get vertices
+  const vertices = []
+  const rhinoVertices = rhinoMesh.vertices()
+  for (let i = 0; i < rhinoVertices.count; i++) {
+    const vertex = rhinoVertices.get(i)
+    vertices.push(vertex.x, vertex.y, vertex.z)
+  }
+
+  // Get faces
+  const indices = []
+  const rhinoFaces = rhinoMesh.faces()
+  for (let i = 0; i < rhinoFaces.count; i++) {
+    const face = rhinoFaces.get(i)
+    if (face.length === 3) {
+      indices.push(face[0], face[1], face[2])
+    } else if (face.length === 4) {
+      // Convert quad to triangles
+      indices.push(face[0], face[1], face[2])
+      indices.push(face[0], face[2], face[3])
+    }
+  }
+
+  threeGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
+  threeGeometry.setIndex(indices)
+  threeGeometry.computeVertexNormals()
+
+  return threeGeometry
+}
+
+// Demo mode for when rhino compute is not working
+function createDemoMode() {
+  updateLoadingStatus('Creating demo structure...')
+
+  // Clear previous objects
+  scene.traverse(child => {
+    if (Object.prototype.hasOwnProperty.call(child.userData, 'objectType') && child.userData.objectType === 'File3dm') {
+      scene.remove(child)
+    }
+  })
+
   const group = new THREE.Group()
 
   // Get slider values
   const thickness = (document.getElementById('thickness')?.value || 50) / 100
   const segments = Math.min(6, Math.max(3, parseInt(document.getElementById('segment')?.value) || 4))
 
+  // Create parametric structure
   for (let i = 0; i < segments; i++) {
     for (let j = 0; j < segments; j++) {
       for (let k = 0; k < segments; k++) {
         if ((i + j + k) % 2 === 0) {
-          // Create cube
           const geometry = new THREE.BoxGeometry(0.5 + thickness, 0.5 + thickness, 0.5 + thickness)
           const material = new THREE.MeshLambertMaterial({
             color: new THREE.Color().setHSL((i + j + k) / (segments * 3), 0.7, 0.5),
@@ -169,20 +319,6 @@ function createSimpleDemo() {
           cube.castShadow = true
           cube.receiveShadow = true
           group.add(cube)
-
-          // Add connecting lines/struts
-          if (i < segments - 1 && (i + j + k) % 3 === 0) {
-            const strutGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.5)
-            const strutMaterial = new THREE.MeshLambertMaterial({ color: 0x666666 })
-            const strut = new THREE.Mesh(strutGeometry, strutMaterial)
-            strut.position.set(
-              (i - segments/2) * 1.5 + 0.75,
-              (j - segments/2) * 1.5,
-              (k - segments/2) * 1.5
-            )
-            strut.rotation.z = Math.PI / 2
-            group.add(strut)
-          }
         }
       }
     }
@@ -198,14 +334,14 @@ function createSimpleDemo() {
   ground.receiveShadow = true
   scene.add(ground)
 
-  updateLoadingStatus(`✅ Created ${group.children.length} objects!`)
+  updateLoadingStatus(`✅ Demo: ${group.children.length} objects created`)
   setTimeout(() => hideLoadingStatus(), 2000)
 
-  // Make sliders interactive
-  setupSliderListeners(group)
+  setupSliderListeners()
 }
 
-function setupSliderListeners(originalGroup) {
+// Setup slider event listeners
+function setupSliderListeners() {
   const sliders = ['thickness', 'segment', 'links', 'min_r', 'max_r', 'square', 'strutsize', 'cubecorners', 'smooth']
 
   sliders.forEach(sliderId => {
@@ -213,22 +349,55 @@ function setupSliderListeners(originalGroup) {
     if (slider) {
       slider.addEventListener('input', function() {
         updateLoadingStatus('Updating...')
-
-        // Remove old structure
-        scene.children.forEach(child => {
-          if (child.type === 'Group') {
-            scene.remove(child)
-          }
-        })
-
-        // Create new structure
-        createSimpleDemo()
+        compute()
       })
     }
   })
 }
 
+// Utility functions
+function base64ToArrayBuffer(base64) {
+  const binary_string = window.atob(base64)
+  const len = binary_string.length
+  const bytes = new Uint8Array(len)
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binary_string.charCodeAt(i)
+  }
+  return bytes.buffer
+}
+
+function zoomCameraToSelection(camera, controls, selection, fitOffset = 1.2) {
+  const box = new THREE.Box3()
+
+  for (const object of selection) {
+    if (object.isLight) continue
+    box.expandByObject(object)
+  }
+
+  const size = box.getSize(new THREE.Vector3())
+  const center = box.getCenter(new THREE.Vector3())
+
+  const maxSize = Math.max(size.x, size.y, size.z)
+  const fitHeightDistance = maxSize / (2 * Math.atan(Math.PI * camera.fov / 360))
+  const fitWidthDistance = fitHeightDistance / camera.aspect
+  const distance = fitOffset * Math.max(fitHeightDistance, fitWidthDistance)
+
+  const direction = controls.target.clone()
+    .sub(camera.position)
+    .normalize()
+    .multiplyScalar(distance)
+  controls.maxDistance = distance * 10
+  controls.target.copy(center)
+
+  camera.near = distance / 100
+  camera.far = distance * 100
+  camera.updateProjectionMatrix()
+  camera.position.copy(controls.target).sub(direction)
+
+  controls.update()
+}
+
 function animate() {
-  animationId = requestAnimationFrame(animate)
+  requestAnimationFrame(animate)
   renderer.render(scene, camera)
 }
