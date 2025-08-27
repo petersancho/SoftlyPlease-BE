@@ -40,7 +40,18 @@ async function getParams(definitionUrl) {
   // Use configuration from config.js
   const config = require('../config/config')
   compute.url = config.rhino.url
-  compute.authToken = config.rhino.apiKey
+  const apiKey = config.rhino.apiKey
+
+  // Set the API key and auth token
+  compute.apiKey = apiKey
+  compute.authToken = apiKey
+
+  // For JWT tokens, we need to set the authorization header
+  compute.headers = {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json'
+  }
+
   console.log('Definitions compute config - URL:', compute.url, 'Auth Token length:', compute.authToken ? compute.authToken.length : 'null')
 
   const response = await compute.computeFetch('io', { 'pointer': definitionUrl }, false)

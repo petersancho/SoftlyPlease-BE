@@ -26,11 +26,19 @@ function computeParams (req, res, next){
   // Use configuration from config.js
   compute.url = config.rhino.url
   const apiKey = config.rhino.apiKey
+
+  // Set the API key and auth token
   compute.apiKey = apiKey
-  // Also set authToken as fallback
   compute.authToken = apiKey
+
+  // For JWT tokens, we need to set the authorization header
+  compute.headers = {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json'
+  }
+
   console.log('Compute config - URL:', compute.url)
-  console.log('Using API Key from config.js')
+  console.log('Using JWT Bearer token from config.js')
   console.log('API Key length:', apiKey.length, 'chars')
   next()
 }
