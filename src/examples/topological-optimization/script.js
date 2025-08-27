@@ -134,8 +134,7 @@ function collectResults(responseJson) {
   }
 
   const str = innerTree[key][0].data
-  const data = JSON.parse(str)
-  const arr = _base64ToArrayBuffer(data)
+  const arr = _base64ToArrayBuffer(str)
   doc = rhino.File3dm.fromByteArray(arr)
 
   if (doc.objects().count < 1) {
