@@ -77,8 +77,8 @@ async function compute(){
       throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
     }
 
-    const responseText = await response.text()
-    collectResults(responseText)
+    const responseJson = await response.json()
+    collectResults(responseJson)
 
   } catch(error){
     console.error(error)
@@ -100,16 +100,42 @@ function _base64ToArrayBuffer(base64) {
 /**
  * Parse response
  */
-function collectResults(responseText) {
+function collectResults(responseJson) {
 
   // clear doc
   if (doc !== undefined)
     doc.delete()
 
-  console.log('Response:', responseText)
+  console.log('Response:', responseJson)
 
-  // The response is directly the base64 encoded rhino file
-  const arr = _base64ToArrayBuffer(responseText)
+  // Extract the base64 data from the JSON response
+  const values = responseJson.values
+  if (!values || values.length === 0) {
+    console.error('No values in response!')
+    showSpinner(false)
+    return
+  }
+
+  // Find the mesh parameter (usually the first one)
+  const meshData = values.find(v => v.ParamName === 'mesh')
+  if (!meshData) {
+    console.error('No mesh data found!')
+    showSpinner(false)
+    return
+  }
+
+  // Get the first item from the inner tree
+  const innerTree = meshData.InnerTree
+  const key = Object.keys(innerTree)[0]
+  if (!key || !innerTree[key] || innerTree[key].length === 0) {
+    console.error('No mesh data in inner tree!')
+    showSpinner(false)
+    return
+  }
+
+  const str = innerTree[key][0].data
+  const data = JSON.parse(str)
+  const arr = _base64ToArrayBuffer(data)
   doc = rhino.File3dm.fromByteArray(arr)
 
   if (doc.objects().count < 1) {
