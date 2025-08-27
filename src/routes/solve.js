@@ -106,6 +106,7 @@ function checkCache (req, res, next){
 
 function commonSolve (req, res, next){
   const timePostStart = performance.now()
+  let apiKey = compute.apiKey;
 
   // set general headers
   // what is the proper max-age, 31536000 = 1 year, 86400 = 1 day

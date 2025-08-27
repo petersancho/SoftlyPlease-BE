@@ -71,17 +71,17 @@ echo "Results will be logged to: $TEST_LOG"
 
 echo -e "\n${YELLOW}📡 PHASE 1: BASIC CONNECTIVITY TESTS${NC}"
 
-# Test 1: Azure VM Port 6500 (Rhino Compute)
-echo -e "\n${BLUE}TEST 1: Rhino Compute Service (Port 6500)${NC}"
-if curl -s --connect-timeout 5 "http://$AZURE_IP:6500/version" > /dev/null 2>&1; then
-    response=$(curl -s "http://$AZURE_IP:6500/version")
+# Test 1: Azure VM Port 6001 (Rhino Compute)
+echo -e "\n${BLUE}TEST 1: Rhino Compute Service (Port 6001)${NC}"
+if curl -s --connect-timeout 5 "http://4.248.252.92:6500/version" > /dev/null 2>&1; then
+    response=$(curl -s "http://4.248.252.92:6500/version")
     if [[ "$response" == *"Rhino Compute"* ]]; then
         test_result "Rhino Compute Service" "PASS" "Service responding correctly"
     else
         test_result "Rhino Compute Service" "FAIL" "Service responding but unexpected content: $response"
     fi
 else
-    test_result "Rhino Compute Service" "FAIL" "Port 6500 not responding"
+    test_result "Rhino Compute Service" "FAIL" "Port 6001 not responding"
 fi
 
 # Test 2: Azure VM Port 80 (Node.js AppServer)
@@ -184,7 +184,7 @@ end_time=$(date +%s%N)
 
 if [[ -n "$response" ]]; then
     # Calculate milliseconds
-    time_diff=$(( (end_time - start_time) / 1000000 ))
+    time_diff=$(( (10#${end_time%N} - 10#${start_time%N}) / 1000000 ))
     if [[ $time_diff -lt 5000 ]]; then  # Less than 5 seconds
         test_result "Response Time" "PASS" "Response time: ${time_diff}ms (acceptable)"
     else
@@ -208,8 +208,8 @@ start2=$(date +%s%N)
 curl -s "https://$DOMAIN/solve?definition=BranchNodeRnd.gh&Radius=5&Count=51&Length=5" > /dev/null 2>&1
 end2=$(date +%s%N)
 
-time1=$(( (end1 - start1) / 1000000 ))
-time2=$(( (end2 - start2) / 1000000 ))
+time1=$(( (10#${end1%N} - 10#${start1%N}) / 1000000 ))
+time2=$(( (10#${end2%N} - 10#${start2%N}) / 1000000 ))
 
 if [[ $time2 -lt $time1 ]]; then
     improvement=$(( (time1 - time2) * 100 / time1 ))
@@ -314,7 +314,7 @@ rhino_up=false
 appserver_up=false
 domain_up=false
 
-if curl -s --connect-timeout 5 "http://$AZURE_IP:6500/version" > /dev/null 2>&1; then
+if curl -s --connect-timeout 5 "http://4.248.252.92:6500/version" > /dev/null 2>&1; then
     rhino_up=true
 fi
 
