@@ -39,14 +39,60 @@ const max_r_slider = document.getElementById( 'max_r' )
 max_r_slider.addEventListener( 'mouseup', onSliderChange, false )
 max_r_slider.addEventListener( 'touchend', onSliderChange, false )
 
+// Add loading status indicator
+function updateLoadingStatus(message) {
+  let statusElement = document.getElementById('loading-status')
+  if (!statusElement) {
+    statusElement = document.createElement('div')
+    statusElement.id = 'loading-status'
+    statusElement.style.cssText = `
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 1000;
+    `
+    document.body.appendChild(statusElement)
+  }
+  statusElement.textContent = message
+  console.log(message)
+}
+
+function hideLoadingStatus() {
+  const statusElement = document.getElementById('loading-status')
+  if (statusElement) {
+    statusElement.remove()
+  }
+}
+
 let doc
 let scene, camera, renderer, controls
 let rhino
 
 async function initializeRhino() {
   if (!rhino) {
-    rhino = await rhino3dm()
-    console.log('Loaded rhino3dm.')
+    try {
+      updateLoadingStatus('Loading 3D libraries...')
+      console.log('Starting rhino3dm initialization...')
+      // Add timeout to rhino3dm loading
+      const rhinoPromise = rhino3dm()
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Rhino3dm load timeout')), 10000)
+      )
+
+      rhino = await Promise.race([rhinoPromise, timeoutPromise])
+      console.log('Loaded rhino3dm successfully.')
+      updateLoadingStatus('Rhino3dm loaded successfully')
+    } catch (error) {
+      console.warn('Rhino3dm failed to load, continuing in demo-only mode:', error.message)
+      rhino = null // Explicitly set to null to indicate demo mode
+      updateLoadingStatus('Using demo mode (Rhino3dm unavailable)')
+    }
   }
   return rhino
 }
@@ -62,11 +108,12 @@ async function compute(){
     // Initialize rhino3dm if not already done
     await initializeRhino()
 
-    // Check if we're in demo mode (rhino compute server not available)
+    // Check if we're in demo mode (rhino compute server not available or rhino3dm failed)
     const isDemoMode = true // Set to false to use real rhino compute
+    const rhinoFailed = rhino === null
 
-    if (isDemoMode) {
-      console.log('Demo mode: generating sample geometry')
+    if (isDemoMode || rhinoFailed) {
+      console.log(rhinoFailed ? 'Rhino3dm failed to load, using demo mode' : 'Demo mode: generating sample geometry')
       generateDemoGeometry()
       return
     }
@@ -107,9 +154,12 @@ async function compute(){
 
 
 /**
- * Generate demo geometry to show the UI is working
+ * Generate demo geometry to show the UI is working (pure Three.js, no rhino3dm required)
  */
 function generateDemoGeometry() {
+  updateLoadingStatus('Generating 3D structure...')
+  console.log('Starting demo geometry generation...')
+
   // Clear previous objects
   scene.traverse(child => {
     if (Object.prototype.hasOwnProperty.call(child.userData, 'objectType') && child.userData.objectType === 'File3dm') {
@@ -122,57 +172,71 @@ function generateDemoGeometry() {
 
   // Get slider values to influence the demo
   const thickness = thickness_slider.valueAsNumber / 10
-  const segments = Math.max(3, segment_slider.valueAsNumber)
+  const segments = Math.max(3, Math.min(8, segment_slider.valueAsNumber)) // Limit to prevent performance issues
   const links = Math.max(1, links_slider.valueAsNumber)
 
-  // Create a parametric structure
-  for (let i = 0; i < segments; i++) {
-    for (let j = 0; j < segments; j++) {
-      for (let k = 0; k < segments; k++) {
-        if ((i + j + k) % 2 === 0) { // Sparse grid pattern
-          const geometry = new THREE.BoxGeometry(0.5 + thickness, 0.5 + thickness, 0.5 + thickness)
-          const material = new THREE.MeshLambertMaterial({
-            color: new THREE.Color().setHSL((i + j + k) / (segments * 3), 0.7, 0.5),
-            transparent: true,
-            opacity: 0.8
-          })
+  console.log(`Creating ${segments}x${segments}x${segments} grid with thickness ${thickness}`)
+  updateLoadingStatus(`Creating ${segments}x${segments}x${segments} structure...`)
 
-          const cube = new THREE.Mesh(geometry, material)
-          cube.position.set(
-            (i - segments/2) * 2,
-            (j - segments/2) * 2,
-            (k - segments/2) * 2
-          )
-          group.add(cube)
+  try {
+    // Create a parametric structure
+    for (let i = 0; i < segments; i++) {
+      for (let j = 0; j < segments; j++) {
+        for (let k = 0; k < segments; k++) {
+          if ((i + j + k) % 2 === 0) { // Sparse grid pattern
+            const geometry = new THREE.BoxGeometry(0.5 + thickness, 0.5 + thickness, 0.5 + thickness)
+            const material = new THREE.MeshLambertMaterial({
+              color: new THREE.Color().setHSL((i + j + k) / (segments * 3), 0.7, 0.5),
+              transparent: true,
+              opacity: 0.8
+            })
 
-          // Add connecting struts
-          if (links > 0 && i < segments - 1) {
-            const strutGeometry = new THREE.CylinderGeometry(0.05, 0.05, 2)
-            const strutMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 })
-            const strut = new THREE.Mesh(strutGeometry, strutMaterial)
-            strut.position.set(
-              (i - segments/2) * 2 + 1,
+            const cube = new THREE.Mesh(geometry, material)
+            cube.position.set(
+              (i - segments/2) * 2,
               (j - segments/2) * 2,
               (k - segments/2) * 2
             )
-            strut.rotation.z = Math.PI / 2
-            group.add(strut)
+            group.add(cube)
+
+            // Add connecting struts (limit to prevent too many objects)
+            if (links > 0 && i < segments - 1 && (i + j + k) % 3 === 0) {
+              const strutGeometry = new THREE.CylinderGeometry(0.05, 0.05, 2)
+              const strutMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 })
+              const strut = new THREE.Mesh(strutGeometry, strutMaterial)
+              strut.position.set(
+                (i - segments/2) * 2 + 1,
+                (j - segments/2) * 2,
+                (k - segments/2) * 2
+              )
+              strut.rotation.z = Math.PI / 2
+              group.add(strut)
+            }
           }
         }
       }
     }
+
+    // Add the group to scene
+    scene.add(group)
+    console.log(`Added ${group.children.length} objects to scene`)
+
+    // Zoom to fit
+    zoomCameraToSelection(camera, controls, [group])
+
+    // Hide spinner
+    showSpinner(false)
+
+    console.log(`✅ Demo geometry generated successfully with ${segments}x${segments}x${segments} grid and thickness ${thickness}`)
+    updateLoadingStatus(`✅ Ready! ${group.children.length} objects created`)
+    setTimeout(() => hideLoadingStatus(), 2000) // Hide after 2 seconds
+
+  } catch (error) {
+    console.error('Error generating demo geometry:', error)
+    showSpinner(false)
+    updateLoadingStatus('❌ Error generating geometry')
+    setTimeout(() => hideLoadingStatus(), 3000)
   }
-
-  // Add the group to scene
-  scene.add(group)
-
-  // Zoom to fit
-  zoomCameraToSelection(camera, controls, [group])
-
-  // Hide spinner
-  showSpinner(false)
-
-  console.log(`Demo geometry generated with ${segments}x${segments}x${segments} grid and thickness ${thickness}`)
 }
 
 // from https://stackoverflow.com/a/21797381
@@ -262,6 +326,7 @@ function collectResults(responseText) {
 function onSliderChange () {
   // show spinner
   showSpinner(true)
+  updateLoadingStatus('Updating structure...')
   compute()
 }
 
@@ -278,6 +343,7 @@ function showSpinner(enable) {
 // BOILERPLATE //
 
 function init () {
+  updateLoadingStatus('Initializing 3D scene...')
 
   // Rhino models are z-up, so set this as the default
   THREE.Object3D.DefaultUp = new THREE.Vector3(0, 0, 1)
@@ -307,6 +373,7 @@ function init () {
   window.addEventListener( 'resize', onWindowResize, false )
 
   animate()
+  updateLoadingStatus('3D scene initialized')
 }
 
 function animate () {
