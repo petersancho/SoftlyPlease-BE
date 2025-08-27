@@ -10,13 +10,33 @@ loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta3/' )
 
 const definition = 'topological-optimization.gh'
 
-// setup input change events - try basic parameters first
-const tolerance_slider = document.getElementById( 'tolerance' )
-tolerance_slider .addEventListener( 'mouseup', onSliderChange, false )
-tolerance_slider .addEventListener( 'touchend', onSliderChange, false )
-const round_slider = document.getElementById( 'round' )
-round_slider.addEventListener( 'mouseup', onSliderChange, false )
-round_slider.addEventListener( 'touchend', onSliderChange, false )
+// setup input change events
+const links_slider = document.getElementById( 'links' )
+links_slider .addEventListener( 'mouseup', onSliderChange, false )
+links_slider .addEventListener( 'touchend', onSliderChange, false )
+const max_r_slider = document.getElementById( 'max_r' )
+max_r_slider.addEventListener( 'mouseup', onSliderChange, false )
+max_r_slider.addEventListener( 'touchend', onSliderChange, false )
+const min_r_slider = document.getElementById( 'min_r' )
+min_r_slider.addEventListener( 'mouseup', onSliderChange, false )
+min_r_slider.addEventListener( 'touchend', onSliderChange, false )
+const thickness_slider = document.getElementById( 'thickness' )
+thickness_slider.addEventListener( 'mouseup', onSliderChange, false )
+thickness_slider.addEventListener( 'touchend', onSliderChange, false )
+const square_checkbox = document.getElementById( 'square' )
+square_checkbox.addEventListener( 'change', onSliderChange, false )
+const strutsize_slider = document.getElementById( 'strutsize' )
+strutsize_slider.addEventListener( 'mouseup', onSliderChange, false )
+strutsize_slider.addEventListener( 'touchend', onSliderChange, false )
+const segment_slider = document.getElementById( 'segment' )
+segment_slider.addEventListener( 'mouseup', onSliderChange, false )
+segment_slider.addEventListener( 'touchend', onSliderChange, false )
+const cubecorners_slider = document.getElementById( 'cubecorners' )
+cubecorners_slider.addEventListener( 'mouseup', onSliderChange, false )
+cubecorners_slider.addEventListener( 'touchend', onSliderChange, false )
+const smooth_slider = document.getElementById( 'smooth' )
+smooth_slider.addEventListener( 'mouseup', onSliderChange, false )
+smooth_slider.addEventListener( 'touchend', onSliderChange, false )
 
 let doc
 let scene, camera, renderer, controls
@@ -34,15 +54,27 @@ async function compute(){
 
   // construct url for GET /solve/definition.gh?name=value(&...)
   const url = new URL('/solve/' + definition, window.location.origin)
-  url.searchParams.append('tolerance', tolerance_slider.valueAsNumber)
-  url.searchParams.append('round', round_slider.valueAsNumber)
+  url.searchParams.append('links', links_slider.valueAsNumber)
+  url.searchParams.append('max_r', max_r_slider.valueAsNumber)
+  url.searchParams.append('min_r', min_r_slider.valueAsNumber)
+  url.searchParams.append('thickness', thickness_slider.valueAsNumber)
+  url.searchParams.append('square', square_checkbox.checked)
+  url.searchParams.append('strutsize', strutsize_slider.valueAsNumber)
+  url.searchParams.append('segment', segment_slider.valueAsNumber)
+  url.searchParams.append('cubecorners', cubecorners_slider.valueAsNumber)
+  url.searchParams.append('smooth', smooth_slider.valueAsNumber)
   console.log(url.toString())
 
   try {
     const response = await fetch(url)
 
-    if(!response.ok)
-      throw new Error(response.statusText)
+    if(!response.ok) {
+      console.error('Response status:', response.status)
+      console.error('Response headers:', Object.fromEntries(response.headers.entries()))
+      const errorText = await response.text()
+      console.error('Error response body:', errorText)
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
+    }
 
     const responseJson = await response.json()
     collectResults(responseJson)
