@@ -136,9 +136,12 @@ function commonSolve (req, res, next){
     let trees = []
     if(res.locals.params.inputs !== undefined && Object.keys(res.locals.params.inputs).length > 0) {
       for (let [key, value] of Object.entries(res.locals.params.inputs)) {
-        let param = new compute.Grasshopper.DataTree(key)
+        // Map parameter names to Grasshopper group names with "rh in" prefix
+        const grasshopperGroupName = `rh in ${key}`
+        let param = new compute.Grasshopper.DataTree(grasshopperGroupName)
         param.append([0], Array.isArray(value) ? value : [value])
         trees.push(param)
+        console.log(`Mapped parameter '${key}' to Grasshopper group '${grasshopperGroupName}'`)
       }
     }
     if(res.locals.params.values !== undefined) {
