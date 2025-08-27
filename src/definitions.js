@@ -46,12 +46,6 @@ async function getParams(definitionUrl) {
   compute.apiKey = apiKey
   compute.authToken = apiKey
 
-  // For JWT tokens, we need to set the authorization header
-  compute.headers = {
-    'Authorization': `Bearer ${apiKey}`,
-    'Content-Type': 'application/json'
-  }
-
   console.log('Definitions compute config - URL:', compute.url, 'Auth Token length:', compute.authToken ? compute.authToken.length : 'null')
 
   const response = await compute.computeFetch('io', { 'pointer': definitionUrl }, false)
