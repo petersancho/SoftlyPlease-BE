@@ -83,38 +83,48 @@
         <!-- Import maps polyfill -->
         <!-- Remove this when import maps will be widely supported -->
     <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.156.1/build/three.module.js",
-                "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.156.1/examples/jsm/controls/OrbitControls.js",
-                "three/examples/jsm/loaders/3DMLoader": "https://unpkg.com/three@0.156.1/examples/jsm/loaders/3DMLoader.js",
-                "rhino3dm":"https://unpkg.com/rhino3dm@8.0.0-beta/rhino3dm.module.js"
-              }
-        }
-    </script>
+            <script type="importmap">
+            {
+                "imports": {
+                    "three": "https://unpkg.com/three@0.156.1/build/three.module.js",
+                    "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.156.1/examples/jsm/controls/OrbitControls.js",
+                    "three/examples/jsm/loaders/3DMLoader": "https://unpkg.com/three@0.156.1/examples/jsm/loaders/3DMLoader.js",
+                    "rhino3dm":"https://unpkg.com/rhino3dm@8.0.0-beta/rhino3dm.module.js",
+                    "rhinocompute": "https://www.unpkg.com/compute-rhino3d@0.13.0-beta/compute.rhino3d.module.js"
+                }
+            }
+        </script>
 
         <script type="module">
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader'
 import rhino3dm from 'rhino3dm'
+import { RhinoCompute } from 'rhinocompute'
 
 // set up loader for converting the results to threejs
 const loader = new Rhino3dmLoader()
 loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta/' )
 
-// initialise 'data' object that will be used by compute()
-const data = {
-  definition: 'BranchNodeRnd.gh'
-}
+// reference the definition
+const definitionName = 'BranchNodeRnd.gh'
 
 // globals
-let doc
+let definition, doc
 let scene, camera, renderer, controls
 
 const rhino = await rhino3dm()
 console.log('Loaded rhino3dm.')
+
+// Setup RhinoCompute authentication
+RhinoCompute.url = getAuth('RHINO_COMPUTE_URL')
+RhinoCompute.apiKey = getAuth('RHINO_COMPUTE_KEY')
+
+// Load the .gh definition file
+let url = definitionName
+let res = await fetch(url)
+let buffer = await res.arrayBuffer()
+definition = new Uint8Array(buffer)
 
 updateDebugStatus('Initializing Three.js scene...')
 updateParamsStatus('⏳ Initializing...', '#ffff00')
@@ -172,6 +182,18 @@ function updateParamsStatus(status, color = '#ffffff') {
     statusEl.style.color = color
     console.log('Params Status:', status)
   }
+}
+
+function getAuth(key) {
+  let value = localStorage[key]
+  if (value === undefined) {
+    const prompt = key.includes('URL') ? 'Server URL' : 'Server API Key'
+    value = window.prompt('RhinoCompute ' + prompt)
+    if (value !== null) {
+      localStorage.setItem(key, value)
+    }
+  }
+  return value
 }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -249,43 +271,46 @@ function init() {
 }
 
 /**
- * Call appserver
+ * Call RhinoCompute
  */
 async function compute() {
   updateDebugStatus('Building request...')
 
-  // construct url for GET /solve/definition.gh?name=value(&...)
-  const url = new URL('/solve/' + data.definition, window.location.origin)
+  // format data using RhinoCompute.Grasshopper.DataTree
+  let param1 = new RhinoCompute.Grasshopper.DataTree('Count')
+  param1.append([0], [document.getElementById('count').valueAsNumber])
 
-  // Add parameters with RH_IN: prefix like the topological optimization page
-  url.searchParams.append('RH_IN:count', document.getElementById('count').valueAsNumber)
-  url.searchParams.append('RH_IN:radius', document.getElementById('radius').valueAsNumber)
-  url.searchParams.append('RH_IN:length', document.getElementById('length').valueAsNumber)
+  let param2 = new RhinoCompute.Grasshopper.DataTree('Radius')
+  param2.append([0], [document.getElementById('radius').valueAsNumber])
 
-  console.log('Request URL:', url.toString())
-  updateRequestInfo(`URL: ${url.toString()}`)
+  let param3 = new RhinoCompute.Grasshopper.DataTree('Length')
+  param3.append([0], [document.getElementById('length').valueAsNumber])
+
+  // Add all params to an array
+  let trees = []
+  trees.push(param1)
+  trees.push(param2)
+  trees.push(param3)
+
+  updateRequestInfo(`Parameters: Count=${document.getElementById('count').valueAsNumber}, Radius=${document.getElementById('radius').valueAsNumber}, Length=${document.getElementById('length').valueAsNumber}`)
   updateDebugStatus('Sending request to Rhino Compute...')
 
   try {
     const startTime = performance.now()
-    const response = await fetch(url)
+
+    // Call RhinoCompute
+    const response = await RhinoCompute.Grasshopper.evaluateDefinition(definition, trees)
+
     const endTime = performance.now()
 
-    updateResponseInfo(`Response: ${response.status} (${(endTime - startTime).toFixed(0)}ms)`)
-
-    if(!response.ok) {
-      // TODO: check for errors in response json
-      throw new Error(response.statusText)
-    }
-
-    const responseJson = await response.json()
-    console.log(responseJson)
+    updateResponseInfo(`Response received (${(endTime - startTime).toFixed(0)}ms)`)
+    console.log('RhinoCompute response:', response)
 
     updateDebugStatus('Processing Rhino Compute response...')
-    collectResults(responseJson)
+    collectResults(response)
 
   } catch(error) {
-    console.error(error)
+    console.error('RhinoCompute error:', error)
     updateDebugStatus(`Error: ${error.message}`)
     updateParamsStatus('❌ Error', '#ff4444')
   }
@@ -408,7 +433,12 @@ function onSliderChange (event) {
   updateParamsStatus('🔄 Computing...', '#ffff00')
 
   showSpinner(true)
-  compute()
+
+  // Debounce the compute calls to avoid too many requests
+  clearTimeout(window.computeTimeout)
+  window.computeTimeout = setTimeout(() => {
+    compute()
+  }, 300) // Wait 300ms after last slider change
 }
 
 /**
