@@ -38,7 +38,7 @@ const links_slider = document.getElementById( 'links' )
 links_slider.addEventListener( 'mouseup', onSliderChange, false )
 links_slider.addEventListener( 'touchend', onSliderChange, false )
 
-let doc
+let _threeMesh, _threeMaterial, doc
 let scene, camera, renderer, controls
 
 const rhino = await rhino3dm()
@@ -85,7 +85,17 @@ async function compute(){
       throw new Error(response.statusText)
 
     const responseJson = await response.json()
-    collectResults(responseJson)
+
+    // process mesh
+    console.log(responseJson.values)
+
+    const rhinoObject = decodeItem(responseJson.values[0].InnerTree['{0}'][0])
+    console.log(rhinoObject)
+    let threeMesh = meshToThreejs(rhinoObject, new THREE.MeshBasicMaterial({vertexColors:true}))
+    replaceCurrentMesh(threeMesh)
+
+    // hide spinner
+    showSpinner(false)
 
   } catch(error){
     console.error(error)
@@ -93,64 +103,35 @@ async function compute(){
   }
 }
 
-// from https://stackoverflow.com/a/21797381
-function _base64ToArrayBuffer(base64) {
-  var binary_string = window.atob(base64);
-  var len = binary_string.length;
-  var bytes = new Uint8Array(len);
-  for (var i = 0; i < len; i++) {
-    bytes[i] = binary_string.charCodeAt(i);
+/**
+* Attempt to decode data tree item to rhino geometry
+*/
+function decodeItem(item) {
+  const data = JSON.parse(item.data)
+  if (item.type === 'System.String') {
+    // hack for draco meshes
+    try {
+        return rhino.DracoCompression.decompressBase64String(data)
+    } catch {} // ignore errors (maybe the string was just a string...)
+  } else if (typeof data === 'object') {
+    return rhino.CommonObject.decode(data)
   }
-  return bytes.buffer;
+  return null
 }
 
-/**
- * Parse response
- */
-function collectResults(responseJson) {
+function meshToThreejs (mesh, material) {
+  let loader = new THREE.BufferGeometryLoader()
+  var geometry = loader.parse(mesh.toThreejsJSON())
+  return new THREE.Mesh(geometry, material)
+}
 
-  // clear doc
-  if (doc !== undefined)
-    doc.delete()
-
-  const values = responseJson.values
-  console.log(responseJson)
-
-  const str = values[0].InnerTree['{0}'][0].data
-  const data = JSON.parse(str)
-  const arr = _base64ToArrayBuffer(data)
-  doc = rhino.File3dm.fromByteArray(arr)
-
-  if (doc.objects().count < 1) {
-    console.error('No rhino objects to load!')
-    showSpinner(false)
-    return
+function replaceCurrentMesh (threeMesh) {
+  if (_threeMesh) {
+    scene.remove(_threeMesh)
+    _threeMesh.geometry.dispose()
   }
-
-  // set up loader for converting the results to threejs
-  const loader = new Rhino3dmLoader()
-  loader.setLibraryPath('https://unpkg.com/rhino3dm@8.0.0-beta3/')
-
-  // load rhino doc into three.js scene
-  loader.parse(arr, function (object) {
-    console.log(object)
-
-    scene.traverse(child => {
-      if (child.userData.hasOwnProperty('objectType') && child.userData.objectType === 'File3dm') {
-        scene.remove(child)
-      }
-    })
-
-    // zoom to extents
-    zoomCameraToSelection(camera, controls, object.children)
-
-    // add object graph from rhino model to three.js scene
-    scene.add(object)
-
-    // hide spinner
-    showSpinner(false)
-
-  }, (error)=>{console.error(error)})
+  _threeMesh = threeMesh
+  scene.add(_threeMesh)
 }
 
 /**
