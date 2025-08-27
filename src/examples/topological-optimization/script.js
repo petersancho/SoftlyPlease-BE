@@ -6,7 +6,7 @@ import rhino3dm from 'rhino3dm'
 
 // set up loader for converting the results to threejs
 const loader = new Rhino3dmLoader()
-loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta3/' )
+loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta2/' )
 
 const definition = 'topological-optimization.gh'
 
@@ -41,9 +41,15 @@ max_r_slider.addEventListener( 'touchend', onSliderChange, false )
 
 let doc
 let scene, camera, renderer, controls
+let rhino
 
-const rhino = await rhino3dm()
-console.log('Loaded rhino3dm.')
+async function initializeRhino() {
+  if (!rhino) {
+    rhino = await rhino3dm()
+    console.log('Loaded rhino3dm.')
+  }
+  return rhino
+}
 
 init()
 compute()
@@ -52,21 +58,23 @@ compute()
  * Call appserver
  */
 async function compute(){
-
-  // construct url for GET /solve/definition.gh?name=value(&...)
-  const url = new URL('/solve/' + definition, window.location.origin)
-  url.searchParams.append('thickness', thickness_slider.valueAsNumber)
-  url.searchParams.append('min_r', min_r_slider.valueAsNumber)
-  url.searchParams.append('square', square_slider.valueAsNumber)
-  url.searchParams.append('strutsize', strutsize_slider.valueAsNumber)
-  url.searchParams.append('segment', segment_slider.valueAsNumber)
-  url.searchParams.append('links', links_slider.valueAsNumber)
-  url.searchParams.append('cubecorners', cubecorners_slider.valueAsNumber)
-  url.searchParams.append('smooth', smooth_slider.valueAsNumber)
-  url.searchParams.append('max_r', max_r_slider.valueAsNumber)
-  console.log(url.toString())
-
   try {
+    // Initialize rhino3dm if not already done
+    await initializeRhino()
+
+    // construct url for GET /solve/definition.gh?name=value(&...)
+    const url = new URL('/solve/' + definition, window.location.origin)
+    url.searchParams.append('thickness', thickness_slider.valueAsNumber)
+    url.searchParams.append('min_r', min_r_slider.valueAsNumber)
+    url.searchParams.append('square', square_slider.valueAsNumber)
+    url.searchParams.append('strutsize', strutsize_slider.valueAsNumber)
+    url.searchParams.append('segment', segment_slider.valueAsNumber)
+    url.searchParams.append('links', links_slider.valueAsNumber)
+    url.searchParams.append('cubecorners', cubecorners_slider.valueAsNumber)
+    url.searchParams.append('smooth', smooth_slider.valueAsNumber)
+    url.searchParams.append('max_r', max_r_slider.valueAsNumber)
+    console.log(url.toString())
+
     const response = await fetch(url)
 
     if(!response.ok) {
