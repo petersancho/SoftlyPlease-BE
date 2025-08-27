@@ -32,7 +32,7 @@ if (!process.env.RHINO_COMPUTE_URL)
 console.log('RHINO_COMPUTE_URL: ' + process.env.RHINO_COMPUTE_URL)
 
 app.set('view engine', 'hbs');
-app.set('views', './src/views')
+app.set('views', __dirname + '/views')
 
 // Routes for this app
 app.use('/examples', express.static(__dirname + '/examples'))
@@ -41,6 +41,8 @@ app.use('/definition', require('./routes/definition'))
 app.use('/solve', require('./routes/solve'))
 app.use('/view', require('./routes/template'))
 app.use('/version', require('./routes/version'))
+app.use('/mcneel-examples', require('./routes/mcneel-examples'))
+app.use('/my-examples', require('./routes/my-examples'))
 app.use('/', require('./routes/index'))
 
 // ref: https://github.com/expressjs/express/issues/3589

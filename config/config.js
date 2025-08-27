@@ -43,7 +43,7 @@ const config = {
 
   // Definition Configuration
   definitions: {
-    directory: './src/files',
+    directory: './SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/files',
     extensions: ['.gh', '.ghx'],
     cacheDefinitions: true
   },

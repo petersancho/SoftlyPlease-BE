@@ -38,8 +38,8 @@ router.get('/',  function(req, res, next) {
     definitions.push({name: def.name})
   })
 
-  res.setHeader('Content-Type', 'application/json')
-  res.send(JSON.stringify(definitions))
+  // Render the homepage template with definitions
+  res.render('homepage', { title: 'softlyplease.com', definitions: definitions });
 })
 
 function describeDefinition(definition, req, res, next){
