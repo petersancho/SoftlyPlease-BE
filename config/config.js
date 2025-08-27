@@ -6,18 +6,7 @@
 const config = {
   // Rhino Compute Server Configuration
   rhino: {
-    url: (() => {
-      let url = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL || 'softlyplease.canadacentral.cloudapp.azure.com'
-      // Add http:// protocol if not present
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        url = 'http://' + url
-      }
-      // Force use port 6500 for direct Rhino Compute connection (bypass reverse proxy)
-      if (url.includes('softlyplease.canadacentral.cloudapp.azure.com') && !url.includes(':6500')) {
-        url = url.replace('softlyplease.canadacentral.cloudapp.azure.com', 'softlyplease.canadacentral.cloudapp.azure.com:6500')
-      }
-      return url
-    })(),
+    url: 'http://softlyplease.canadacentral.cloudapp.azure.com:6500',
     apiKey: process.env.RHINO_COMPUTE_KEY || process.env.RHINO_COMPUTE_APIKEY || 'p2robot-13a6-48f3-b24e-2025computeX',
     timeout: 30000,
     retries: 3
