@@ -35,40 +35,40 @@
         <div id="container">
             <div id="overlay">
                 <div>
-                    <input type="range" id="links" name="links" min="10" max="500" value="100" step="10">
-                    <label for="links">Links</label>
-                </div>
-                <div>
-                    <input type="range" id="max_r" name="max_r" min="5" max="50" value="10" step="0.5">
-                    <label for="max_r">Max R</label>
-                </div>
-                <div>
-                    <input type="range" id="min_r" name="min_r" min="0.1" max="5" value="1.0" step="0.1">
-                    <label for="min_r">Min R</label>
-                </div>
-                <div>
-                    <input type="range" id="thickness" name="thickness" min="0.1" max="5" value="1.0" step="0.1">
+                    <input type="range" id="thickness" name="thickness" min="0" max="10" value="3" step="1">
                     <label for="thickness">Thickness</label>
                 </div>
                 <div>
-                    <input type="checkbox" id="square" name="square" checked>
+                    <input type="range" id="min_r" name="min_r" min="0" max="100" value="24" step="1">
+                    <label for="min_r">Min R</label>
+                </div>
+                <div>
+                    <input type="range" id="square" name="square" min="0" max="20" value="8" step="1">
                     <label for="square">Square</label>
                 </div>
                 <div>
-                    <input type="range" id="strutsize" name="strutsize" min="0.1" max="10" value="2.0" step="0.1">
+                    <input type="range" id="strutsize" name="strutsize" min="0" max="10" value="1" step="1">
                     <label for="strutsize">Strut Size</label>
                 </div>
                 <div>
-                    <input type="range" id="segment" name="segment" min="4" max="32" value="8" step="1">
+                    <input type="range" id="segment" name="segment" min="0" max="10" value="6" step="1">
                     <label for="segment">Segment</label>
                 </div>
                 <div>
-                    <input type="range" id="cubecorners" name="cubecorners" min="0" max="10" value="2" step="1">
+                    <input type="range" id="links" name="links" min="0" max="10" value="4" step="1">
+                    <label for="links">Links</label>
+                </div>
+                <div>
+                    <input type="range" id="cubecorners" name="cubecorners" min="0" max="1" value="0" step="1">
                     <label for="cubecorners">Cube Corners</label>
                 </div>
                 <div>
-                    <input type="range" id="smooth" name="smooth" min="0" max="1" value="0.5" step="0.01">
+                    <input type="range" id="smooth" name="smooth" min="0" max="10" value="5" step="1">
                     <label for="smooth">Smooth</label>
+                </div>
+                <div>
+                    <input type="range" id="max_r" name="max_r" min="0" max="500" value="500" step="1">
+                    <label for="max_r">Max R</label>
                 </div>
             </div>
         </div>
