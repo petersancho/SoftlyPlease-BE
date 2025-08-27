@@ -157,12 +157,23 @@ function commonSolve (req, res, next){
       trees.push(param)
     }
 
-    let fullUrl = req.protocol + '://' + req.get('host')
-    let definitionPath = `${fullUrl}/definition/${definition.id}`
     const timePreComputeServerCall = performance.now()
 
-    // call compute server
-    compute.Grasshopper.evaluateDefinition(definitionPath, trees, false).then( (response) => {
+    // Load the definition file content directly instead of using URL
+    const fs = require('fs')
+    let definitionBuffer
+
+    try {
+      const definitionContent = fs.readFileSync(definition.path)
+      definitionBuffer = new Uint8Array(definitionContent)
+      console.log(`Loaded definition file: ${definition.name} (${definitionContent.length} bytes)`)
+    } catch (error) {
+      console.error('Error loading definition file:', error)
+      throw new Error(`Failed to load definition file: ${definition.name}`)
+    }
+
+    // call compute server with definition content directly
+    compute.Grasshopper.evaluateDefinition(definitionBuffer, trees).then( (response) => {
 
       if(!response.ok) {
         const errorMsg = `Compute server error: ${response.status} ${response.statusText}`
