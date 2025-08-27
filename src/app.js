@@ -26,12 +26,13 @@ app.use(compression())
 const argIndex = process.argv.indexOf('--computeUrl')
 if (argIndex > -1)
   process.env.RHINO_COMPUTE_URL = process.argv[argIndex + 1]
-if (!process.env.RHINO_COMPUTE_URL)
-  process.env.RHINO_COMPUTE_URL = process.env.NODE_ENV === 'production'
-    ? 'http://4.248.252.92/'  // Your Azure VM IP for production
+// Use COMPUTE_URL as the primary source, fallback to RHINO_COMPUTE_URL for backward compatibility
+if (!process.env.COMPUTE_URL && !process.env.RHINO_COMPUTE_URL)
+  process.env.COMPUTE_URL = process.env.NODE_ENV === 'production'
+    ? 'http://softlyplease.canadacentral.cloudapp.azure.com/'  // Your Azure VM DNS for production
     : 'http://localhost:6500/' // default for development
 
-console.log('RHINO_COMPUTE_URL: ' + process.env.RHINO_COMPUTE_URL)
+console.log('COMPUTE_URL: ' + (process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL))
 
 app.set('view engine', 'hbs');
 app.set('views', './src/views')

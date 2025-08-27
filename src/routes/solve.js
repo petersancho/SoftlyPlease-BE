@@ -31,14 +31,8 @@ function computeParams (req, res, next){
   compute.apiKey = apiKey
   compute.authToken = apiKey
 
-  // For JWT tokens, we need to set the authorization header
-  compute.headers = {
-    'Authorization': `Bearer ${apiKey}`,
-    'Content-Type': 'application/json'
-  }
-
   console.log('Compute config - URL:', compute.url)
-  console.log('Using JWT Bearer token from config.js')
+  console.log('Using API Key from Heroku config vars')
   console.log('API Key length:', apiKey.length, 'chars')
   next()
 }
