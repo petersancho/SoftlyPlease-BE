@@ -86,19 +86,54 @@ async function compute(){
 
     const responseJson = await response.json()
 
-    // process mesh
-    console.log(responseJson.values)
+    // DEBUG: Log everything
+    console.log('Full response:', responseJson)
+    console.log('Response values:', responseJson.values)
+    console.log('Values length:', responseJson.values ? responseJson.values.length : 'no values')
 
-    const rhinoObject = decodeItem(responseJson.values[0].InnerTree['{0}'][0])
-    console.log(rhinoObject)
+    if (!responseJson.values || responseJson.values.length === 0) {
+      console.error('No values in response!')
+      showSpinner(false)
+      return
+    }
+
+    // Check if we have the expected structure
+    const firstValue = responseJson.values[0]
+    console.log('First value:', firstValue)
+    console.log('InnerTree:', firstValue.InnerTree)
+
+    if (!firstValue.InnerTree || !firstValue.InnerTree['{0}']) {
+      console.error('Unexpected response structure! InnerTree or {0} missing')
+      showSpinner(false)
+      return
+    }
+
+    // process mesh
+    const rhinoObject = decodeItem(firstValue.InnerTree['{0}'][0])
+    console.log('Decoded rhino object:', rhinoObject)
+
+    if (!rhinoObject) {
+      console.error('Failed to decode rhino object!')
+      showSpinner(false)
+      return
+    }
+
     let threeMesh = meshToThreejs(rhinoObject, new THREE.MeshBasicMaterial({vertexColors:true}))
+    console.log('Three.js mesh:', threeMesh)
+
+    if (!threeMesh) {
+      console.error('Failed to create three.js mesh!')
+      showSpinner(false)
+      return
+    }
+
     replaceCurrentMesh(threeMesh)
 
     // hide spinner
     showSpinner(false)
 
   } catch(error){
-    console.error(error)
+    console.error('Error in compute():', error)
     showSpinner(false)
   }
 }
@@ -120,18 +155,47 @@ function decodeItem(item) {
 }
 
 function meshToThreejs (mesh, material) {
-  let loader = new THREE.BufferGeometryLoader()
-  var geometry = loader.parse(mesh.toThreejsJSON())
-  return new THREE.Mesh(geometry, material)
+  console.log('Converting rhino mesh to three.js:', mesh)
+  console.log('Mesh type:', typeof mesh)
+  console.log('Mesh methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(mesh)))
+
+  if (!mesh || typeof mesh.toThreejsJSON !== 'function') {
+    console.error('Invalid mesh or missing toThreejsJSON method!')
+    return null
+  }
+
+  try {
+    const threejsJson = mesh.toThreejsJSON()
+    console.log('Three.js JSON:', threejsJson)
+
+    let loader = new THREE.BufferGeometryLoader()
+    var geometry = loader.parse(threejsJson)
+    console.log('Created geometry:', geometry)
+
+    const threeMesh = new THREE.Mesh(geometry, material)
+    console.log('Created three.js mesh:', threeMesh)
+    return threeMesh
+  } catch (error) {
+    console.error('Error converting mesh:', error)
+    return null
+  }
 }
 
 function replaceCurrentMesh (threeMesh) {
+  console.log('Replacing current mesh with:', threeMesh)
+  console.log('Scene before:', scene.children.length, 'children')
+
   if (_threeMesh) {
+    console.log('Removing previous mesh')
     scene.remove(_threeMesh)
     _threeMesh.geometry.dispose()
   }
+
   _threeMesh = threeMesh
   scene.add(_threeMesh)
+
+  console.log('Scene after:', scene.children.length, 'children')
+  console.log('Added mesh to scene:', _threeMesh)
 }
 
 /**
@@ -184,6 +248,12 @@ function init () {
   window.addEventListener( 'resize', onWindowResize, false )
 
   animate()
+
+  // DEBUG: Basic scene setup
+  console.log('Scene initialized:', scene)
+  console.log('Camera initialized:', camera)
+  console.log('Renderer initialized:', renderer)
+  console.log('Controls initialized:', controls)
 }
 
 /**
