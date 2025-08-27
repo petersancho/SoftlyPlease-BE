@@ -77,8 +77,8 @@ async function compute(){
       throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
     }
 
-    const responseJson = await response.json()
-    collectResults(responseJson)
+    const responseText = await response.text()
+    collectResults(responseText)
 
   } catch(error){
     console.error(error)
@@ -100,18 +100,16 @@ function _base64ToArrayBuffer(base64) {
 /**
  * Parse response
  */
-function collectResults(responseJson) {
+function collectResults(responseText) {
 
   // clear doc
   if (doc !== undefined)
     doc.delete()
 
-  const values = responseJson.values
-  console.log(responseJson)
+  console.log('Response:', responseText)
 
-  const str = values[0].InnerTree['{0}'][0].data
-  const data = JSON.parse(str)
-  const arr = _base64ToArrayBuffer(data)
+  // The response is directly the base64 encoded rhino file
+  const arr = _base64ToArrayBuffer(responseText)
   doc = rhino.File3dm.fromByteArray(arr)
 
   if (doc.objects().count < 1) {
