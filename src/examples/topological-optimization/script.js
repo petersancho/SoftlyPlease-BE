@@ -61,15 +61,15 @@ async function compute(){
   const data = {
     definition: definition,
     inputs: {
-      'tolerance': tolerance_slider.valueAsNumber,
-      'round': round_slider.valueAsNumber,
-      'pipe_width': pipe_width_slider.valueAsNumber,
-      'segment': segment_slider.valueAsNumber,
-      'cube': cube_checkbox.checked,
-      'smooth': smooth_slider.valueAsNumber,
-      'min_r': min_r_slider.valueAsNumber,
-      'max_R': max_R_slider.valueAsNumber,
-      'links': links_slider.valueAsNumber
+      'RH_IN:tolerance': tolerance_slider.valueAsNumber,
+      'RH_IN:round': round_slider.valueAsNumber,
+      'RH_IN:pipe_width': pipe_width_slider.valueAsNumber,
+      'RH_IN:segment': segment_slider.valueAsNumber,
+      'RH_IN:cube': cube_checkbox.checked,
+      'RH_IN:smooth': smooth_slider.valueAsNumber,
+      'RH_IN:min_r': min_r_slider.valueAsNumber,
+      'RH_IN:max_R': max_R_slider.valueAsNumber,
+      'RH_IN:links': links_slider.valueAsNumber
     }
   }
 
@@ -83,23 +83,35 @@ async function compute(){
 
   try {
     const response = await fetch(url, request)
+    console.log('Response status:', response.status, response.statusText)
 
     if(!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}, message: ${response.statusText}`)
+      const errorText = await response.text()
+      throw new Error(`HTTP error! status: ${response.status}, message: ${response.statusText}, body: ${errorText}`)
     }
 
     const responseJson = await response.json()
     console.log('Response received:', responseJson)
+    console.log('Response type:', typeof responseJson)
+    console.log('Response keys:', Object.keys(responseJson || {}))
 
-    if (!responseJson || !responseJson.values) {
-      console.error('Invalid response format:', responseJson)
+    if (!responseJson) {
+      console.error('Empty response')
+      return
+    }
+
+    if (!responseJson.values) {
+      console.error('No values in response. Available keys:', Object.keys(responseJson))
       return
     }
 
     if (responseJson.values.length === 0) {
-      console.error('No values in response')
+      console.error('Empty values array')
       return
     }
+
+    console.log('Values array length:', responseJson.values.length)
+    console.log('First value:', responseJson.values[0])
 
     collectResults(responseJson)
 
