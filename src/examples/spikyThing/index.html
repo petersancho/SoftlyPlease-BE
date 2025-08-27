@@ -71,10 +71,10 @@
                   <div><strong>Render:</strong> <span id="render-info" style="color: #ffffff;">No geometry rendered</span></div>
                   <hr style="border: 1px solid #333; margin: 8px 0;">
                   <div style="font-size: 10px; color: #cccccc;">
-                    <div>• Appserver: ✅ Running</div>
+                    <div>• Rhino Compute URL: ✅ Pre-configured</div>
                     <div>• Three.js: ✅ Loaded & Ready</div>
                     <div>• Rhino3dm: ✅ Initialized</div>
-                    <div>• Parameters: <span id="params-status" style="color: #ff6600;">⏳ Testing...</span></div>
+                    <div>• API Key: <span id="params-status" style="color: #ff6600;">⏳ Enter when prompted...</span></div>
                   </div>
                 </div>
             </div>
@@ -117,8 +117,8 @@ const rhino = await rhino3dm()
 console.log('Loaded rhino3dm.')
 
 // Setup RhinoCompute authentication
-RhinoCompute.url = getAuth('RHINO_COMPUTE_URL')
-RhinoCompute.apiKey = getAuth('RHINO_COMPUTE_KEY')
+RhinoCompute.url = 'http://4.248.252.92:80'  // Pre-configured Rhino Compute server URL
+RhinoCompute.apiKey = getAuth('RHINO_COMPUTE_KEY')  // Will prompt for API key if not stored
 
 // Load the .gh definition file
 let url = definitionName
@@ -187,8 +187,9 @@ function updateParamsStatus(status, color = '#ffffff') {
 function getAuth(key) {
   let value = localStorage[key]
   if (value === undefined) {
+    // Only prompt for API key since URL is hardcoded
     const prompt = key.includes('URL') ? 'Server URL' : 'Server API Key'
-    value = window.prompt('RhinoCompute ' + prompt)
+    value = window.prompt('RhinoCompute ' + prompt + ' (will be stored locally)')
     if (value !== null) {
       localStorage.setItem(key, value)
     }
