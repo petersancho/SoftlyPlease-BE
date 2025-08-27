@@ -109,8 +109,9 @@ function collectResults(responseText) {
   console.log('Response:', responseText)
 
   // The response is directly the base64 encoded rhino file
+  let arr
   try {
-    const arr = _base64ToArrayBuffer(responseText)
+    arr = _base64ToArrayBuffer(responseText)
     doc = rhino.File3dm.fromByteArray(arr)
 
     if (doc.objects().count < 1) {
