@@ -1,14 +1,20 @@
 
 const appserverVersion = require('../package.json').version
+const config = require('../../config/config')
 
 async function getVersion() {
 
-  let request = {
-    'method':'GET',
-    'headers': {'RhinoComputeKey': process.env.RHINO_COMPUTE_KEY }
+  let computeUrl = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL || config.rhino.url;
+  if (!computeUrl.endsWith('/')) {
+    computeUrl += '/';
   }
 
-  const response = await fetch( (process.env.RHINO_COMPUTE_URL.endsWith('/') ? process.env.RHINO_COMPUTE_URL : process.env.RHINO_COMPUTE_URL + '/') + 'version', request )
+  let request = {
+    'method':'GET',
+    'headers': {'RhinoComputeKey': process.env.RHINO_COMPUTE_KEY || config.rhino.apiKey }
+  }
+
+  const response = await fetch(computeUrl + 'version', request )
   console.log(response)
   const result = await response.json()
 

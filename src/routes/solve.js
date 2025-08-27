@@ -139,6 +139,7 @@ function checkCache (req, res, next){
 
 function commonSolve (req, res, next){
   const timePostStart = performance.now()
+  const apiKey = compute.apiKey; // Declare apiKey here
 
   // set general headers
   res.setHeader('Cache-Control', 'public, max-age=31536000')

@@ -184,7 +184,7 @@ end_time=$(date +%s%N)
 
 if [[ -n "$response" ]]; then
     # Calculate milliseconds
-    time_diff=$(( (10#${end_time%N} - 10#${start_time%N}) / 1000000 ))
+    time_diff=$(( ( $(echo "${end_time}" | sed 's/N$//') - $(echo "${start_time}" | sed 's/N$//') ) / 1000000 ))
     if [[ $time_diff -lt 5000 ]]; then  # Less than 5 seconds
         test_result "Response Time" "PASS" "Response time: ${time_diff}ms (acceptable)"
     else
@@ -208,8 +208,8 @@ start2=$(date +%s%N)
 curl -s "https://$DOMAIN/solve?definition=BranchNodeRnd.gh&Radius=5&Count=51&Length=5" > /dev/null 2>&1
 end2=$(date +%s%N)
 
-time1=$(( (10#${end1%N} - 10#${start1%N}) / 1000000 ))
-time2=$(( (10#${end2%N} - 10#${start2%N}) / 1000000 ))
+time1=$(( ( $(echo "${end1}" | sed 's/N$//') - $(echo "${start1}" | sed 's/N$//') ) / 1000000 ))
+time2=$(( ( $(echo "${end2}" | sed 's/N$//') - $(echo "${start2}" | sed 's/N$//') ) / 1000000 ))
 
 if [[ $time2 -lt $time1 ]]; then
     improvement=$(( (time1 - time2) * 100 / time1 ))
