@@ -6,9 +6,8 @@
 const config = {
   // Rhino Compute Server Configuration
   rhino: {
-    url: process.env.RHINO_COMPUTE_URL || 'http://4.248.252.92:80/',
-    // Use the RawOAuth2Token from the decoded auth response
-    apiKey: process.env.RHINO_COMPUTE_APIKEY || 'eyJhbGciOiJIUzI1NiJ9.eyJjIjoxLCJwIjoxLCJiNjRpdiI6ImJSSWR0UUd2N2dGYTJQZ2RUNGVjV3c9PSIsImI2NGN0IjoiYXovUFdrZG94bTZ2Y1hzaTBaa2c4bTEyZVQ0VlpzandabCtncnNIOUp5bkdPNU13VzN5NVM1WHBrbXNMQi9WYlIvd1lpa3J2WHBGY1dtdTdKUWczK2V2ZEdlUVZiWDRiNDdYZERVVVBpYzg9IiwiaWF0IjoxNzU0MjQ4MDU1fQ.7AfeslbQIyqkF5UxHjjFPZnn3xubjDqCD_MoUYXVmiE',
+    url: process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL || 'http://softlyplease.canadacentral.cloudapp.azure.com:80',
+    apiKey: process.env.RHINO_COMPUTE_KEY || process.env.RHINO_COMPUTE_APIKEY || 'p2robot-13a6-48f3-b24e-2025computeX',
     timeout: 30000,
     retries: 3
   },
