@@ -7,7 +7,11 @@ const config = {
   // Rhino Compute Server Configuration
   rhino: {
     url: (() => {
-      let url = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL || 'http://softlyplease.canadacentral.cloudapp.azure.com/'
+      let url = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL || 'softlyplease.canadacentral.cloudapp.azure.com'
+      // Add http:// protocol if not present
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'http://' + url
+      }
       // Clean the URL by removing default port :80 if present
       return url.replace(':80/', '/').replace(':80', '')
     })(),

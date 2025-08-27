@@ -143,9 +143,12 @@ function commonSolve (req, res, next){
     let trees = []
     if(res.locals.params.inputs !== undefined && Object.keys(res.locals.params.inputs).length > 0) {
       for (let [key, value] of Object.entries(res.locals.params.inputs)) {
-        let param = new compute.Grasshopper.DataTree(key)
+        // Map parameter names to Grasshopper group names with "RH_IN:" prefix
+        const grasshopperGroupName = `RH_IN:${key}`
+        let param = new compute.Grasshopper.DataTree(grasshopperGroupName)
         param.append([0], Array.isArray(value) ? value : [value])
         trees.push(param)
+        console.log(`Mapped parameter '${key}' to Grasshopper group '${grasshopperGroupName}'`)
       }
     }
     if(res.locals.params.values !== undefined) {
@@ -199,6 +202,18 @@ function commonSolve (req, res, next){
 
       const r = JSON.parse(result)
       delete r.pointer
+
+      // Debug: Log the output names to understand RH_OUT structure
+      if (r.values && r.values.length > 0) {
+        console.log('Grasshopper outputs received:')
+        r.values.forEach((output, index) => {
+          if (output.InnerTree && Object.keys(output.InnerTree).length > 0) {
+            const outputNames = Object.keys(output.InnerTree)
+            console.log(`Output ${index}: ${outputNames.join(', ')}`)
+          }
+        })
+      }
+
       res.send(JSON.stringify(r))
     }).catch( (error) => {
       console.error('Solve error:', error)
