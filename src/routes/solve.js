@@ -44,12 +44,12 @@ function computeParams (req, res, next){
     global.fetch = async (url, options = {}) => {
       const headers = options.headers || {}
       headers['Rhino-Compute-Key'] = apiKey
+      headers['X-Auth-Token'] = apiKey // Added this line
       headers['Authorization'] = `Bearer ${apiKey}`
       headers['X-API-Key'] = apiKey
       return global.originalFetch(url, { ...options, headers })
     }
   }
-
   next()
 }
 
@@ -198,11 +198,12 @@ function commonSolve (req, res, next){
     console.log('Definition:', definition.name)
     console.log('Definition buffer size:', definitionBuffer ? definitionBuffer.length : 'null')
     console.log('Trees count:', trees ? Object.keys(trees).length : 'null')
-    console.log('API Key set:', !!apiKey)
+    console.log('API Key set:', !!compute.apiKey)
     console.log('===============================')
 
     compute.Grasshopper.evaluateDefinition(definitionBuffer, trees).then( (response) => {
       console.log('=== SPIKY THING RESPONSE ===')
+      console.log('Response type:', typeof response)
       console.log('Response status:', response.status)
       console.log('Response ok:', response.ok)
       console.log('============================')
@@ -214,13 +215,27 @@ function commonSolve (req, res, next){
         console.error('=====================')
 
         // Try to get response body for more details
-        return response.text().then(body => {
-          console.error('Error body:', body.substring(0, 500))
-          throw new Error(`${errorMsg}. Body: ${body}`)
-        })
+        if (typeof response.text === 'function') {
+          return response.text().then(body => {
+            console.error('Error body:', body.substring(0, 500))
+            throw new Error(`${errorMsg}. Body: ${body}`)
+          })
+        } else {
+          // Response might already be text or have a different structure
+          console.error('Response object:', response)
+          throw new Error(`${errorMsg}. Response: ${JSON.stringify(response)}`)
+        }
       }
 
-      return response.text()
+      // Handle successful response
+      if (typeof response.text === 'function') {
+        return response.text()
+      } else if (typeof response === 'string') {
+        return response
+      } else {
+        // Try to convert response to string
+        return JSON.stringify(response)
+      }
 
     }).then( (result) => {
       // Cache the result
@@ -245,7 +260,7 @@ function commonSolve (req, res, next){
       console.error('Error message:', error.message)
       console.error('Error stack:', error.stack)
       console.error('Compute URL:', compute.url)
-      console.error('API Key set:', !!apiKey)
+      console.error('API Key set:', !!compute.apiKey)
       console.error('Definition name:', definition ? definition.name : 'null')
       console.error('====================================')
       next(error)

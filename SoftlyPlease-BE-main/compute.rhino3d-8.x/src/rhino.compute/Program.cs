@@ -102,7 +102,8 @@ requests while the child processes are launching.")]
 
                     if (port > 0)
                     {
-                        b.UseUrls($"http://localhost:{port}");
+                        // CHANGED THIS LINE: Now listening on all interfaces, not just localhost
+                        b.UseUrls($"http://*:{port}");
                         ComputeChildren.ParentPort = port;
                     }
 

@@ -18,7 +18,7 @@ app.use(compression())
 
 // Define URL for our compute server
 // - For local debugging on the same computer, rhino.compute.exe is
-//   typically running at http://localhost:5000/ (compute.geometry.exe) or http://localhost:6500/ (rhino.compute.exe)
+//   typically running at http://localhost:5000/ (compute.geometry.exe) or http://localhost:6001/ (rhino.compute.exe)
 // - For a production environment it is good to use an environment variable
 //   named RHINO_COMPUTE_URL to define where the compute server is located
 // - And just in case, you can pass an address as a command line arg
@@ -29,13 +29,16 @@ if (argIndex > -1)
 // Use COMPUTE_URL as the primary source, fallback to RHINO_COMPUTE_URL for backward compatibility
 if (!process.env.COMPUTE_URL && !process.env.RHINO_COMPUTE_URL)
   process.env.COMPUTE_URL = process.env.NODE_ENV === 'production'
-    ? 'http://softlyplease.canadacentral.cloudapp.azure.com:6500/'  // Your Azure VM DNS for production (direct port 6500)
-    : 'http://localhost:6500/' // default for development
+    ? 'http://softlyplease.canadacentral.cloudapp.azure.com:6001/'  // Your Azure VM DNS for production (direct port 6001)
+    : 'http://softlyplease.canadacentral.cloudapp.azure.com:6001/' // default for development
 
 console.log('COMPUTE_URL: ' + (process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL))
 
-app.set('view engine', 'hbs');
+app.set('view engine', 'hbs')
 app.set('views', './src/views')
+
+// Ensure the view engine is properly configured
+app.engine('hbs', require('hbs').__express)
 
 // EMERGENCY TEST ROUTE
 app.get('/test', (req, res) => {

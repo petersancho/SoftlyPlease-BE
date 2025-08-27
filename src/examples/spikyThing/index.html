@@ -67,7 +67,7 @@
 
         <!-- Import maps polyfill -->
         <!-- Remove this when import maps will be widely supported -->
-    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <script src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
             <script type="importmap">
             {
                 "imports": {
@@ -162,35 +162,7 @@ controlsForm.addEventListener('submit', (e) => {
  //                            HELPER  FUNCTIONS                            //
 /////////////////////////////////////////////////////////////////////////////
 
-/**
- * Gets <input> elements from html and sets handlers
- * (html is generated from the grasshopper definition)
- */
-function getInputs() {
-  const inputs = {}
-  for (const input of document.getElementsByTagName('input')) {
-    switch (input.type) {
-      case 'number':
-        inputs[input.id] = input.valueAsNumber
-        input.onchange = (e) => onSliderChange(e)
-        break
-      case 'range':
-        inputs[input.id] = input.valueAsNumber
-        input.onmouseup = (e) => onSliderChange(e)
-        input.ontouchend = (e) => onSliderChange(e)
-        input.oninput = (e) => onSliderChange(e)  // Add real-time updates
-        break
-      case 'checkbox':
-        inputs[input.id] = input.checked
-        input.onclick = (e) => onSliderChange(e)
-        break
-      default:
-        break
-    }
-  }
-  console.log(inputs)
-  return inputs
-}
+
 
 /**
  * Sets up the scene, camera, renderer, lights and controls and starts the animation
@@ -258,33 +230,6 @@ async function compute() {
   } catch(error) {
     console.error(error)
   }
-}
-
-/**
- * Called when a slider value changes in the UI. Collect all of the
- * slider values and call compute to solve for a new scene
- */
-function onSliderChange () {
-  showSpinner(true)
-  // get slider values
-  let inputs = {}
-  for (const input of document.getElementsByTagName('input')) {
-    switch (input.type) {
-    case 'number':
-      inputs[input.id] = input.valueAsNumber
-      break
-    case 'range':
-      inputs[input.id] = input.valueAsNumber
-      break
-    case 'checkbox':
-      inputs[input.id] = input.checked
-      break
-    }
-  }
-
-  data.inputs = inputs
-
-  compute()
 }
 
 /**
@@ -488,16 +433,6 @@ function download () {
     link.href = window.URL.createObjectURL(blob)
     link.download = filename
     link.click()
-}
-
-/**
- * Shows or hides the loading spinner
- */
-function showSpinner(enable) {
-  if (enable)
-    document.getElementById('loader').style.display = 'block'
-  else
-    document.getElementById('loader').style.display = 'none'
 }
     </script>
 </body>
