@@ -72,8 +72,8 @@ app.get('*', (req, res, next) => {
   next();
 });
 
-// Serve .gh files
-app.get('*.gh', (req, res) => {
+// Serve .gh files (only for direct file requests, not solve requests)
+app.get('/files/*.gh', (req, res) => {
   const fileName = req.path.split('/').pop();
   const filePath = require('path').join(__dirname, 'files', fileName);
   const fs = require('fs');
