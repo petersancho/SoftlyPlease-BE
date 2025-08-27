@@ -39,86 +39,52 @@ links_slider.addEventListener( 'mouseup', onSliderChange, false )
 links_slider.addEventListener( 'touchend', onSliderChange, false )
 
 let _threeMesh, _threeMaterial, doc
-let rhino = null
-let scene, camera, renderer, controls
 
-// Initialize rhino3dm with error handling
-async function initializeRhino() {
-  try {
-    console.log('Initializing rhino3dm...')
-    rhino = await rhino3dm()
-    console.log('Loaded rhino3dm successfully.')
-    return true
-  } catch (error) {
-    console.error('Failed to load rhino3dm:', error)
-    showSpinner(false)
-    alert('Failed to load 3D viewer. Please refresh the page.')
-    return false
-  }
-}
+const rhino = await rhino3dm()
+console.log('Loaded rhino3dm.')
 
-// Initialize application
-async function initializeApp() {
-  const rhinoLoaded = await initializeRhino()
-  if (!rhinoLoaded) return
-
-  init()
-  compute()
-}
-
-// Start the application
-initializeApp()
+init()
+compute()
 
 /**
  * Call appserver
  */
 async function compute(){
-  console.log('Starting compute function...')
 
   showSpinner(true)
 
-  // initialise 'inputs' object (definition comes from URL path)
-  const inputs = {
-    'tolerance':tolerance_slider.valueAsNumber,
-    'round':round_slider.valueAsNumber,
-    'pipe_width':pipe_width_slider.valueAsNumber,
-    'segment':segment_slider.valueAsNumber,
-    'cube':cube_checkbox.checked,
-    'smooth':smooth_slider.valueAsNumber,
-    'min_r':min_r_slider.valueAsNumber,
-    'max_R':max_R_slider.valueAsNumber,
-    'links':links_slider.valueAsNumber
+  // initialise 'data' object that will be used by compute()
+  const data = {
+    definition: definition,
+    inputs: {
+      'tolerance':tolerance_slider.valueAsNumber,
+      'round':round_slider.valueAsNumber,
+      'pipe_width':pipe_width_slider.valueAsNumber,
+      'segment':segment_slider.valueAsNumber,
+      'cube':cube_checkbox.checked,
+      'smooth':smooth_slider.valueAsNumber,
+      'min_r':min_r_slider.valueAsNumber,
+      'max_R':max_R_slider.valueAsNumber,
+      'links':links_slider.valueAsNumber
+    }
   }
 
-  console.log('Inputs to send:', inputs)
+  console.log(data.inputs)
 
   const request = {
     'method':'POST',
-    'body': JSON.stringify({inputs: inputs}),
+    'body': JSON.stringify(data),
     'headers': {'Content-Type': 'application/json'}
   }
 
-  // Add timeout to prevent infinite loading
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
-
   try {
-    console.log('Sending request to server...')
-    const response = await fetch( `/solve/${definition}`, {
-      ...request,
-      signal: controller.signal
-    } )
-
-    clearTimeout(timeoutId)
-    console.log('Response status:', response.status)
+    const response = await fetch( '/solve/topological-optimization', request )
 
     if(!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
+      throw new Error(response.statusText)
     }
 
     const responseJson = await response.json()
-    console.log('Response received:', responseJson)
 
     // hide spinner
     showSpinner(false)
@@ -127,16 +93,8 @@ async function compute(){
     loadScene(responseJson)
 
   } catch(error) {
-    clearTimeout(timeoutId)
-    console.error('API Error:', error)
-
-    if (error.name === 'AbortError') {
-      showSpinner(false)
-      alert('Request timed out after 30 seconds. The server may be busy or unavailable.')
-    } else {
-      showSpinner(false)
-      alert(`Failed to compute optimization: ${error.message}\n\nPlease check that:\n1. Rhino Compute server is running\n2. Your GH definition is valid\n3. Network connection is working\n\nCheck the browser console (F12) for more details.`)
-    }
+    console.error(error)
+    showSpinner(false)
   }
 }
 
@@ -158,49 +116,28 @@ function showSpinner( enable ){
  * Load a scene from rhino3dm result
  */
 function loadScene( result ){
-  try {
-    console.log('Processing result:', result)
 
-    if (!result || !result.values || !result.values[0]) {
-      throw new Error('Invalid result format - no values found')
-    }
+  doc = new rhino.File3dm()
 
-    doc = new rhino.File3dm()
+  // set up loader for converting the results to threejs
+  const loader = new Rhino3dmLoader()
+  loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta/' )
 
-    // set up loader for converting the results to threejs
-    const loader = new Rhino3dmLoader()
-    loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta/' )
+  // load rhino doc
+  const buffer = base64ToArrayBuffer(result.values[0].InnerTree['{0;0}'][0].data)
+  loader.parse( buffer, function ( object ) {
 
-    // load rhino doc
-    const buffer = base64ToArrayBuffer(result.values[0].InnerTree['{0;0}'][0].data)
-    console.log('Buffer created, parsing...')
+      // clear objects from scene
+      scene.children = scene.children.filter(child => child.userData.background)
 
-    loader.parse( buffer, function ( object ) {
-      try {
-        console.log('Object parsed:', object)
+      // add object to scene
+      scene.add( object )
+      object.rotation.x = -Math.PI/2
 
-        // clear objects from scene
-        scene.children = scene.children.filter(child => child.userData.background)
+      // fit camera to object
+      fitCameraToObject(object)
 
-        // add object to scene
-        scene.add( object )
-        object.rotation.x = -Math.PI/2
-
-        // fit camera to object
-        fitCameraToObject(object)
-
-        console.log('Geometry loaded successfully!')
-
-      } catch (parseError) {
-        console.error('Error processing parsed object:', parseError)
-        alert('Failed to process 3D geometry. Check console for details.')
-      }
-    } )
-
-  } catch (error) {
-    console.error('Error in loadScene:', error)
-    alert(`Failed to load geometry: ${error.message}\n\nPlease check your GH definition outputs a valid mesh.`)
-  }
+  } )
 }
 
 /**

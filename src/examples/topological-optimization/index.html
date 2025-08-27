@@ -32,10 +32,98 @@
                 0% { transform: rotate(0deg); }
                 100% { transform: rotate(360deg); }
             }
-        </style>
-    </head>
-    <body>
-        <div id="loader"></div>
+
+        /* Navigation Bar */
+        .nav-bar {
+            background: #1a1a1a;
+            padding: 20px 0;
+            border-bottom: 4px solid white;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            text-decoration: none;
+            font-family: 'Georgia', serif;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: normal;
+        }
+
+        .nav-links a:hover {
+            background: white;
+            color: black;
+            transform: translateY(-2px);
+        }
+
+        .nav-links a.current {
+            background: white;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="nav-bar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <svg width="150" height="30" viewBox="0 0 150 30" xmlns="http://www.w3.org/2000/svg">
+                    <!-- 3D Cube Axonometric View -->
+                    <g transform="translate(5,8)">
+                        <!-- Back face -->
+                        <polygon points="0,0 12,3 12,15 0,12" fill="none" stroke="#ffffff" stroke-width="1"/>
+                        <!-- Top face -->
+                        <polygon points="0,0 12,3 18,0 6,-3" fill="none" stroke="#ffffff" stroke-width="1"/>
+                        <!-- Right face -->
+                        <polygon points="12,3 18,0 18,12 12,15" fill="none" stroke="#ffffff" stroke-width="1"/>
+                        <!-- Front face -->
+                        <polygon points="6,-3 18,0 18,12 6,9" fill="#ffffff" stroke="#ffffff" stroke-width="1"/>
+                        <!-- Bottom face -->
+                        <polygon points="0,12 12,15 18,12 6,9" fill="none" stroke="#ffffff" stroke-width="1"/>
+                        <!-- Left face -->
+                        <polygon points="0,0 6,-3 6,9 0,12" fill="none" stroke="#ffffff" stroke-width="1"/>
+                    </g>
+                    <!-- Text -->
+                    <text x="35" y="20" font-family="serif" font-size="14" fill="#ffffff">SoftlyPlease</text>
+                </svg>
+            </a>
+            <div class="nav-links">
+                <a href="/">HOME</a>
+                <a href="/examples/">MCNEEL EXAMPLES</a>
+                <a href="/topological-optimization/" class="current">TOPOLOGICAL OPTIMIZATION</a>
+            </div>
+        </div>
+    </nav>
+
+    <div id="loader"></div>
         <div id="container">
             <div id="overlay">
                 <div>
