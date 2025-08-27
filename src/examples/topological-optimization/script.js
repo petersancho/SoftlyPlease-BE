@@ -55,7 +55,7 @@ downloadButton.onclick = download
  */
 async function compute(){
 
-  // construct url for POST /solve
+  // construct url for POST /solve (POST endpoint is at root, not with definition name)
   const url = new URL('/solve', window.location.origin)
 
   const data = {
@@ -73,7 +73,31 @@ async function compute(){
     }
   }
 
-  console.log('Sending data:', data)
+      console.log('Sending data:', data)
+
+    // DEBUG: Check server connectivity and available definitions
+    try {
+      console.log('Checking server connectivity...')
+      const healthResponse = await fetch('/')
+      console.log('Server health response:', healthResponse.status)
+
+      const defsResponse = await fetch('/?format=json')
+      const defs = await defsResponse.json()
+      console.log('Available definitions:', defs)
+
+      // Check if our definition exists
+      const ourDef = defs.find(d => d.name === 'topological-optimization.gh')
+      console.log('Our definition found:', ourDef)
+
+      if (ourDef) {
+        // Try to get definition details
+        const detailResponse = await fetch(`/topological-optimization.gh?format=json`)
+        const details = await detailResponse.json()
+        console.log('Definition details:', details)
+      }
+    } catch (defError) {
+      console.error('Error checking server:', defError)
+    }
 
   const request = {
     'method':'POST',
