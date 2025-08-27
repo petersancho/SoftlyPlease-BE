@@ -215,6 +215,11 @@
                         <label for="smooth">Smooth (0-10)</label>
                         <input type="range" id="smooth" name="smooth" min="0" max="10" value="5" step="1">
                     </div>
+
+                    <div class="control-group" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ccc;">
+                        <button onclick="window.testCompute()" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px;">Test Compute</button>
+                        <p style="margin-top: 10px; font-size: 12px; color: #666;">Click to manually test the compute function. Check browser console for detailed debugging information.</p>
+                    </div>
                 </div>
             </div>
             <div id="canvas"></div>

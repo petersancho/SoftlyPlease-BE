@@ -199,11 +199,23 @@ async function compute(){
 
     // Call RhinoCompute
     console.log('🐛 DEBUG: Calling RhinoCompute.Grasshopper.evaluateDefinition...')
+    console.log('🐛 DEBUG: Definition loaded?', !!definition)
+    console.log('🐛 DEBUG: Definition byte length:', definition ? definition.byteLength : 'undefined')
+
     const res = await RhinoCompute.Grasshopper.evaluateDefinition(definition, trees)
 
     console.log('✅ DEBUG: RhinoCompute response received successfully:', res);
     console.log('✅ DEBUG: Response type:', typeof res);
     console.log('✅ DEBUG: Response keys:', res ? Object.keys(res) : 'null');
+    console.log('✅ DEBUG: Response is null?', res === null);
+    console.log('✅ DEBUG: Response is undefined?', res === undefined);
+
+    if (res === null || res === undefined) {
+      console.error('❌ ERROR: RhinoCompute returned null/undefined response');
+      alert('RhinoCompute returned no response. Check server logs and Grasshopper definition.');
+      showSpinner(false);
+      return;
+    }
 
     collectResults(res)
 
@@ -251,69 +263,121 @@ function collectResults(responseText) {
     // Clear previous geometry from scene
     clearSceneGeometry()
 
-    console.log('Response received, length:', responseText.length)
+    console.log('🐛 DEBUG: collectResults called with responseText:', responseText)
+    console.log('🐛 DEBUG: responseText type:', typeof responseText)
+    console.log('🐛 DEBUG: responseText length:', responseText ? responseText.length : 'undefined')
+    console.log('🐛 DEBUG: responseText is null?', responseText === null)
+    console.log('🐛 DEBUG: responseText is undefined?', responseText === undefined)
+
+    if (!responseText || responseText.length === 0) {
+      console.error('❌ ERROR: Empty or null responseText received')
+      alert('Empty response from Rhino Compute server.')
+      showSpinner(false)
+      return
+    }
 
     // Try to parse as JSON first (typical Rhino Compute response)
     let responseData
     try {
       responseData = JSON.parse(responseText)
-      console.log('Parsed JSON response:', responseData)
+      console.log('✅ DEBUG: Successfully parsed JSON response:', responseData)
+      console.log('✅ DEBUG: Response data type:', typeof responseData)
+      console.log('✅ DEBUG: Response data keys:', responseData ? Object.keys(responseData) : 'null')
     } catch (jsonError) {
       // If JSON parsing fails, try as base64 encoded Rhino file
-      console.log('Response is not JSON, trying as base64 Rhino file')
-      const arr = _base64ToArrayBuffer(responseText)
-      doc = rhino.File3dm.fromByteArray(arr)
+      console.log('🐛 DEBUG: Response is not JSON, trying as base64 Rhino file')
+      console.log('🐛 DEBUG: JSON parse error:', jsonError.message)
 
-      if (doc.objects().count < 1) {
-        console.error('No rhino objects to load!')
+      try {
+        const arr = _base64ToArrayBuffer(responseText)
+        console.log('✅ DEBUG: Base64 decoded successfully, array length:', arr.byteLength)
+
+        doc = rhino.File3dm.fromByteArray(arr)
+        console.log('✅ DEBUG: Rhino doc created, objects count:', doc.objects().count)
+
+        if (doc.objects().count < 1) {
+          console.error('❌ ERROR: No rhino objects to load!')
+          alert('No geometry objects found in Rhino Compute response.')
+          showSpinner(false)
+          return
+        }
+
+        // Convert Rhino doc to Three.js and render
+        renderRhinoDocToThreeJS(doc)
+        return
+      } catch (base64Error) {
+        console.error('❌ ERROR: Failed to parse as base64 Rhino file:', base64Error)
+        alert('Failed to parse Rhino Compute response as JSON or base64.')
         showSpinner(false)
         return
       }
-
-      // Convert Rhino doc to Three.js and render
-      renderRhinoDocToThreeJS(doc)
-      return
     }
 
     // Handle JSON response (typical for Rhino Compute)
     if (responseData.values && Array.isArray(responseData.values)) {
-      console.log('Processing Rhino Compute JSON response with', responseData.values.length, 'outputs')
+      console.log('🐛 DEBUG: Processing Rhino Compute JSON response with', responseData.values.length, 'outputs')
+      console.log('🐛 DEBUG: Full response data:', responseData)
 
       let totalObjects = 0
 
       // Process each output from the Grasshopper definition
       for (let i = 0; i < responseData.values.length; i++) {
         const output = responseData.values[i]
-        if (output.InnerTree && Object.keys(output.InnerTree).length > 0) {
-          console.log(`Processing output ${i}:`, output)
+        console.log(`🐛 DEBUG: Processing output ${i}:`, output)
+        console.log(`🐛 DEBUG: Output has InnerTree?`, !!output.InnerTree)
+        console.log(`🐛 DEBUG: InnerTree keys:`, output.InnerTree ? Object.keys(output.InnerTree) : 'none')
 
+        if (output.InnerTree && Object.keys(output.InnerTree).length > 0) {
           // Process each branch in the data tree
           for (const path in output.InnerTree) {
             const branch = output.InnerTree[path]
-            console.log(`Processing branch ${path} with ${branch.length} items`)
+            console.log(`🐛 DEBUG: Processing branch ${path} with ${branch.length} items`)
+            console.log(`🐛 DEBUG: Branch data:`, branch)
 
             for (let j = 0; j < branch.length; j++) {
               const item = branch[j]
+              console.log(`🐛 DEBUG: Processing item ${j}:`, item)
+              console.log(`🐛 DEBUG: Item type:`, item.type)
+              console.log(`🐛 DEBUG: Item data:`, item.data)
+
               const rhinoObject = decodeRhinoObject(item)
+              console.log(`🐛 DEBUG: decodeRhinoObject result:`, rhinoObject)
 
               if (rhinoObject) {
-                console.log(`Decoded Rhino object:`, rhinoObject)
+                console.log(`✅ DEBUG: Decoded Rhino object successfully:`, rhinoObject)
                 addRhinoObjectToScene(rhinoObject)
                 totalObjects++
+              } else {
+                console.warn(`⚠️ WARNING: Failed to decode Rhino object for item ${j}`)
               }
             }
           }
+        } else {
+          console.warn(`⚠️ WARNING: Output ${i} has no InnerTree or empty InnerTree`)
         }
       }
 
+      console.log(`✅ DEBUG: Total objects processed: ${totalObjects}`)
+
     } else {
-      console.warn('Unexpected response format:', responseData)
+      console.warn('⚠️ WARNING: Unexpected response format:', responseData)
+      console.warn('⚠️ WARNING: Expected responseData.values to be an array')
     }
+
+    // Check scene after processing
+    console.log('🐛 DEBUG: Scene children count after processing:', scene.children.length)
+    console.log('🐛 DEBUG: Scene children:', scene.children.map(child => ({
+      type: child.type,
+      name: child.name,
+      isMesh: child.isMesh,
+      isLine: child.isLine,
+      isPoints: child.isPoints
+    })))
 
     // Zoom to fit all geometry
     zoomCameraToSelection(camera, controls, scene.children)
 
-    console.log('Three.js rendering complete')
+    console.log('✅ DEBUG: Three.js rendering complete')
     showSpinner(false)
 
   } catch (error) {
@@ -439,20 +503,42 @@ function decodeRhinoObject(item) {
  */
 function addRhinoObjectToScene(rhinoObject) {
   try {
+    console.log('🐛 DEBUG: addRhinoObjectToScene called with:', rhinoObject)
+    console.log('🐛 DEBUG: Rhino object type:', rhinoObject.constructor.name)
+
     // Create a temporary Rhino doc to convert to Three.js
     const tempDoc = new rhino.File3dm()
+    console.log('✅ DEBUG: Created temporary Rhino doc')
+
     const objectId = tempDoc.objects().add(rhinoObject, null)
+    console.log('✅ DEBUG: Added object to temp doc, objectId:', objectId)
 
     if (objectId !== null) {
       const loader = new Rhino3dmLoader()
       loader.setLibraryPath('https://unpkg.com/rhino3dm@8.0.0-beta2/')
+      console.log('✅ DEBUG: Created Rhino3dmLoader')
 
       const buffer = new Uint8Array(tempDoc.toByteArray()).buffer
+      console.log('✅ DEBUG: Created buffer from temp doc, byte length:', buffer.byteLength)
 
       loader.parse(buffer, function (object) {
+        console.log('✅ DEBUG: Rhino3dmLoader.parse callback called')
+        console.log('✅ DEBUG: Parsed Three.js object:', object)
+        console.log('✅ DEBUG: Object type:', object.type)
+        console.log('✅ DEBUG: Object children count:', object.children.length)
+
+        let meshCount = 0
+        let lineCount = 0
+        let pointsCount = 0
+
         // Style the object
         object.traverse(child => {
+          console.log('🐛 DEBUG: Traversing child:', child.type, child.name)
+
           if (child.isMesh) {
+            meshCount++
+            console.log('✅ DEBUG: Found mesh, adding wireframe and material')
+
             // Add wireframe
             const edges = new THREE.EdgesGeometry(child.geometry)
             const wireframe = new THREE.LineSegments(edges,
@@ -466,18 +552,36 @@ function addRhinoObjectToScene(rhinoObject) {
               transparent: true,
               opacity: 0.7
             })
+          } else if (child.isLine) {
+            lineCount++
+            console.log('✅ DEBUG: Found line object')
+          } else if (child.isPoints) {
+            pointsCount++
+            console.log('✅ DEBUG: Found points object')
           }
         })
 
+        console.log(`✅ DEBUG: Object contains: ${meshCount} meshes, ${lineCount} lines, ${pointsCount} points`)
+
         object.userData.objectType = 'rhino-geometry'
         scene.add(object)
-        console.log('Added geometry object to scene')
+
+        console.log('✅ DEBUG: Added geometry object to scene')
+        console.log('✅ DEBUG: Scene children count after adding:', scene.children.length)
+
+        // Force a render
+        renderer.render(scene, camera)
+        console.log('✅ DEBUG: Forced render completed')
       })
+    } else {
+      console.warn('⚠️ WARNING: Failed to add rhinoObject to temp doc')
     }
 
     tempDoc.delete()
+    console.log('✅ DEBUG: Cleaned up temp doc')
   } catch (error) {
-    console.error('Error adding Rhino object to scene:', error)
+    console.error('❌ ERROR: Error adding Rhino object to scene:', error)
+    console.error('❌ ERROR: Error stack:', error.stack)
   }
 }
 
@@ -487,6 +591,24 @@ function addRhinoObjectToScene(rhinoObject) {
  */
 function onSliderChange () {
   // show spinner
+  showSpinner(true)
+  compute()
+}
+
+// Test function accessible from browser console and HTML button
+window.testCompute = function() {
+  console.log('🧪 TEST: testCompute() called manually')
+  console.log('🧪 TEST: Current slider values:')
+  console.log('  - thickness:', thickness_slider.valueAsNumber)
+  console.log('  - minr:', minr_slider.valueAsNumber)
+  console.log('  - maxr:', maxr_slider.valueAsNumber)
+  console.log('  - square:', square_slider.valueAsNumber)
+  console.log('  - strutsize:', strutsize_slider.valueAsNumber)
+  console.log('  - segment:', segment_slider.valueAsNumber)
+  console.log('  - links:', links_slider.valueAsNumber)
+  console.log('  - cubecorners:', cubecorners_slider.valueAsNumber)
+  console.log('  - smooth:', smooth_slider.valueAsNumber)
+
   showSpinner(true)
   compute()
 }
