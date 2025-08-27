@@ -86,32 +86,32 @@ loadDefinition().then(() => {
  * Call RhinoCompute
  */
 async function compute(){
-  // format data - using "rh in" prefixes to match Grasshopper group names
-  let param1 = new RhinoCompute.Grasshopper.DataTree('rh in tolerance')
+  // format data - using "RH_IN:" prefixes to match Grasshopper group names
+  let param1 = new RhinoCompute.Grasshopper.DataTree('RH_IN:tolerance')
   param1.append([0], [tolerance_slider.valueAsNumber])
 
-  let param2 = new RhinoCompute.Grasshopper.DataTree('rh in round')
+  let param2 = new RhinoCompute.Grasshopper.DataTree('RH_IN:round')
   param2.append([0], [round_slider.valueAsNumber])
 
-  let param3 = new RhinoCompute.Grasshopper.DataTree('rh in pipe_width')
+  let param3 = new RhinoCompute.Grasshopper.DataTree('RH_IN:pipe_width')
   param3.append([0], [pipe_width_slider.valueAsNumber])
 
-  let param4 = new RhinoCompute.Grasshopper.DataTree('rh in segment')
+  let param4 = new RhinoCompute.Grasshopper.DataTree('RH_IN:segment')
   param4.append([0], [segment_slider.valueAsNumber])
 
-  let param5 = new RhinoCompute.Grasshopper.DataTree('rh in cube')
+  let param5 = new RhinoCompute.Grasshopper.DataTree('RH_IN:cube')
   param5.append([0], [cube_checkbox.checked])
 
-  let param6 = new RhinoCompute.Grasshopper.DataTree('rh in smooth')
+  let param6 = new RhinoCompute.Grasshopper.DataTree('RH_IN:smooth')
   param6.append([0], [smooth_slider.valueAsNumber])
 
-  let param7 = new RhinoCompute.Grasshopper.DataTree('rh in min_r')
+  let param7 = new RhinoCompute.Grasshopper.DataTree('RH_IN:min_r')
   param7.append([0], [min_r_slider.valueAsNumber])
 
-  let param8 = new RhinoCompute.Grasshopper.DataTree('rh in max_R')
+  let param8 = new RhinoCompute.Grasshopper.DataTree('RH_IN:max_R')
   param8.append([0], [max_R_slider.valueAsNumber])
 
-  let param9 = new RhinoCompute.Grasshopper.DataTree('rh in links')
+  let param9 = new RhinoCompute.Grasshopper.DataTree('RH_IN:links')
   param9.append([0], [links_slider.valueAsNumber])
 
   // Add all params to an array
