@@ -37,9 +37,15 @@ console.log('COMPUTE_URL: ' + (process.env.COMPUTE_URL || process.env.RHINO_COMP
 app.set('view engine', 'hbs');
 app.set('views', './src/views')
 
-// DEBUG ROUTE: Check configuration
-const { debugConfig } = require('./routes/solve')
-app.get('/debug-config', debugConfig)
+// EMERGENCY TEST ROUTE
+app.get('/test', (req, res) => {
+  res.json({
+    status: 'EMERGENCY_FIX_APPLIED',
+    message: 'Site is back online!',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  })
+})
 
 // Routes for this app
 app.use('/examples', express.static(__dirname + '/examples'))
