@@ -7,33 +7,32 @@ loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta2/' )
 const definition = 'topological-optimization.gh'
 
 // setup input change events
-const thickness_slider = document.getElementById( 'thickness' )
-thickness_slider.addEventListener( 'mouseup', onSliderChange, false )
-thickness_slider.addEventListener( 'touchend', onSliderChange, false )
-const min_r_slider = document.getElementById( 'min_r' )
-min_r_slider.addEventListener( 'mouseup', onSliderChange, false )
-min_r_slider.addEventListener( 'touchend', onSliderChange, false )
-const square_slider = document.getElementById( 'square' )
-square_slider.addEventListener( 'mouseup', onSliderChange, false )
-square_slider.addEventListener( 'touchend', onSliderChange, false )
-const strutsize_slider = document.getElementById( 'strutsize' )
-strutsize_slider.addEventListener( 'mouseup', onSliderChange, false )
-strutsize_slider.addEventListener( 'touchend', onSliderChange, false )
+const tolerance_slider = document.getElementById( 'tolerance' )
+tolerance_slider.addEventListener( 'mouseup', onSliderChange, false )
+tolerance_slider.addEventListener( 'touchend', onSliderChange, false )
+const round_slider = document.getElementById( 'round' )
+round_slider.addEventListener( 'mouseup', onSliderChange, false )
+round_slider.addEventListener( 'touchend', onSliderChange, false )
+const pipe_width_slider = document.getElementById( 'pipe_width' )
+pipe_width_slider.addEventListener( 'mouseup', onSliderChange, false )
+pipe_width_slider.addEventListener( 'touchend', onSliderChange, false )
 const segment_slider = document.getElementById( 'segment' )
 segment_slider.addEventListener( 'mouseup', onSliderChange, false )
 segment_slider.addEventListener( 'touchend', onSliderChange, false )
-const links_slider = document.getElementById( 'links' )
-links_slider.addEventListener( 'mouseup', onSliderChange, false )
-links_slider.addEventListener( 'touchend', onSliderChange, false )
-const cubecorners_slider = document.getElementById( 'cubecorners' )
-cubecorners_slider.addEventListener( 'mouseup', onSliderChange, false )
-cubecorners_slider.addEventListener( 'touchend', onSliderChange, false )
+const cube_checkbox = document.getElementById( 'cube' )
+cube_checkbox.addEventListener( 'change', onSliderChange, false )
 const smooth_slider = document.getElementById( 'smooth' )
 smooth_slider.addEventListener( 'mouseup', onSliderChange, false )
 smooth_slider.addEventListener( 'touchend', onSliderChange, false )
-const max_r_slider = document.getElementById( 'max_r' )
-max_r_slider.addEventListener( 'mouseup', onSliderChange, false )
-max_r_slider.addEventListener( 'touchend', onSliderChange, false )
+const min_r_slider = document.getElementById( 'min_r' )
+min_r_slider.addEventListener( 'mouseup', onSliderChange, false )
+min_r_slider.addEventListener( 'touchend', onSliderChange, false )
+const max_R_slider = document.getElementById( 'max_R' )
+max_R_slider.addEventListener( 'mouseup', onSliderChange, false )
+max_R_slider.addEventListener( 'touchend', onSliderChange, false )
+const links_slider = document.getElementById( 'links' )
+links_slider.addEventListener( 'mouseup', onSliderChange, false )
+links_slider.addEventListener( 'touchend', onSliderChange, false )
 
 let doc
 let scene, camera, renderer, controls
@@ -61,45 +60,132 @@ async function initializeRhino() {
   return rhino
 }
 
+// Debug functions
+function updateDebugStatus(message) {
+  const statusEl = document.getElementById('status')
+  if (statusEl) {
+    statusEl.textContent = message
+    console.log('Debug Status:', message)
+  }
+}
+
+function updateResponseInfo(info) {
+  const infoEl = document.getElementById('response-info')
+  if (infoEl) {
+    infoEl.textContent = info
+    console.log('Response Info:', info)
+  }
+}
+
+function updateRenderInfo(info) {
+  const infoEl = document.getElementById('render-info')
+  if (infoEl) {
+    infoEl.textContent = info
+    console.log('Render Info:', info)
+  }
+}
+
+function updateServerInfo(info) {
+  const infoEl = document.getElementById('server-info')
+  if (infoEl) {
+    infoEl.textContent = info
+    console.log('Server Info:', info)
+  }
+}
+
+function updateComputeStatus(status, color = '#ffffff') {
+  const statusEl = document.getElementById('compute-status')
+  if (statusEl) {
+    statusEl.textContent = status
+    statusEl.style.color = color
+    console.log('Compute Status:', status)
+  }
+}
+
+// Test compute server connection
+async function testComputeServer() {
+  try {
+    updateComputeStatus('🔄 Testing connection...', '#ffff00')
+
+    const testUrl = new URL('/solve/' + definition, window.location.origin)
+    testUrl.searchParams.append('RH_IN:tolerance', '0.01')
+
+    const response = await fetch(testUrl, { method: 'HEAD' }) // Use HEAD to avoid full computation
+
+    if (response.status === 401) {
+      updateComputeStatus('❌ 401 Unauthorized', '#ff4444')
+      updateServerInfo('Compute server requires authentication')
+    } else if (response.status === 200) {
+      updateComputeStatus('✅ Connected', '#00ff00')
+      updateServerInfo('Compute server ready')
+    } else {
+      updateComputeStatus(`⚠️ Status: ${response.status}`, '#ffaa00')
+      updateServerInfo(`Server responded with: ${response.status}`)
+    }
+  } catch (error) {
+    updateComputeStatus('❌ Connection Failed', '#ff4444')
+    updateServerInfo(`Error: ${error.message}`)
+    console.error('Compute server test failed:', error)
+  }
+}
+
 init()
-compute()
+updateDebugStatus('Initializing Rhino Compute AppServer...')
+updateServerInfo('Appserver running on port 3001')
+
+// Test compute server connection first
+testComputeServer().then(() => {
+  // After testing connection, try to compute
+  compute()
+})
 
 /**
  * Call appserver
  */
 async function compute(){
   try {
+    updateDebugStatus('Initializing Rhino3dm...')
     // Initialize rhino3dm if not already done
     await initializeRhino()
 
+    updateDebugStatus('Building request parameters...')
     // construct url for GET /solve/definition.gh?name=value(&...)
     const url = new URL('/solve/' + definition, window.location.origin)
-    url.searchParams.append('thickness', thickness_slider.valueAsNumber)
-    url.searchParams.append('min_r', min_r_slider.valueAsNumber)
-    url.searchParams.append('square', square_slider.valueAsNumber)
-    url.searchParams.append('strutsize', strutsize_slider.valueAsNumber)
-    url.searchParams.append('segment', segment_slider.valueAsNumber)
-    url.searchParams.append('links', links_slider.valueAsNumber)
-    url.searchParams.append('cubecorners', cubecorners_slider.valueAsNumber)
-    url.searchParams.append('smooth', smooth_slider.valueAsNumber)
-    url.searchParams.append('max_r', max_r_slider.valueAsNumber)
-    console.log(url.toString())
+    url.searchParams.append('RH_IN:tolerance', tolerance_slider.valueAsNumber)
+    url.searchParams.append('RH_IN:round', round_slider.valueAsNumber)
+    url.searchParams.append('RH_IN:pipe_width', pipe_width_slider.valueAsNumber)
+    url.searchParams.append('RH_IN:segment', segment_slider.valueAsNumber)
+    url.searchParams.append('RH_IN:cube', cube_checkbox.checked)
+    url.searchParams.append('RH_IN:smooth', smooth_slider.valueAsNumber)
+    url.searchParams.append('RH_IN:min_r', min_r_slider.valueAsNumber)
+    url.searchParams.append('RH_IN:max_R', max_R_slider.valueAsNumber)
+    url.searchParams.append('RH_IN:links', links_slider.valueAsNumber)
 
+    console.log('Request URL:', url.toString())
+    updateDebugStatus('Sending request to Rhino Compute...')
+
+    const startTime = performance.now()
     const response = await fetch(url)
+    const endTime = performance.now()
+
+    updateResponseInfo(`Response: ${response.status} (${(endTime - startTime).toFixed(0)}ms)`)
 
     if(!response.ok) {
       console.error('Response status:', response.status)
       console.error('Response headers:', Object.fromEntries(response.headers.entries()))
       const errorText = await response.text()
       console.error('Error response body:', errorText)
+      updateDebugStatus(`Error: ${response.status} ${response.statusText}`)
       throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
     }
 
+    updateDebugStatus('Processing Rhino Compute response...')
     const responseText = await response.text()
     collectResults(responseText)
 
   } catch(error){
-    console.error(error)
+    console.error('Compute error:', error)
+    updateDebugStatus(`Error: ${error.message}`)
   }
 }
 
@@ -116,72 +202,253 @@ function _base64ToArrayBuffer(base64) {
 }
 
 /**
- * Parse response
+ * Parse response and render with Three.js
  */
 function collectResults(responseText) {
-
-  // clear doc
-  if (doc !== undefined)
-    doc.delete()
-
-  console.log('Response:', responseText)
-
-  // The response is directly the base64 encoded rhino file
-  let arr
   try {
-    arr = _base64ToArrayBuffer(responseText)
-    doc = rhino.File3dm.fromByteArray(arr)
+    updateDebugStatus('Clearing previous geometry...')
+    // Clear previous geometry from scene
+    clearSceneGeometry()
 
-    if (doc.objects().count < 1) {
-      console.error('No rhino objects to load!')
-      showSpinner(false)
+    console.log('Response received, length:', responseText.length)
+    updateResponseInfo(`Received ${responseText.length} chars`)
+
+    // Try to parse as JSON first (typical Rhino Compute response)
+    let responseData
+    try {
+      responseData = JSON.parse(responseText)
+      console.log('Parsed JSON response:', responseData)
+      updateDebugStatus('Processing JSON response...')
+    } catch (jsonError) {
+      // If JSON parsing fails, try as base64 encoded Rhino file
+      console.log('Response is not JSON, trying as base64 Rhino file')
+      updateDebugStatus('Processing base64 Rhino file...')
+      const arr = _base64ToArrayBuffer(responseText)
+      doc = rhino.File3dm.fromByteArray(arr)
+
+      if (doc.objects().count < 1) {
+        console.error('No rhino objects to load!')
+        updateRenderInfo('No geometry objects found')
+        showSpinner(false)
+        return
+      }
+
+      // Convert Rhino doc to Three.js and render
+      renderRhinoDocToThreeJS(doc)
       return
     }
-  } catch (error) {
-    console.error('Error parsing Rhino file:', error)
-    showSpinner(false)
-    return
-  }
 
-  // set up loader for converting the results to threejs
+    // Handle JSON response (typical for Rhino Compute)
+    if (responseData.values && Array.isArray(responseData.values)) {
+      console.log('Processing Rhino Compute JSON response with', responseData.values.length, 'outputs')
+      updateRenderInfo(`Processing ${responseData.values.length} outputs`)
+
+      let totalObjects = 0
+
+      // Process each output from the Grasshopper definition
+      for (let i = 0; i < responseData.values.length; i++) {
+        const output = responseData.values[i]
+        if (output.InnerTree && Object.keys(output.InnerTree).length > 0) {
+          console.log(`Processing output ${i}:`, output)
+
+          // Process each branch in the data tree
+          for (const path in output.InnerTree) {
+            const branch = output.InnerTree[path]
+            console.log(`Processing branch ${path} with ${branch.length} items`)
+
+            for (let j = 0; j < branch.length; j++) {
+              const item = branch[j]
+              const rhinoObject = decodeRhinoObject(item)
+
+              if (rhinoObject) {
+                console.log(`Decoded Rhino object:`, rhinoObject)
+                addRhinoObjectToScene(rhinoObject)
+                totalObjects++
+              }
+            }
+          }
+        }
+      }
+
+      updateRenderInfo(`Rendered ${totalObjects} objects`)
+    } else {
+      console.warn('Unexpected response format:', responseData)
+      updateRenderInfo('Unexpected response format')
+    }
+
+    // Zoom to fit all geometry
+    updateDebugStatus('Fitting camera to geometry...')
+    zoomCameraToSelection(camera, controls, scene.children)
+
+    console.log('Three.js rendering complete')
+    updateDebugStatus('Rendering complete')
+    showSpinner(false)
+
+  } catch (error) {
+    console.error('Error in collectResults:', error)
+    updateDebugStatus(`Render error: ${error.message}`)
+    updateRenderInfo('Error during rendering')
+    showSpinner(false)
+  }
+}
+
+/**
+ * Clear previous geometry from Three.js scene
+ */
+function clearSceneGeometry() {
+  // Remove all File3dm objects and their children
+  const objectsToRemove = []
+
+  scene.traverse(child => {
+    if (child.userData && child.userData.objectType === 'File3dm') {
+      objectsToRemove.push(child)
+    }
+    // Also remove any geometry objects that might be direct children
+    if (child.isMesh || child.isLine || child.isPoints) {
+      if (!child.userData || child.userData.objectType !== 'light') {
+        objectsToRemove.push(child)
+      }
+    }
+  })
+
+  objectsToRemove.forEach(obj => {
+    scene.remove(obj)
+    if (obj.geometry) obj.geometry.dispose()
+    if (obj.material) {
+      if (Array.isArray(obj.material)) {
+        obj.material.forEach(mat => mat.dispose())
+      } else {
+        obj.material.dispose()
+      }
+    }
+  })
+
+  console.log('Cleared', objectsToRemove.length, 'objects from scene')
+}
+
+/**
+ * Render Rhino File3dm to Three.js scene
+ */
+function renderRhinoDocToThreeJS(rhinoDoc) {
+  console.log('Converting Rhino doc to Three.js, objects count:', rhinoDoc.objects().count)
+
   const loader = new Rhino3dmLoader()
   loader.setLibraryPath('https://unpkg.com/rhino3dm@8.0.0-beta2/')
 
-  // const lineMat = new THREE.LineBasicMaterial({color: new THREE.Color('black')});
-  // load rhino doc into three.js scene
-  loader.parse(arr, function (object) {
-    console.log('Parsed object:', object)
+  // Get the byte array from the Rhino doc
+  const buffer = new Uint8Array(rhinoDoc.toByteArray()).buffer
+
+  loader.parse(buffer, function (object) {
+    console.log('Parsed Rhino object:', object)
     console.log('Object children count:', object.children.length)
 
-    scene.traverse(child => {
-      if (child.userData.hasOwnProperty('objectType') && child.userData.objectType === 'File3dm') {
-        scene.remove(child)
+    // Clear existing geometry
+    clearSceneGeometry()
+
+    // Add wireframe edges to meshes
+    object.traverse(child => {
+      if (child.isMesh) {
+        console.log('Adding wireframe to mesh:', child)
+        const edges = new THREE.EdgesGeometry(child.geometry)
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
+          color: 0x000000,
+          linewidth: 1
+        }))
+        child.add(line)
+
+        // Set mesh material
+        child.material = new THREE.MeshPhongMaterial({
+          color: 0x888888,
+          transparent: true,
+          opacity: 0.8,
+          side: THREE.DoubleSide
+        })
       }
     })
 
-    object.traverse(child => {
-      if (child.isMesh) {
-        console.log('Found mesh:', child)
-        const edges = new THREE.EdgesGeometry( child.geometry );
-        const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0x000000 } ) )
-        child.add( line )
-      }
-    }, false)
+    // Mark object for identification
+    object.userData.objectType = 'File3dm'
 
-    // zoom to extents
+    // Add to scene
+    scene.add(object)
+    console.log('Added Rhino object to Three.js scene')
+
+    // Zoom to fit
     zoomCameraToSelection(camera, controls, object.children)
 
-    // add object graph from rhino model to three.js scene
-    scene.add(object)
-    console.log('Added object to scene')
-
-    // hide spinner
-    showSpinner(false)
-
   }, (error) => {
-    console.error('Loader parse error:', error)
+    console.error('Error parsing Rhino doc:', error)
     showSpinner(false)
   })
+}
+
+/**
+ * Decode Rhino object from Grasshopper data tree item
+ */
+function decodeRhinoObject(item) {
+  try {
+    const data = JSON.parse(item.data)
+    if (item.type === 'System.String') {
+      // Handle compressed meshes
+      try {
+        return rhino.DracoCompression.decompressBase64String(data)
+      } catch {
+        // Ignore errors for non-draco strings
+      }
+    } else if (typeof data === 'object') {
+      return rhino.CommonObject.decode(data)
+    }
+  } catch (error) {
+    console.warn('Failed to decode Rhino object:', error)
+  }
+  return null
+}
+
+/**
+ * Add decoded Rhino object to Three.js scene
+ */
+function addRhinoObjectToScene(rhinoObject) {
+  try {
+    // Create a temporary Rhino doc to convert to Three.js
+    const tempDoc = new rhino.File3dm()
+    const objectId = tempDoc.objects().add(rhinoObject, null)
+
+    if (objectId !== null) {
+      const loader = new Rhino3dmLoader()
+      loader.setLibraryPath('https://unpkg.com/rhino3dm@8.0.0-beta2/')
+
+      const buffer = new Uint8Array(tempDoc.toByteArray()).buffer
+
+      loader.parse(buffer, function (object) {
+        // Style the object
+        object.traverse(child => {
+          if (child.isMesh) {
+            // Add wireframe
+            const edges = new THREE.EdgesGeometry(child.geometry)
+            const wireframe = new THREE.LineSegments(edges,
+              new THREE.LineBasicMaterial({ color: 0x000000 })
+            )
+            child.add(wireframe)
+
+            // Set material
+            child.material = new THREE.MeshPhongMaterial({
+              color: Math.random() * 0xffffff,
+              transparent: true,
+              opacity: 0.7
+            })
+          }
+        })
+
+        object.userData.objectType = 'rhino-geometry'
+        scene.add(object)
+        console.log('Added geometry object to scene')
+      })
+    }
+
+    tempDoc.delete()
+  } catch (error) {
+    console.error('Error adding Rhino object to scene:', error)
+  }
 }
 
 /**

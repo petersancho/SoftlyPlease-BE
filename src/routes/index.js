@@ -24,7 +24,7 @@ const getParams = require('../definitions.js').getParams
  */
 function setComputeParams (){
   compute.url = process.env.RHINO_COMPUTE_URL
-  compute.apiKey = process.env.RHINO_COMPUTE_KEY
+  compute.apiKey = process.env.RHINO_COMPUTE_APIKEY
 }
 
 /**
