@@ -4,7 +4,11 @@ const appserverVersion = require('../package.json').version
 async function getVersion() {
 
   // Use COMPUTE_URL as primary, fallback to RHINO_COMPUTE_URL for backward compatibility
-  const computeUrl = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL
+  let computeUrl = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL
+
+  // Clean the URL by removing default port :80 if present
+  computeUrl = computeUrl.replace(':80/', '/').replace(':80', '')
+
   const baseUrl = computeUrl.endsWith('/') ? computeUrl : computeUrl + '/'
   const apiKey = process.env.RHINO_COMPUTE_KEY
 
