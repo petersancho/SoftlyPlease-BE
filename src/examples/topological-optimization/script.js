@@ -6,8 +6,7 @@ import { RhinoCompute } from 'rhinocompute'
 const loader = new Rhino3dmLoader()
 loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta2/' )
 
-// reference the definition
-const definitionName = 'topological-optimization.gh'
+// Note: Definition is handled by the appserver internally
 
 // Slider variables - will be initialized after DOM is ready
 let thickness_slider, minr_slider, maxr_slider, square_slider, strutsize_slider
@@ -58,9 +57,8 @@ let definition, doc
 let scene, camera, renderer, controls
 let rhino
 
-// Setup RhinoCompute authentication
-RhinoCompute.url = 'http://softlyplease.canadacentral.cloudapp.azure.com' // Use the configured Azure compute server
-RhinoCompute.apiKey = process.env.RHINO_COMPUTE_KEY || 'eyJSYXdPcGVuSWRUb2tlbiI6ICJleUpoYkdjaU9pSlNVekkxTmlJc0ltdHBaQ0k2SWpFaUxDSjBlWEFpT2lKS1YxUWlmUS5leUp6ZFdJaU9pSTFPVEV3TWpreE9EUTJOVEk1TURJMElpd2laVzFoYVd3aU9pSndaWFJsY21wellXNWphRzlBWjIxaGFXd3VZMjl0SWl3aVpXMWhhV3dmZG1WeWFXWnBaV1FpT25SeWRXVXNJbU52YlM1eWFHbHViek5rTG1GalkyOTFiblJ6TG1WdFlXbHNjeUk2V3lKd1pYUmxjbXB6WVc1amFHOUFaMjFoYVd3dVkyOXRJbDBzSW01aGJXVWlPaUpRWlhSbGNpQlhhVzVuYnlJc0lteHZZMkZzWlNJNkltVnVMV05oSWl3aWNHbGpkSFZ5WlNJNkltaDBkSEJ6T2k4dmQzZDNMbWR5WVhaaGRHRnlMbU52YlM5aGRtRjBZWEl2Tmpaall6bGtaVEkxT1RFNU9EZzNOakZpWm1JMll6VmtaV05qWkdFNE9HSV9aRDF5WlhSeWJ5SXNJbU52YlM1eWFHbHViek5rTG1GalkyOTFiblJ6TG0xbGJXSmxjbDluY205MWNITWlPbHQ3SW1sa0lqb2lOakExTlRFd09UUXlNREV5TWpFeE1pSXNJbTVoYldVaU9pSk5Ra1ZNWVdJaUxDSmtiMjFoYVc1eklqcGJYWDFkTENKamIyMHVjbWhwYm04elpDNWhZMk52ZFc1MGN5NWhaRzFwYmw5bmNtOTFjSE1pT2x0ZExDSmpiMjB1Y21ocGJtOHpaQzVoWTJOdmRXNTBjeTV2ZDI1bGNsOW5jbTkxY0hNaU9sdDdJbWxrSWpvaU5EYzRPVFF4TlRrek56Z3pOVEF3T0NJc0ltNWhiV1VpT2lKRGIyMXdkWFJsSUhSbFlXMGlMQ0prYjIxaGFXNXpJanBiWFgxZExDSmpiMjB1Y21ocGJtOHpaQzVoWTJOdmRXNTBjeTV6YVdRaU9pSnJVWEYxSzNaV2JuUXlhbTl0U1hkMWFVWTFSM2hTVURaVE1ITTVkVVJxWkU4dlUxZEJORU0zTDNkelBTSXNJbWx6Y3lJNkltaDBkSEJ6T2k4dllXTmpiM1Z1ZEhNdWNtaHBibTh6WkM1amIyMGlMQ0poZFdRaU9pSmpiRzkxWkY5NmIyOWZZMnhwWlc1MElpd2laWGh3SWpvek16TXhNRFE0TURVMExDSnBZWFFpT2pFM05UUXlORGd3TlRVc0ltRjFkR2hmZEdsdFpTSTZNVGMxTkRJME1qRXpOU3dpYm05dVkyVWlPaUphZWs4elR6bE5OM0k1V1ZKVFFWUnFPRzE0UWxkcFlrNXNlblJyZEVoamRIWlFSRTVoY2pocFUxcEllWGxwUzBaSE5sSllWalY0UjA1NWFWWjBhRk5sSWl3aVlYUmZhR0Z6YUNJNkltSjFjVzlMT1Y5bFR6ZG5aVEpPWDJaZmVteEdkV2M5UFNKOS5DN0hxcVp6MDhQYkRMSEdBVHJvcmhvVEVud2lfQ0ZIYmdrYUoxSXFIVkQ2b3hGU2dMLUZWUjlGNHJkQmFiU3VMU2p2b0IwOW56Zgo3TlE0U29jSVlGNjJheDhkQjZSRTNaTW1NclhyZ1J5SUlTUlh6dmlqdE5oN3BWU1ZwMnVLdUFoZEFJZFJwekpMRHducTRZWHE1MlcwZmdjVHVicWlOSDE5X3RhbU9CVkVKa1hKZTBKWDU0X09KWWdFN1FIbXotQllSU0ZESWlLLWljRkJKbVAzeFFsMzBNeFduZ0pOWk5mazBWOWJTMDFqaU9lNUNRVGNndHM5M1V4UlRwRGNJQXg1UklsNDlqdHN5cW5YUEJvR1NvRG13Rjg3Y1lsMDY3dnh1VW44a1ZPdkFPVEREbTlzb2ctZ3Y3elFoSEd1aTRhb0dQblB5LUFZaEhMWW1sQkxTeFEiLCAiUmF3T0F1dGgyVG9rZW4iOiAiZXlKaGJHY2lPaUpJVXpJMU5pSjkuZXlKaklqb3hMQ0p3SWpveExDSmlOalJwZGlJNkltSlNUV1IwVVVkMk4yZEdZVEpRWjJSVU5HVmpWM2M5UFNJc0ltSTJOR04wSWpvaVlYb3ZVRmRyWkc5NGJUWjJZMWh6YVRCYWEyYzRiVEV5WlZRMFZscHphbmRhYkN0bmNuTklPVXA1YmtkUE5VMTNWek41TlZNMVdIQnJiWE5NUWk5V1lsSXZkMWxwYTNKMldIQkdZMWR0ZFRkS1VXY3pLMlYyWkVkbFVWWmlXRFJpTkRkWVpFUlZWVkJwWXpnOUlpd2lhV0YwSWpveE56VTBNalE0TURVMWZRLjdBZmVzbGJRSXlxa0Y1VXhIampGUFpubjN4dWJqRHFDRF9Nb1VZWFZtaUUiLCAiU2NvcGUiOiBbImxpY2Vuc2VzIiwgInByb2ZpbGUiLCAiZ3JvdXBzIiwgImVtYWlsIiwgIm5vZXhwaXJlIiwgIm9wZW5pZCJdLCAiR3JvdXBJZCI6ICI0Nzg5NDE1OTM3ODM1MDA4In0='
+// Appserver URL - the proper way to communicate with Rhino Compute
+const APPSERVER_URL = window.location.origin
 
 async function initializeRhino() {
   if (!rhino) {
@@ -84,26 +82,7 @@ async function initializeRhino() {
   return rhino
 }
 
-// Load the .gh definition file
-async function loadDefinition() {
-  try {
-    console.log('🐛 DEBUG: Loading Grasshopper definition from:', definitionName)
-    let url = definitionName
-    let res = await fetch(url)
-    if (!res.ok) {
-      throw new Error(`Failed to load definition: ${res.status} ${res.statusText}`)
-    }
-    let buffer = await res.arrayBuffer()
-    definition = new Uint8Array(buffer)
-    console.log('✅ DEBUG: Definition loaded successfully:', definitionName, 'Size:', definition.length, 'bytes')
-
-    // Test connection to Rhino Compute server
-    await testRhinoConnection()
-  } catch (error) {
-    console.error('❌ ERROR loading definition:', error)
-    alert('Failed to load Grasshopper definition: ' + error.message)
-  }
-}
+// Note: Definition loading is handled by the appserver internally
 
 // Test basic connection to Rhino Compute server
 async function testRhinoConnection() {
@@ -137,7 +116,7 @@ async function testRhinoConnection() {
 }
 
 init()
-loadDefinition()
+// Note: Definition loading is handled by the appserver internally
 
 /**
  * Call RhinoCompute
@@ -155,95 +134,56 @@ async function compute(){
       }
     }
 
-    // format data - using "RH_IN:" prefixes to match Grasshopper group names
-    // Create a simple box geometry for RH_IN:brep parameter
-    console.log('🐛 DEBUG: Creating test geometry for RH_IN:brep...')
-    const box = new rhino.Box([0, 0, 0], [10, 10, 10])
-    const brep = box.toBrep(true)
-    const brepJson = JSON.stringify(brep.encode())
-
-    let param1 = new RhinoCompute.Grasshopper.DataTree('RH_IN:brep')
-    param1.append([0], [brepJson])
-
-    let param2 = new RhinoCompute.Grasshopper.DataTree('RH_IN:links')
-    param2.append([0], [links_slider.valueAsNumber])
-
-    let param3 = new RhinoCompute.Grasshopper.DataTree('RH_IN:minr')
-    param3.append([0], [minr_slider.valueAsNumber])
-
-    let param4 = new RhinoCompute.Grasshopper.DataTree('RH_IN:maxr')
-    param4.append([0], [maxr_slider.valueAsNumber])
-
-    let param5 = new RhinoCompute.Grasshopper.DataTree('RH_IN:thickness')
-    param5.append([0], [thickness_slider.valueAsNumber])
-
-    let param6 = new RhinoCompute.Grasshopper.DataTree('RH_IN:square')
-    param6.append([0], [square_slider.valueAsNumber])
-
-    let param7 = new RhinoCompute.Grasshopper.DataTree('RH_IN:strutsize')
-    param7.append([0], [strutsize_slider.valueAsNumber])
-
-    let param8 = new RhinoCompute.Grasshopper.DataTree('RH_IN:segment')
-    param8.append([0], [segment_slider.valueAsNumber])
-
-    let param9 = new RhinoCompute.Grasshopper.DataTree('RH_IN:cubecorners')
-    param9.append([0], [cubecorners_slider.valueAsNumber])
-
-    let param10 = new RhinoCompute.Grasshopper.DataTree('RH_IN:smooth')
-    param10.append([0], [smooth_slider.valueAsNumber])
-
-    // Add all params to an array
-    let trees = []
-    trees.push(param1)
-    trees.push(param2)
-    trees.push(param3)
-    trees.push(param4)
-    trees.push(param5)
-    trees.push(param6)
-    trees.push(param7)
-    trees.push(param8)
-    trees.push(param9)
-    trees.push(param10)
-
-    console.log('🐛 DEBUG: Starting RhinoCompute request...')
-    console.log('🐛 DEBUG: RhinoCompute.url:', RhinoCompute.url)
-    console.log('🐛 DEBUG: RhinoCompute.apiKey length:', RhinoCompute.apiKey ? RhinoCompute.apiKey.length : 'undefined')
-    console.log('🐛 DEBUG: Trees count:', trees.length)
-    console.log('🐛 DEBUG: Parameters:', ['brep', 'links', 'minr', 'maxr', 'thickness', 'square', 'strutsize', 'segment', 'cubecorners', 'smooth'])
-    console.log('🐛 DEBUG: Parameter values:', {
-      brep: '10x10x10 box geometry',
-      links: links_slider.valueAsNumber,
-      minr: minr_slider.valueAsNumber,
-      maxr: maxr_slider.valueAsNumber,
-      thickness: thickness_slider.valueAsNumber,
-      square: square_slider.valueAsNumber,
-      strutsize: strutsize_slider.valueAsNumber,
-      segment: segment_slider.valueAsNumber,
-      cubecorners: cubecorners_slider.valueAsNumber,
-      smooth: smooth_slider.valueAsNumber
-    });
-
-    // Call RhinoCompute
-    console.log('🐛 DEBUG: Calling RhinoCompute.Grasshopper.evaluateDefinition...')
-    console.log('🐛 DEBUG: Definition loaded?', !!definition)
-    console.log('🐛 DEBUG: Definition byte length:', definition ? definition.byteLength : 'undefined')
-
-    const res = await RhinoCompute.Grasshopper.evaluateDefinition(definition, trees)
-
-    console.log('✅ DEBUG: RhinoCompute response received successfully:', res);
-    console.log('✅ DEBUG: Response type:', typeof res);
-    console.log('✅ DEBUG: Response keys:', res ? Object.keys(res) : 'null');
-    console.log('✅ DEBUG: Response is null?', res === null);
-    console.log('✅ DEBUG: Response is undefined?', res === undefined);
-
-    if (res === null || res === undefined) {
-      console.error('❌ ERROR: RhinoCompute returned null/undefined response');
-      alert('RhinoCompute returned no response. Check server logs and Grasshopper definition.');
-      showSpinner(false);
-      return;
+    // Prepare parameters for the appserver /solve endpoint
+    const parameters = {
+      definition: 'topological-optimization.ghx',
+      inputs: {
+        'RH_IN:links': [links_slider.valueAsNumber],
+        'RH_IN:minr': [minr_slider.valueAsNumber],
+        'RH_IN:maxr': [maxr_slider.valueAsNumber],
+        'RH_IN:thickness': [thickness_slider.valueAsNumber],
+        'RH_IN:square': [square_slider.valueAsNumber],
+        'RH_IN:strutsize': [strutsize_slider.valueAsNumber],
+        'RH_IN:segment': [segment_slider.valueAsNumber],
+        'RH_IN:cubecorners': [cubecorners_slider.valueAsNumber],
+        'RH_IN:smooth': [smooth_slider.valueAsNumber]
+      }
     }
 
-    collectResults(res)
+    console.log('🐛 DEBUG: Sending request to appserver /solve endpoint...')
+    console.log('🐛 DEBUG: Appserver URL:', APPSERVER_URL)
+    console.log('🐛 DEBUG: Parameters:', parameters)
+
+    // Send POST request to the appserver /solve endpoint
+    const response = await fetch(`${APPSERVER_URL}/solve`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(parameters)
+    })
+
+    console.log('✅ DEBUG: Appserver response received, status:', response.status)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('❌ ERROR: Appserver returned error:', response.status, errorText)
+      alert(`Appserver Error (${response.status}): ${errorText}`)
+      showSpinner(false)
+      return
+    }
+
+    const result = await response.json()
+    console.log('✅ DEBUG: Appserver response parsed successfully:', result)
+
+    if (!result || !result.values) {
+      console.error('❌ ERROR: Invalid response format from appserver')
+      alert('Invalid response format from appserver')
+      showSpinner(false)
+      return
+    }
+
+    collectResults(JSON.stringify(result))
 
   } catch (error) {
     console.error('❌ ERROR in compute():', error)
@@ -253,11 +193,11 @@ async function compute(){
 
     // More detailed error information
     if (error.message.includes('CORS')) {
-      alert('CORS Error: The Rhino Compute server is blocking your request. This is a server configuration issue.')
+      alert('CORS Error: The appserver is blocking your request. This is a server configuration issue.')
     } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-      alert('Authentication Error: Invalid API key or server not accepting credentials.')
+      alert('Authentication Error: Server not accepting request.')
     } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
-      alert('Network Error: Cannot connect to Rhino Compute server. Check if the server is running.')
+      alert('Network Error: Cannot connect to appserver. Check if the server is running.')
     } else {
       alert('Error: ' + error.message)
     }
@@ -645,9 +585,7 @@ window.testCompute = function() {
   console.log('🧪 TEST: THREE object:', window.THREE)
   console.log('🧪 TEST: rhino object:', window.rhino)
 
-  // Check definition loading
-  console.log('🧪 TEST: definition variable:', definition)
-  console.log('🧪 TEST: definitionName:', definitionName)
+  // Note: Definition is handled by appserver internally
 
   // Ensure sliders are initialized
   if (!thickness_slider) {
