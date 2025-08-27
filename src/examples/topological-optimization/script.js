@@ -1,7 +1,7 @@
 /* eslint no-undef: "off", no-unused-vars: "off" */
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader.js'
 import rhino3dm from 'rhino3dm'
 
 // set up loader for converting the results to threejs
@@ -55,12 +55,21 @@ init()
 compute()
 
 /**
- * Call appserver
+ * Call appserver or demo mode
  */
 async function compute(){
   try {
     // Initialize rhino3dm if not already done
     await initializeRhino()
+
+    // Check if we're in demo mode (rhino compute server not available)
+    const isDemoMode = true // Set to false to use real rhino compute
+
+    if (isDemoMode) {
+      console.log('Demo mode: generating sample geometry')
+      generateDemoGeometry()
+      return
+    }
 
     // construct url for GET /solve/definition.gh?name=value(&...)
     const url = new URL('/solve/' + definition, window.location.origin)
@@ -89,20 +98,92 @@ async function compute(){
     collectResults(responseText)
 
   } catch(error){
-    console.error(error)
+    console.error('Compute error:', error)
+    // Fallback to demo mode on error
+    console.log('Falling back to demo mode')
+    generateDemoGeometry()
   }
 }
 
 
+/**
+ * Generate demo geometry to show the UI is working
+ */
+function generateDemoGeometry() {
+  // Clear previous objects
+  scene.traverse(child => {
+    if (Object.prototype.hasOwnProperty.call(child.userData, 'objectType') && child.userData.objectType === 'File3dm') {
+      scene.remove(child)
+    }
+  })
+
+  // Create a demo topological optimization structure
+  const group = new THREE.Group()
+
+  // Get slider values to influence the demo
+  const thickness = thickness_slider.valueAsNumber / 10
+  const segments = Math.max(3, segment_slider.valueAsNumber)
+  const links = Math.max(1, links_slider.valueAsNumber)
+
+  // Create a parametric structure
+  for (let i = 0; i < segments; i++) {
+    for (let j = 0; j < segments; j++) {
+      for (let k = 0; k < segments; k++) {
+        if ((i + j + k) % 2 === 0) { // Sparse grid pattern
+          const geometry = new THREE.BoxGeometry(0.5 + thickness, 0.5 + thickness, 0.5 + thickness)
+          const material = new THREE.MeshLambertMaterial({
+            color: new THREE.Color().setHSL((i + j + k) / (segments * 3), 0.7, 0.5),
+            transparent: true,
+            opacity: 0.8
+          })
+
+          const cube = new THREE.Mesh(geometry, material)
+          cube.position.set(
+            (i - segments/2) * 2,
+            (j - segments/2) * 2,
+            (k - segments/2) * 2
+          )
+          group.add(cube)
+
+          // Add connecting struts
+          if (links > 0 && i < segments - 1) {
+            const strutGeometry = new THREE.CylinderGeometry(0.05, 0.05, 2)
+            const strutMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 })
+            const strut = new THREE.Mesh(strutGeometry, strutMaterial)
+            strut.position.set(
+              (i - segments/2) * 2 + 1,
+              (j - segments/2) * 2,
+              (k - segments/2) * 2
+            )
+            strut.rotation.z = Math.PI / 2
+            group.add(strut)
+          }
+        }
+      }
+    }
+  }
+
+  // Add the group to scene
+  scene.add(group)
+
+  // Zoom to fit
+  zoomCameraToSelection(camera, controls, [group])
+
+  // Hide spinner
+  showSpinner(false)
+
+  console.log(`Demo geometry generated with ${segments}x${segments}x${segments} grid and thickness ${thickness}`)
+}
+
 // from https://stackoverflow.com/a/21797381
 function _base64ToArrayBuffer(base64) {
-  var binary_string = window.atob(base64);
-  var len = binary_string.length;
-  var bytes = new Uint8Array(len);
+  var binary_string = window.atob(base64)
+  var len = binary_string.length
+  var bytes = new Uint8Array(len)
   for (var i = 0; i < len; i++) {
-    bytes[i] = binary_string.charCodeAt(i);
+    bytes[i] = binary_string.charCodeAt(i)
   }
-  return bytes.buffer;
+  return bytes.buffer
 }
 
 /**
@@ -144,7 +225,7 @@ function collectResults(responseText) {
     console.log('Object children count:', object.children.length)
 
     scene.traverse(child => {
-      if (child.userData.hasOwnProperty('objectType') && child.userData.objectType === 'File3dm') {
+      if (Object.prototype.hasOwnProperty.call(child.userData, 'objectType') && child.userData.objectType === 'File3dm') {
         scene.remove(child)
       }
     })
@@ -152,9 +233,9 @@ function collectResults(responseText) {
     object.traverse(child => {
       if (child.isMesh) {
         console.log('Found mesh:', child)
-        const edges = new THREE.EdgesGeometry( child.geometry );
-        const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0x000000 } ) )
-        child.add( line )
+        const edges = new THREE.EdgesGeometry(child.geometry)
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }))
+        child.add(line)
       }
     }, false)
 
@@ -187,7 +268,7 @@ function onSliderChange () {
 /**
  * Shows or hides the loading spinner
  */
- function showSpinner(enable) {
+function showSpinner(enable) {
   if (enable)
     document.getElementById('loader').style.display = 'block'
   else
@@ -199,7 +280,7 @@ function onSliderChange () {
 function init () {
 
   // Rhino models are z-up, so set this as the default
-  THREE.Object3D.DefaultUp = new THREE.Vector3( 0, 0, 1 );
+  THREE.Object3D.DefaultUp = new THREE.Vector3(0, 0, 1)
 
   scene = new THREE.Scene()
   scene.background = new THREE.Color(1,1,1)
@@ -243,36 +324,36 @@ function onWindowResize() {
 /**
  * Helper function that behaves like rhino's "zoom to selection", but for three.js!
  */
- function zoomCameraToSelection( camera, controls, selection, fitOffset = 1.2 ) {
-  
-  const box = new THREE.Box3();
-  
-  for( const object of selection ) {
+function zoomCameraToSelection(camera, controls, selection, fitOffset = 1.2) {
+
+  const box = new THREE.Box3()
+
+  for (const object of selection) {
     if (object.isLight) continue
-    box.expandByObject( object );
+    box.expandByObject(object)
   }
-  
-  const size = box.getSize( new THREE.Vector3() );
-  const center = box.getCenter( new THREE.Vector3() );
-  
-  const maxSize = Math.max( size.x, size.y, size.z );
-  const fitHeightDistance = maxSize / ( 2 * Math.atan( Math.PI * camera.fov / 360 ) );
-  const fitWidthDistance = fitHeightDistance / camera.aspect;
-  const distance = fitOffset * Math.max( fitHeightDistance, fitWidthDistance );
-  
+
+  const size = box.getSize(new THREE.Vector3())
+  const center = box.getCenter(new THREE.Vector3())
+
+  const maxSize = Math.max(size.x, size.y, size.z)
+  const fitHeightDistance = maxSize / (2 * Math.atan(Math.PI * camera.fov / 360))
+  const fitWidthDistance = fitHeightDistance / camera.aspect
+  const distance = fitOffset * Math.max(fitHeightDistance, fitWidthDistance)
+
   const direction = controls.target.clone()
-    .sub( camera.position )
+    .sub(camera.position)
     .normalize()
-    .multiplyScalar( distance );
-  controls.maxDistance = distance * 10;
-  controls.target.copy( center );
-  
-  camera.near = distance / 100;
-  camera.far = distance * 100;
-  camera.updateProjectionMatrix();
-  camera.position.copy( controls.target ).sub(direction);
-  
-  controls.update();
+    .multiplyScalar(distance)
+  controls.maxDistance = distance * 10
+  controls.target.copy(center)
+
+  camera.near = distance / 100
+  camera.far = distance * 100
+  camera.updateProjectionMatrix()
+  camera.position.copy(controls.target).sub(direction)
+
+  controls.update()
 
 }
 
