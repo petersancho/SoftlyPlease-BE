@@ -26,6 +26,15 @@ function computeParams (req, res, next){
   // Use configuration from config.js
   let baseUrl = config.rhino.url
 
+  // DEBUG: Log the configuration being used
+  console.log('=== COMPUTE PARAMS DEBUG ===')
+  console.log('Raw baseUrl from config:', baseUrl)
+  console.log('Environment COMPUTE_URL:', process.env.COMPUTE_URL)
+  console.log('Environment RHINO_COMPUTE_KEY exists:', !!process.env.RHINO_COMPUTE_KEY)
+  console.log('Environment RHINO_COMPUTE_KEY value:', process.env.RHINO_COMPUTE_KEY ? process.env.RHINO_COMPUTE_KEY.substring(0, 10) + '...' : 'null')
+  console.log('All environment vars with rhino/compute:', Object.keys(process.env).filter(key => key.toLowerCase().includes('rhino') || key.toLowerCase().includes('compute')))
+  console.log('============================')
+
   // Ensure URL ends with slash for proper concatenation
   if (!baseUrl.endsWith('/')) {
     baseUrl += '/'
@@ -38,21 +47,67 @@ function computeParams (req, res, next){
   compute.apiKey = apiKey
   compute.authToken = apiKey
 
-  // Override the fetch function to add custom headers for reverse proxy
+  // Override the fetch function to add multiple auth headers for direct connection
   const originalFetch = global.fetch
   global.fetch = async (url, options = {}) => {
     const headers = options.headers || {}
+    // Try multiple authentication methods
     headers['Rhino-Compute-Key'] = apiKey
     headers['Authorization'] = `Bearer ${apiKey}`
     headers['X-API-Key'] = apiKey
+    headers['ApiKey'] = apiKey
+    headers['X-Rhino-Compute-Key'] = apiKey
+
+    // Add CORS and other necessary headers
+    headers['Accept'] = 'application/json'
+    headers['Content-Type'] = 'application/json'
+
+    console.log('Making request to:', url)
+    console.log('With auth headers:', Object.keys(headers).filter(k => k.toLowerCase().includes('key') || k.toLowerCase().includes('auth')))
 
     return originalFetch(url, { ...options, headers })
+  }
+
+  // Force the URL to use port 6500 for direct connection
+  if (compute.url.includes('softlyplease.canadacentral.cloudapp.azure.com') && !compute.url.includes(':6500')) {
+    compute.url = compute.url.replace('softlyplease.canadacentral.cloudapp.azure.com', 'softlyplease.canadacentral.cloudapp.azure.com:6500')
   }
 
   console.log('Compute config - URL:', compute.url)
   console.log('Using API Key from Heroku config vars')
   console.log('API Key length:', apiKey.length, 'chars')
+  console.log('API Key starts with:', apiKey.substring(0, 10) + '...')
+
   next()
+}
+
+/**
+ * DEBUG ENDPOINT: Check configuration
+ * Access: GET /debug-config
+ */
+function debugConfig (req, res) {
+  const debugInfo = {
+    timestamp: new Date().toISOString(),
+    environment: {
+      NODE_ENV: process.env.NODE_ENV,
+      COMPUTE_URL: process.env.COMPUTE_URL,
+      RHINO_COMPUTE_KEY: process.env.RHINO_COMPUTE_KEY ? process.env.RHINO_COMPUTE_KEY.substring(0, 10) + '...' : 'NOT SET',
+      RHINO_COMPUTE_APIKEY: process.env.RHINO_COMPUTE_APIKEY ? process.env.RHINO_COMPUTE_APIKEY.substring(0, 10) + '...' : 'NOT SET'
+    },
+    config: {
+      rhino_url: config.rhino.url,
+      rhino_apiKey: config.rhino.apiKey ? config.rhino.apiKey.substring(0, 10) + '...' : 'NOT SET',
+      rhino_timeout: config.rhino.timeout
+    },
+    compute_module: {
+      url: compute.url,
+      apiKey: compute.apiKey ? compute.apiKey.substring(0, 10) + '...' : 'NOT SET',
+      authToken: compute.authToken ? compute.authToken.substring(0, 10) + '...' : 'NOT SET'
+    }
+  }
+
+  res.setHeader('Content-Type', 'application/json')
+  res.send(JSON.stringify(debugInfo, null, 2))
 }
 
 /**
@@ -193,12 +248,27 @@ function commonSolve (req, res, next){
     }
 
     // call compute server with definition content directly
+    console.log('About to call compute.Grasshopper.evaluateDefinition...')
+    console.log('Definition buffer size:', definitionBuffer ? definitionBuffer.length : 'null')
+    console.log('Trees count:', trees ? Object.keys(trees).length : 'null')
+
     compute.Grasshopper.evaluateDefinition(definitionBuffer, trees).then( (response) => {
+      console.log('Compute response received:', response)
+      console.log('Response status:', response.status)
+      console.log('Response statusText:', response.statusText)
+      console.log('Response ok:', response.ok)
+      console.log('Response headers:', response.headers)
 
       if(!response.ok) {
         const errorMsg = `Compute server error: ${response.status} ${response.statusText}`
         console.error(errorMsg)
-        throw new Error(errorMsg)
+        console.error('Full response:', response)
+
+        // Try to get response body for more details
+        return response.text().then(body => {
+          console.error('Response body:', body)
+          throw new Error(`${errorMsg}. Body: ${body}`)
+        })
       }
 
       return response.text()
@@ -227,7 +297,37 @@ function commonSolve (req, res, next){
 
       res.send(JSON.stringify(r))
     }).catch( (error) => {
-      console.error('Solve error:', error)
+      console.error('=== SOLVE ERROR DETAILS ===')
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+      console.error('Error name:', error.name)
+      console.error('Error code:', error.code)
+      console.error('Current compute URL:', compute.url)
+      console.error('Current API key length:', apiKey ? apiKey.length : 'null')
+      console.error('Definition name:', definition ? definition.name : 'null')
+      console.error('Trees keys:', trees ? Object.keys(trees) : 'null')
+      console.error('==========================')
+
+      // Try a simple connectivity test
+      const testUrl = compute.url + '/health'
+      console.log('Testing connectivity to:', testUrl)
+
+      fetch(testUrl, {
+        headers: {
+          'Rhino-Compute-Key': apiKey,
+          'Authorization': `Bearer ${apiKey}`,
+          'Accept': 'application/json'
+        }
+      }).then(testResponse => {
+        console.log('Connectivity test status:', testResponse.status)
+        console.log('Connectivity test statusText:', testResponse.statusText)
+        return testResponse.text()
+      }).then(testBody => {
+        console.log('Connectivity test body:', testBody)
+      }).catch(testError => {
+        console.error('Connectivity test failed:', testError.message)
+      })
+
       next(error)
     })
   }

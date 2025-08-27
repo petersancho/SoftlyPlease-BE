@@ -12,8 +12,11 @@ const config = {
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = 'http://' + url
       }
-      // Clean the URL by removing default port :80 if present
-      return url.replace(':80/', '/').replace(':80', '')
+      // Force use port 6500 for direct Rhino Compute connection (bypass reverse proxy)
+      if (url.includes('softlyplease.canadacentral.cloudapp.azure.com') && !url.includes(':6500')) {
+        url = url.replace('softlyplease.canadacentral.cloudapp.azure.com', 'softlyplease.canadacentral.cloudapp.azure.com:6500')
+      }
+      return url
     })(),
     apiKey: process.env.RHINO_COMPUTE_KEY || process.env.RHINO_COMPUTE_APIKEY || 'p2robot-13a6-48f3-b24e-2025computeX',
     timeout: 30000,
@@ -58,7 +61,7 @@ const config = {
 
   // Bootstrap Configuration (for VM deployment)
   bootstrap: {
-    computeUrl: process.env.COMPUTE_URL || 'http://4.248.252.92:80',
+    computeUrl: process.env.COMPUTE_URL || 'http://softlyplease.canadacentral.cloudapp.azure.com:6500',
     appServerUrl: process.env.APPSERVER_URL || (process.env.NODE_ENV === 'production'
       ? 'https://softlyplease-appserver.herokuapp.com'
       : 'http://localhost:3000'),

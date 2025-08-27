@@ -6,46 +6,59 @@ import { RhinoCompute } from 'rhinocompute'
 const loader = new Rhino3dmLoader()
 loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta2/' )
 
-// reference the definition
-const definitionName = 'topological-optimization.gh'
+// Note: Definition is handled by the appserver internally
 
-// setup input change events
-const thickness_slider = document.getElementById( 'thickness' )
-thickness_slider.addEventListener( 'mouseup', onSliderChange, false )
-thickness_slider.addEventListener( 'touchend', onSliderChange, false )
-const minr_slider = document.getElementById( 'min_r' )
-minr_slider.addEventListener( 'mouseup', onSliderChange, false )
-minr_slider.addEventListener( 'touchend', onSliderChange, false )
-const maxr_slider = document.getElementById( 'max_r' )
-maxr_slider.addEventListener( 'mouseup', onSliderChange, false )
-maxr_slider.addEventListener( 'touchend', onSliderChange, false )
-const square_slider = document.getElementById( 'square' )
-square_slider.addEventListener( 'mouseup', onSliderChange, false )
-square_slider.addEventListener( 'touchend', onSliderChange, false )
-const strutsize_slider = document.getElementById( 'strutsize' )
-strutsize_slider.addEventListener( 'mouseup', onSliderChange, false )
-strutsize_slider.addEventListener( 'touchend', onSliderChange, false )
-const segment_slider = document.getElementById( 'segment' )
-segment_slider.addEventListener( 'mouseup', onSliderChange, false )
-segment_slider.addEventListener( 'touchend', onSliderChange, false )
-const cubecorners_slider = document.getElementById( 'cubecorners' )
-cubecorners_slider.addEventListener( 'mouseup', onSliderChange, false )
-cubecorners_slider.addEventListener( 'touchend', onSliderChange, false )
-const smooth_slider = document.getElementById( 'smooth' )
-smooth_slider.addEventListener( 'mouseup', onSliderChange, false )
-smooth_slider.addEventListener( 'touchend', onSliderChange, false )
-const links_slider = document.getElementById( 'links' )
-links_slider.addEventListener( 'mouseup', onSliderChange, false )
-links_slider.addEventListener( 'touchend', onSliderChange, false )
+// Slider variables - will be initialized after DOM is ready
+let thickness_slider, minr_slider, maxr_slider, square_slider, strutsize_slider
+let segment_slider, links_slider, cubecorners_slider, smooth_slider
+
+// Function to initialize sliders after DOM is ready
+function initializeSliders() {
+  console.log('🛠️ DEBUG: Initializing sliders...')
+
+  thickness_slider = document.getElementById('thickness')
+  minr_slider = document.getElementById('min_r')
+  maxr_slider = document.getElementById('max_r')
+  square_slider = document.getElementById('square')
+  strutsize_slider = document.getElementById('strutsize')
+  segment_slider = document.getElementById('segment')
+  links_slider = document.getElementById('links')
+  cubecorners_slider = document.getElementById('cubecorners')
+  smooth_slider = document.getElementById('smooth')
+
+  // Check if all sliders exist
+  const sliders = [thickness_slider, minr_slider, maxr_slider, square_slider, strutsize_slider,
+                  segment_slider, links_slider, cubecorners_slider, smooth_slider]
+
+  const missingSliders = sliders.filter(slider => !slider)
+  if (missingSliders.length > 0) {
+    console.error('❌ ERROR: Missing sliders:', missingSliders.length, 'out of', sliders.length)
+    sliders.forEach((slider, index) => {
+      if (!slider) {
+        const sliderNames = ['thickness', 'min_r', 'max_r', 'square', 'strutsize', 'segment', 'links', 'cubecorners', 'smooth']
+        console.error('❌ ERROR: Missing slider:', sliderNames[index])
+      }
+    })
+    return false
+  }
+
+  // Add event listeners to all sliders
+  sliders.forEach(slider => {
+    slider.addEventListener('mouseup', onSliderChange, false)
+    slider.addEventListener('touchend', onSliderChange, false)
+  })
+
+  console.log('✅ DEBUG: All sliders initialized successfully')
+  return true
+}
 
 // globals
 let definition, doc
 let scene, camera, renderer, controls
 let rhino
 
-// Setup RhinoCompute authentication
-RhinoCompute.url = 'http://softlyplease.canadacentral.cloudapp.azure.com' // Use the configured compute server
-RhinoCompute.apiKey = 'eyJSYXdPcGVuSWRUb2tlbiI6ICJleUpoYkdjaU9pSlNVekkxTmlJc0ltdHBaQ0k2SWpFaUxDSjBlWEFpT2lKS1YxUWlmUS5leUp6ZFdJaU9pSTFPVEV3TWpreE9EUTJOVEk1TURJMElpd2laVzFoYVd3aU9pSndaWFJsY21wellXNWphRzlBWjIxaGFXd3VZMjl0SWl3aVpXMWhhV3dmZG1WeWFXWnBaV1FpT25SeWRXVXNJbU52YlM1eWFHbHViek5rTG1GalkyOTFiblJ6TG1WdFlXbHNjeUk2V3lKd1pYUmxjbXB6WVc1amFHOUFaMjFoYVd3dVkyOXRJbDBzSW01aGJXVWlPaUpRWlhSbGNpQlhhVzVuYnlJc0lteHZZMkZzWlNJNkltVnVMV05oSWl3aWNHbGpkSFZ5WlNJNkltaDBkSEJ6T2k4dmQzZDNMbWR5WVhaaGRHRnlMbU52YlM5aGRtRjBZWEl2Tmpaall6bGtaVEkxT1RFNU9EZzNOakZpWm1JMll6VmtaV05qWkdFNE9HSV9aRDF5WlhSeWJ5SXNJbU52YlM1eWFHbHViek5rTG1GalkyOTFiblJ6TG0xbGJXSmxjbDluY205MWNITWlPbHQ3SW1sa0lqb2lOakExTlRFd09UUXlNREV5TWpFeE1pSXNJbTVoYldVaU9pSk5Ra1ZNWVdJaUxDSmtiMjFoYVc1eklqcGJYWDFkTENKamIyMHVjbWhwYm04elpDNWhZMk52ZFc1MGN5NWhaRzFwYmw5bmNtOTFjSE1pT2x0ZExDSmpiMjB1Y21ocGJtOHpaQzVoWTJOdmRXNTBjeTV2ZDI1bGNsOW5jbTkxY0hNaU9sdDdJbWxrSWpvaU5EYzRPVFF4TlRrek56Z3pOVEF3T0NJc0ltNWhiV1VpT2lKRGIyMXdkWFJsSUhSbFlXMGlMQ0prYjIxaGFXNXpJanBiWFgxZExDSmpiMjB1Y21ocGJtOHpaQzVoWTJOdmRXNTBjeTV6YVdRaU9pSnJVWEYxSzNaV2JuUXlhbTl0U1hkMWFVWTFSM2hTVURaVE1ITTVkVVJxWkU4dlUxZEJORU0zTDNkelBTSXNJbWx6Y3lJNkltaDBkSEJ6T2k4dllXTmpiM1Z1ZEhNdWNtaHBibTh6WkM1amIyMGlMQ0poZFdRaU9pSmpiRzkxWkY5NmIyOWZZMnhwWlc1MElpd2laWGh3SWpvek16TXhNRFE0TURVMExDSnBZWFFpT2pFM05UUXlORGd3TlRVc0ltRjFkR2hmZEdsdFpTSTZNVGMxTkRJME1qRXpOU3dpYm05dVkyVWlPaUphZWs4elR6bE5OM0k1V1ZKVFFWUnFPRzE0UWxkcFlrNXNlblJyZEVoamRIWlFSRTVoY2pocFUxcEllWGxwUzBaSE5sSllWalY0UjA1NWFWWjBhRk5sSWl3aVlYUmZhR0Z6YUNJNkltSjFjVzlMT1Y5bFR6ZG5aVEpPWDJaZmVteEdkV2M5UFNKOS5DN0hxcVp6MDhQYkRMSEdBVHJvcmhvVEVud2lfQ0ZIYmdrYUoxSXFIVkQ2b3hGU2dMLUZWUjlGNHJkQmFiU3VMU2p2b0IwOW56ZGo3TlE0U29jSVlGNjJheDhkQjZSRTNaTW1NclhyZ1J5SUlTUlh6dmlqdE5oN3BWU1ZwMnVLdUFoZEFJZFJwekpMRHducTRZWHE1MlcwZmdjVHVicWlOSDE5X3RhbU9CVkVKa1hKZTBKWDU0X09KWWdFN1FIbXotQllSU0ZESWlLLWljRkJKbVAzeFFsMzBNeFduZ0pOWk5mazBWOWJTMDFqaU9lNUNRVGNndHM5M1V4UlRwRGNJQXg1UklsNDlqdHN5cW5YUEJvR1NvRG13Rjg3Y1lsMDY3dnh1VW44a1ZPdkFPVEREbTlzb2ctZ3Y3elFoSEd1aTRhb0dQblB5LUFZaEhMWW1sQkxTeFEiLCAiUmF3T0F1dGgyVG9rZW4iOiAiZXlKaGJHY2lPaUpJVXpJMU5pSjkuZXlKaklqb3hMQ0p3SWpveExDSmlOalJwZGlJNkltSlNUV1IwVVVkMk4yZEdZVEpRWjJSVU5HVmpWM2M5UFNJc0ltSTJOR04wSWpvaVlYb3ZVRmRyWkc5NGJUWjJZMWh6YVRCYWEyYzRiVEV5WlZRMFZscHphbmRhYkN0bmNuTklPVXA1YmtkUE5VMTNWek41TlZNMVdIQnJiWE5NUWk5V1lsSXZkMWxwYTNKMldIQkdZMWR0ZFRkS1VXY3pLMlYyWkVkbFVWWmlXRFJpTkRkWVpFUlZWVkJwWXpnOUlpd2lhV0YwSWpveE56VTBNalE0TURVMWZRLjdBZmVzbGJRSXlxa0Y1VXhIampGUFpubjN4dWJqRHFDRF9Nb1VZWFZtaUUiLCAiU2NvcGUiOiBbImxpY2Vuc2VzIiwgInByb2ZpbGUiLCAiZ3JvdXBzIiwgImVtYWlsIiwgIm5vZXhwaXJlIiwgIm9wZW5pZCJdLCAiR3JvdXBJZCI6ICI0Nzg5NDE1OTM3ODM1MDA4In0='
+// Appserver URL - the proper way to communicate with Rhino Compute
+const APPSERVER_URL = window.location.origin
 
 async function initializeRhino() {
   if (!rhino) {
@@ -69,86 +82,125 @@ async function initializeRhino() {
   return rhino
 }
 
-// Load the .gh definition file
-async function loadDefinition() {
-  let url = definitionName
-  let res = await fetch(url)
-  let buffer = await res.arrayBuffer()
-  definition = new Uint8Array(buffer)
-  console.log('Loaded definition:', definitionName)
+// Note: Definition loading is handled by the appserver internally
+
+// Test basic connection to Rhino Compute server
+async function testRhinoConnection() {
+  try {
+    console.log('🐛 DEBUG: Testing Rhino Compute server connection...')
+    const testUrl = RhinoCompute.url + '/io'
+
+    const response = await fetch(testUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${RhinoCompute.apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    console.log('🐛 DEBUG: Server test response status:', response.status)
+    console.log('🐛 DEBUG: Server test response headers:', Object.fromEntries(response.headers.entries()))
+
+    if (response.status === 401) {
+      console.warn('⚠️ WARNING: Server returns 401 Unauthorized - API key may be invalid')
+      alert('Warning: Server authentication failed. API key may be expired or invalid.')
+    } else if (response.status === 200) {
+      console.log('✅ DEBUG: Server connection test successful')
+    } else {
+      console.warn('⚠️ WARNING: Server returned unexpected status:', response.status)
+    }
+  } catch (error) {
+    console.error('❌ ERROR: Cannot connect to Rhino Compute server:', error)
+    alert('Cannot connect to Rhino Compute server. Check network connection and server status.')
+  }
 }
 
 init()
-loadDefinition().then(() => {
-  compute()
-})
+// Note: Definition loading is handled by the appserver internally
 
 /**
  * Call RhinoCompute
  */
 async function compute(){
   try {
-    // format data - using "RH_IN:" prefixes to match Grasshopper group names
-    // Note: RH_IN:brep expects geometry data, but we'll skip it for now since we don't have geometry input
-    // let param1 = new RhinoCompute.Grasshopper.DataTree('RH_IN:brep')
-    // param1.append([0], [''])  // Empty string for now - this would typically be geometry data
+    // Ensure sliders are initialized
+    if (!thickness_slider) {
+      console.log('🛠️ DEBUG: Sliders not initialized in compute(), initializing now...')
+      if (!initializeSliders()) {
+        console.error('❌ ERROR: Failed to initialize sliders in compute()')
+        alert('Sliders not properly initialized. Please refresh the page.')
+        showSpinner(false)
+        return
+      }
+    }
 
-    let param2 = new RhinoCompute.Grasshopper.DataTree('RH_IN:links')
-    param2.append([0], [links_slider.valueAsNumber])
+    // Prepare parameters for the appserver /solve endpoint
+    const parameters = {
+      definition: 'topological-optimization.ghx',
+      inputs: {
+        'RH_IN:links': [links_slider.valueAsNumber],
+        'RH_IN:minr': [minr_slider.valueAsNumber],
+        'RH_IN:maxr': [maxr_slider.valueAsNumber],
+        'RH_IN:thickness': [thickness_slider.valueAsNumber],
+        'RH_IN:square': [square_slider.valueAsNumber],
+        'RH_IN:strutsize': [strutsize_slider.valueAsNumber],
+        'RH_IN:segment': [segment_slider.valueAsNumber],
+        'RH_IN:cubecorners': [cubecorners_slider.valueAsNumber],
+        'RH_IN:smooth': [smooth_slider.valueAsNumber]
+      }
+    }
 
-    let param3 = new RhinoCompute.Grasshopper.DataTree('RH_IN:minr')
-    param3.append([0], [minr_slider.valueAsNumber])
+    console.log('🐛 DEBUG: Sending request to appserver /solve endpoint...')
+    console.log('🐛 DEBUG: Appserver URL:', APPSERVER_URL)
+    console.log('🐛 DEBUG: Parameters:', parameters)
 
-    let param4 = new RhinoCompute.Grasshopper.DataTree('RH_IN:maxr')
-    param4.append([0], [maxr_slider.valueAsNumber])
+    // Send POST request to the appserver /solve endpoint
+    const response = await fetch(`${APPSERVER_URL}/solve`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(parameters)
+    })
 
-    let param5 = new RhinoCompute.Grasshopper.DataTree('RH_IN:thickness')
-    param5.append([0], [thickness_slider.valueAsNumber])
+    console.log('✅ DEBUG: Appserver response received, status:', response.status)
 
-    let param6 = new RhinoCompute.Grasshopper.DataTree('RH_IN:square')
-    param6.append([0], [square_slider.valueAsNumber])
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('❌ ERROR: Appserver returned error:', response.status, errorText)
+      alert(`Appserver Error (${response.status}): ${errorText}`)
+      showSpinner(false)
+      return
+    }
 
-    let param7 = new RhinoCompute.Grasshopper.DataTree('RH_IN:strutsize')
-    param7.append([0], [strutsize_slider.valueAsNumber])
+    const result = await response.json()
+    console.log('✅ DEBUG: Appserver response parsed successfully:', result)
 
-    let param8 = new RhinoCompute.Grasshopper.DataTree('RH_IN:segment')
-    param8.append([0], [segment_slider.valueAsNumber])
+    if (!result || !result.values) {
+      console.error('❌ ERROR: Invalid response format from appserver')
+      alert('Invalid response format from appserver')
+      showSpinner(false)
+      return
+    }
 
-    let param9 = new RhinoCompute.Grasshopper.DataTree('RH_IN:cubecorners')
-    param9.append([0], [cubecorners_slider.valueAsNumber])
-
-    let param10 = new RhinoCompute.Grasshopper.DataTree('RH_IN:smooth')
-    param10.append([0], [smooth_slider.valueAsNumber])
-
-    // Add all params to an array
-    let trees = []
-    trees.push(param2)
-    trees.push(param3)
-    trees.push(param4)
-    trees.push(param5)
-    trees.push(param6)
-    trees.push(param7)
-    trees.push(param8)
-    trees.push(param9)
-    trees.push(param10)
-
-    console.log('Sending parameters to RhinoCompute:', {
-      url: RhinoCompute.url,
-      apiKey: RhinoCompute.apiKey ? '***' + RhinoCompute.apiKey.slice(-4) : 'undefined',
-      trees: trees.length,
-      parameters: ['links', 'minr', 'maxr', 'thickness', 'square', 'strutsize', 'segment', 'cubecorners', 'smooth']
-    });
-
-    // Call RhinoCompute
-    const res = await RhinoCompute.Grasshopper.evaluateDefinition(definition, trees)
-
-    console.log('RhinoCompute response received:', res);
-    collectResults(res)
+    collectResults(JSON.stringify(result))
 
   } catch (error) {
-    console.error('Error in compute():', error)
+    console.error('❌ ERROR in compute():', error)
+    console.error('❌ ERROR message:', error.message)
+    console.error('❌ ERROR stack:', error.stack)
     showSpinner(false)
-    alert('Error: ' + error.message)
+
+    // More detailed error information
+    if (error.message.includes('CORS')) {
+      alert('CORS Error: The appserver is blocking your request. This is a server configuration issue.')
+    } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+      alert('Authentication Error: Server not accepting request.')
+    } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+      alert('Network Error: Cannot connect to appserver. Check if the server is running.')
+    } else {
+      alert('Error: ' + error.message)
+    }
   }
 }
 
@@ -177,69 +229,121 @@ function collectResults(responseText) {
     // Clear previous geometry from scene
     clearSceneGeometry()
 
-    console.log('Response received, length:', responseText.length)
+    console.log('🐛 DEBUG: collectResults called with responseText:', responseText)
+    console.log('🐛 DEBUG: responseText type:', typeof responseText)
+    console.log('🐛 DEBUG: responseText length:', responseText ? responseText.length : 'undefined')
+    console.log('🐛 DEBUG: responseText is null?', responseText === null)
+    console.log('🐛 DEBUG: responseText is undefined?', responseText === undefined)
+
+    if (!responseText || responseText.length === 0) {
+      console.error('❌ ERROR: Empty or null responseText received')
+      alert('Empty response from Rhino Compute server.')
+      showSpinner(false)
+      return
+    }
 
     // Try to parse as JSON first (typical Rhino Compute response)
     let responseData
     try {
       responseData = JSON.parse(responseText)
-      console.log('Parsed JSON response:', responseData)
+      console.log('✅ DEBUG: Successfully parsed JSON response:', responseData)
+      console.log('✅ DEBUG: Response data type:', typeof responseData)
+      console.log('✅ DEBUG: Response data keys:', responseData ? Object.keys(responseData) : 'null')
     } catch (jsonError) {
       // If JSON parsing fails, try as base64 encoded Rhino file
-      console.log('Response is not JSON, trying as base64 Rhino file')
-      const arr = _base64ToArrayBuffer(responseText)
-      doc = rhino.File3dm.fromByteArray(arr)
+      console.log('🐛 DEBUG: Response is not JSON, trying as base64 Rhino file')
+      console.log('🐛 DEBUG: JSON parse error:', jsonError.message)
 
-      if (doc.objects().count < 1) {
-        console.error('No rhino objects to load!')
+      try {
+        const arr = _base64ToArrayBuffer(responseText)
+        console.log('✅ DEBUG: Base64 decoded successfully, array length:', arr.byteLength)
+
+        doc = rhino.File3dm.fromByteArray(arr)
+        console.log('✅ DEBUG: Rhino doc created, objects count:', doc.objects().count)
+
+        if (doc.objects().count < 1) {
+          console.error('❌ ERROR: No rhino objects to load!')
+          alert('No geometry objects found in Rhino Compute response.')
+          showSpinner(false)
+          return
+        }
+
+        // Convert Rhino doc to Three.js and render
+        renderRhinoDocToThreeJS(doc)
+        return
+      } catch (base64Error) {
+        console.error('❌ ERROR: Failed to parse as base64 Rhino file:', base64Error)
+        alert('Failed to parse Rhino Compute response as JSON or base64.')
         showSpinner(false)
         return
       }
-
-      // Convert Rhino doc to Three.js and render
-      renderRhinoDocToThreeJS(doc)
-      return
     }
 
     // Handle JSON response (typical for Rhino Compute)
     if (responseData.values && Array.isArray(responseData.values)) {
-      console.log('Processing Rhino Compute JSON response with', responseData.values.length, 'outputs')
+      console.log('🐛 DEBUG: Processing Rhino Compute JSON response with', responseData.values.length, 'outputs')
+      console.log('🐛 DEBUG: Full response data:', responseData)
 
       let totalObjects = 0
 
       // Process each output from the Grasshopper definition
       for (let i = 0; i < responseData.values.length; i++) {
         const output = responseData.values[i]
-        if (output.InnerTree && Object.keys(output.InnerTree).length > 0) {
-          console.log(`Processing output ${i}:`, output)
+        console.log(`🐛 DEBUG: Processing output ${i}:`, output)
+        console.log(`🐛 DEBUG: Output has InnerTree?`, !!output.InnerTree)
+        console.log(`🐛 DEBUG: InnerTree keys:`, output.InnerTree ? Object.keys(output.InnerTree) : 'none')
 
+        if (output.InnerTree && Object.keys(output.InnerTree).length > 0) {
           // Process each branch in the data tree
           for (const path in output.InnerTree) {
             const branch = output.InnerTree[path]
-            console.log(`Processing branch ${path} with ${branch.length} items`)
+            console.log(`🐛 DEBUG: Processing branch ${path} with ${branch.length} items`)
+            console.log(`🐛 DEBUG: Branch data:`, branch)
 
             for (let j = 0; j < branch.length; j++) {
               const item = branch[j]
+              console.log(`🐛 DEBUG: Processing item ${j}:`, item)
+              console.log(`🐛 DEBUG: Item type:`, item.type)
+              console.log(`🐛 DEBUG: Item data:`, item.data)
+
               const rhinoObject = decodeRhinoObject(item)
+              console.log(`🐛 DEBUG: decodeRhinoObject result:`, rhinoObject)
 
               if (rhinoObject) {
-                console.log(`Decoded Rhino object:`, rhinoObject)
+                console.log(`✅ DEBUG: Decoded Rhino object successfully:`, rhinoObject)
                 addRhinoObjectToScene(rhinoObject)
                 totalObjects++
+              } else {
+                console.warn(`⚠️ WARNING: Failed to decode Rhino object for item ${j}`)
               }
             }
           }
+        } else {
+          console.warn(`⚠️ WARNING: Output ${i} has no InnerTree or empty InnerTree`)
         }
       }
 
+      console.log(`✅ DEBUG: Total objects processed: ${totalObjects}`)
+
     } else {
-      console.warn('Unexpected response format:', responseData)
+      console.warn('⚠️ WARNING: Unexpected response format:', responseData)
+      console.warn('⚠️ WARNING: Expected responseData.values to be an array')
     }
+
+    // Check scene after processing
+    console.log('🐛 DEBUG: Scene children count after processing:', scene.children.length)
+    console.log('🐛 DEBUG: Scene children:', scene.children.map(child => ({
+      type: child.type,
+      name: child.name,
+      isMesh: child.isMesh,
+      isLine: child.isLine,
+      isPoints: child.isPoints
+    })))
 
     // Zoom to fit all geometry
     zoomCameraToSelection(camera, controls, scene.children)
 
-    console.log('Three.js rendering complete')
+    console.log('✅ DEBUG: Three.js rendering complete')
     showSpinner(false)
 
   } catch (error) {
@@ -365,20 +469,42 @@ function decodeRhinoObject(item) {
  */
 function addRhinoObjectToScene(rhinoObject) {
   try {
+    console.log('🐛 DEBUG: addRhinoObjectToScene called with:', rhinoObject)
+    console.log('🐛 DEBUG: Rhino object type:', rhinoObject.constructor.name)
+
     // Create a temporary Rhino doc to convert to Three.js
     const tempDoc = new rhino.File3dm()
+    console.log('✅ DEBUG: Created temporary Rhino doc')
+
     const objectId = tempDoc.objects().add(rhinoObject, null)
+    console.log('✅ DEBUG: Added object to temp doc, objectId:', objectId)
 
     if (objectId !== null) {
       const loader = new Rhino3dmLoader()
       loader.setLibraryPath('https://unpkg.com/rhino3dm@8.0.0-beta2/')
+      console.log('✅ DEBUG: Created Rhino3dmLoader')
 
       const buffer = new Uint8Array(tempDoc.toByteArray()).buffer
+      console.log('✅ DEBUG: Created buffer from temp doc, byte length:', buffer.byteLength)
 
       loader.parse(buffer, function (object) {
+        console.log('✅ DEBUG: Rhino3dmLoader.parse callback called')
+        console.log('✅ DEBUG: Parsed Three.js object:', object)
+        console.log('✅ DEBUG: Object type:', object.type)
+        console.log('✅ DEBUG: Object children count:', object.children.length)
+
+        let meshCount = 0
+        let lineCount = 0
+        let pointsCount = 0
+
         // Style the object
         object.traverse(child => {
+          console.log('🐛 DEBUG: Traversing child:', child.type, child.name)
+
           if (child.isMesh) {
+            meshCount++
+            console.log('✅ DEBUG: Found mesh, adding wireframe and material')
+
             // Add wireframe
             const edges = new THREE.EdgesGeometry(child.geometry)
             const wireframe = new THREE.LineSegments(edges,
@@ -392,18 +518,36 @@ function addRhinoObjectToScene(rhinoObject) {
               transparent: true,
               opacity: 0.7
             })
+          } else if (child.isLine) {
+            lineCount++
+            console.log('✅ DEBUG: Found line object')
+          } else if (child.isPoints) {
+            pointsCount++
+            console.log('✅ DEBUG: Found points object')
           }
         })
 
+        console.log(`✅ DEBUG: Object contains: ${meshCount} meshes, ${lineCount} lines, ${pointsCount} points`)
+
         object.userData.objectType = 'rhino-geometry'
         scene.add(object)
-        console.log('Added geometry object to scene')
+
+        console.log('✅ DEBUG: Added geometry object to scene')
+        console.log('✅ DEBUG: Scene children count after adding:', scene.children.length)
+
+        // Force a render
+        renderer.render(scene, camera)
+        console.log('✅ DEBUG: Forced render completed')
       })
+    } else {
+      console.warn('⚠️ WARNING: Failed to add rhinoObject to temp doc')
     }
 
     tempDoc.delete()
+    console.log('✅ DEBUG: Cleaned up temp doc')
   } catch (error) {
-    console.error('Error adding Rhino object to scene:', error)
+    console.error('❌ ERROR: Error adding Rhino object to scene:', error)
+    console.error('❌ ERROR: Error stack:', error.stack)
   }
 }
 
@@ -413,6 +557,56 @@ function addRhinoObjectToScene(rhinoObject) {
  */
 function onSliderChange () {
   // show spinner
+  showSpinner(true)
+  compute()
+}
+
+// Test function accessible from browser console and HTML button
+window.testCompute = function() {
+  console.log('🧪 TEST: testCompute() called manually - BUTTON WORKING!')
+
+  // Add immediate visual feedback
+  const testButton = document.querySelector('button[onclick*="testCompute"]')
+  if (testButton) {
+    testButton.textContent = 'Testing...'
+    testButton.style.background = '#28a745'
+    setTimeout(() => {
+      testButton.textContent = 'Test Compute'
+      testButton.style.background = '#007bff'
+    }, 2000)
+  }
+
+  // Check if RhinoCompute is loaded
+  console.log('🧪 TEST: RhinoCompute object:', window.RhinoCompute)
+  console.log('🧪 TEST: RhinoCompute.url:', window.RhinoCompute?.url)
+  console.log('🧪 TEST: RhinoCompute.apiKey:', window.RhinoCompute?.apiKey ? '***' + window.RhinoCompute.apiKey.slice(-4) : 'undefined')
+
+  // Check if required modules are loaded
+  console.log('🧪 TEST: THREE object:', window.THREE)
+  console.log('🧪 TEST: rhino object:', window.rhino)
+
+  // Note: Definition is handled by appserver internally
+
+  // Ensure sliders are initialized
+  if (!thickness_slider) {
+    console.log('🧪 TEST: Sliders not initialized yet, initializing now...')
+    if (!initializeSliders()) {
+      alert('Failed to initialize sliders. Please refresh the page.')
+      return
+    }
+  }
+
+  console.log('🧪 TEST: Current slider values:')
+  console.log('  - thickness:', thickness_slider?.valueAsNumber || 'slider not found')
+  console.log('  - minr:', minr_slider?.valueAsNumber || 'slider not found')
+  console.log('  - maxr:', maxr_slider?.valueAsNumber || 'slider not found')
+  console.log('  - square:', square_slider?.valueAsNumber || 'slider not found')
+  console.log('  - strutsize:', strutsize_slider?.valueAsNumber || 'slider not found')
+  console.log('  - segment:', segment_slider?.valueAsNumber || 'slider not found')
+  console.log('  - links:', links_slider?.valueAsNumber || 'slider not found')
+  console.log('  - cubecorners:', cubecorners_slider?.valueAsNumber || 'slider not found')
+  console.log('  - smooth:', smooth_slider?.valueAsNumber || 'slider not found')
+
   showSpinner(true)
   compute()
 }
@@ -457,6 +651,11 @@ function init () {
   controls = new OrbitControls( camera, renderer.domElement  )
 
   window.addEventListener( 'resize', onWindowResize, false )
+
+  // Initialize sliders after DOM is ready
+  if (!initializeSliders()) {
+    console.error('❌ ERROR: Failed to initialize sliders')
+  }
 
   animate()
 }
