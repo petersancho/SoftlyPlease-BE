@@ -2,7 +2,6 @@ const express = require('express')
 const router = express.Router()
 const compute = require('compute-rhino3d')
 const {performance} = require('perf_hooks')
-const config = require('../../config/config')
 
 const NodeCache = require('node-cache')
 const cache = new NodeCache()
@@ -23,35 +22,8 @@ if(process.env.MEMCACHIER_SERVERS !== undefined) {
 }
 
 function computeParams (req, res, next){
-  // Use configuration from config.js
-  let baseUrl = config.rhino.url
-
-  // Ensure URL ends with slash for proper concatenation
-  if (!baseUrl.endsWith('/')) {
-    baseUrl += '/'
-  }
-
-  compute.url = baseUrl
-  const apiKey = config.rhino.apiKey
-
-  // Set the API key and auth token
-  compute.apiKey = apiKey
-  compute.authToken = apiKey
-
-  // Override the fetch function to add custom headers for reverse proxy
-  const originalFetch = global.fetch
-  global.fetch = async (url, options = {}) => {
-    const headers = options.headers || {}
-    headers['Rhino-Compute-Key'] = apiKey
-    headers['Authorization'] = `Bearer ${apiKey}`
-    headers['X-API-Key'] = apiKey
-
-    return originalFetch(url, { ...options, headers })
-  }
-
-  console.log('Compute config - URL:', compute.url)
-  console.log('Using API Key from Heroku config vars')
-  console.log('API Key length:', apiKey.length, 'chars')
+  compute.url = process.env.RHINO_COMPUTE_URL
+  compute.apiKey = process.env.RHINO_COMPUTE_KEY
   next()
 }
 
@@ -69,8 +41,7 @@ function collectParams (req, res, next){
     res.locals.params.inputs = req.query
     break
   case 'POST':
-    res.locals.params.definition = req.body.definition
-    res.locals.params.inputs = req.body.inputs || {}
+    res.locals.params = req.body
     break
   default:
     next()
@@ -80,13 +51,9 @@ function collectParams (req, res, next){
   let definitionName = res.locals.params.definition
   if (definitionName===undefined)
     definitionName = res.locals.params.pointer
-
   definition = req.app.get('definitions').find(o => o.name === definitionName)
-  if(!definition) {
-    const error = new Error(`Definition '${definitionName}' not found on server.`)
-    error.status = 404
-    throw error
-  }
+  if(!definition)
+    throw new Error('Definition not found on server.')
 
   //replace definition data with object that includes definition hash
   res.locals.params.definition = definition
@@ -141,25 +108,27 @@ function commonSolve (req, res, next){
   const timePostStart = performance.now()
 
   // set general headers
+  // what is the proper max-age, 31536000 = 1 year, 86400 = 1 day
   res.setHeader('Cache-Control', 'public, max-age=31536000')
   res.setHeader('Content-Type', 'application/json')
 
   if(res.locals.cacheResult !== null) {
+    //send
+    //console.log(res.locals.cacheResult)
     const timespanPost = Math.round(performance.now() - timePostStart)
     res.setHeader('Server-Timing', `cacheHit;dur=${timespanPost}`)
     res.send(res.locals.cacheResult)
     return
   } else {
     //solve
+    //console.log('solving')
+    // set parameters
     let trees = []
-    if(res.locals.params.inputs !== undefined && Object.keys(res.locals.params.inputs).length > 0) {
+    if(res.locals.params.inputs !== undefined) { //TODO: handle no inputs
       for (let [key, value] of Object.entries(res.locals.params.inputs)) {
-        // Map parameter names to Grasshopper group names with "RH_IN:" prefix
-        const grasshopperGroupName = `RH_IN:${key}`
-        let param = new compute.Grasshopper.DataTree(grasshopperGroupName)
+        let param = new compute.Grasshopper.DataTree(key)
         param.append([0], Array.isArray(value) ? value : [value])
         trees.push(param)
-        console.log(`Mapped parameter '${key}' to Grasshopper group '${grasshopperGroupName}'`)
       }
     }
     if(res.locals.params.values !== undefined) {
@@ -170,64 +139,54 @@ function commonSolve (req, res, next){
       }
     }
 
-    // If no inputs provided, add a minimal default input to prevent compute errors
-    if(trees.length === 0) {
-      let param = new compute.Grasshopper.DataTree('default')
-      param.append([0], [1])
-      trees.push(param)
-    }
-
+    let fullUrl = req.protocol + '://' + req.get('host')
+    let definitionPath = `${fullUrl}/definition/${definition.id}`
     const timePreComputeServerCall = performance.now()
+    let computeServerTiming = null
 
-    // Load the definition file content directly instead of using URL
-    const fs = require('fs')
-    let definitionBuffer
-
-    try {
-      const definitionContent = fs.readFileSync(definition.path)
-      definitionBuffer = new Uint8Array(definitionContent)
-      console.log(`Loaded definition file: ${definition.name} (${definitionContent.length} bytes)`)
-    } catch (error) {
-      console.error('Error loading definition file:', error)
-      throw new Error(`Failed to load definition file: ${definition.name}`)
-    }
-
-    // call compute server with definition content directly
-    compute.Grasshopper.evaluateDefinition(definitionBuffer, trees).then( (response) => {
-
+    // call compute server
+    compute.Grasshopper.evaluateDefinition(definitionPath, trees, false).then( (response) => {
+        
+      // Throw error if response not ok
       if(!response.ok) {
-        const errorMsg = `Compute server error: ${response.status} ${response.statusText}`
-        console.error(errorMsg)
-        throw new Error(errorMsg)
+        throw new Error(response.statusText)
+      } else {
+        computeServerTiming = response.headers
+        return response.text()
       }
 
-      return response.text()
-
     }).then( (result) => {
-      // Cache the result
+      // Note: IIS does not send these headers which was causing an issue with the appserver response
+      /*const timeComputeServerCallComplete = performance.now()
+
+      let computeTimings = computeServerTiming.get('server-timing')
+      let sum = 0
+      computeTimings.split(',').forEach(element => {
+        let t = element.split('=')[1].trim()
+        sum += Number(t)
+      })
+      const timespanCompute = timeComputeServerCallComplete - timePreComputeServerCall
+      const timespanComputeNetwork = Math.round(timespanCompute - sum)
+      const timespanSetup = Math.round(timePreComputeServerCall - timePostStart)
+      const timing = `setup;dur=${timespanSetup}, ${computeTimings}, network;dur=${timespanComputeNetwork}`
+        
       if(mc !== null) {
-        mc.set(res.locals.cacheKey, result, {expires:0})
+        //set memcached
+        mc.set(res.locals.cacheKey, result, {expires:0}, function(err, val){
+          console.log(err)
+          console.log(val)
+        })
       } else {
+        //set node-cache
         cache.set(res.locals.cacheKey, result)
       }
 
+      res.setHeader('Server-Timing', timing)*/
+      
       const r = JSON.parse(result)
       delete r.pointer
-
-      // Debug: Log the output names to understand RH_OUT structure
-      if (r.values && r.values.length > 0) {
-        console.log('Grasshopper outputs received:')
-        r.values.forEach((output, index) => {
-          if (output.InnerTree && Object.keys(output.InnerTree).length > 0) {
-            const outputNames = Object.keys(output.InnerTree)
-            console.log(`Output ${index}: ${outputNames.join(', ')}`)
-          }
-        })
-      }
-
       res.send(JSON.stringify(r))
-    }).catch( (error) => {
-      console.error('Solve error:', error)
+    }).catch( (error) => { 
       next(error)
     })
   }

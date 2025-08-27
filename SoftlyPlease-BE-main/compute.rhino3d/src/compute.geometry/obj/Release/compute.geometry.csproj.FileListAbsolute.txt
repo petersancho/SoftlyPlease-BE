@@ -1,6 +1,0 @@
-C:\compute-sp\SoftlyPlease-BE-main\compute.rhino3d\src\compute.geometry\obj\Release\compute.geometry.csproj.AssemblyReference.cache
-C:\compute-sp\SoftlyPlease-BE-main\compute.rhino3d\src\compute.geometry\obj\Release\compute.geometry.GeneratedMSBuildEditorConfig.editorconfig
-C:\compute-sp\SoftlyPlease-BE-main\compute.rhino3d\src\compute.geometry\obj\Release\compute.geometry.AssemblyInfoInputs.cache
-C:\compute-sp\SoftlyPlease-BE-main\compute.rhino3d\src\compute.geometry\obj\Release\compute.geometry.AssemblyInfo.cs
-C:\compute-sp\SoftlyPlease-BE-main\compute.rhino3d\src\compute.geometry\obj\Release\compute.geometry.csproj.CoreCompileInputs.cache
-C:\compute-sp\SoftlyPlease-BE-main\compute.rhino3d\src\compute.geometry\obj\Release\compute.geometry.sourcelink.json

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
-<head>
+    <head>
         <meta charset="utf-8">
         <link rel="icon" href="data:,">
-        <title>Spiky Thing</title>
+        <title>Bendy</title>
         <style>
             body {
                 margin: 0;
@@ -41,42 +41,32 @@
         </style>
     </head>
     <body>
-        <div id="loader"></div>
+        <div id="loader"></div> 
         <div id="container">
             <div id="overlay">
 <!-- /////////////////////////////////////////////////////////////////////////// -->
-                <div><h2>Spiky Thing</h2></div>
-                <form id="controls-form" novalidate>
-                  <div>
-                    <label for="count">count</label>
-                    <input type="range" id="count" min="0" max="100" value="50" step="5">
-                  </div>
-                  <div>
-                    <label for="radius">radius</label>
-                    <input type="range" id="radius" min="1" max="10" value="3" step="0.5">
-                  </div>
-                  <div>
-                    <label for="length">length</label>
-                    <input type="range" id="length" min="1" max="10" value="5" step="0.5">
-                  </div>
-                  <div><button id="downloadButton" disabled>Download</button></div>
-                </form>
+                <div><h2>Bendy</h2></div>
+                <div>
+                  <label for="iterations">iterations</label>
+                  <input type="range" id="iterations" min="0" max="1000" value="1000" step="1">
+                </div>
+                <div><button id="downloadButton" disabled>Download</button></div>
+                <!-- <div><a href="_Bending_gridshell.gh" download="_Bending_gridshell.gh.html">Save source code</a></div> -->
 <!-- /////////////////////////////////////////////////////////////////////////// -->
             </div>
         </div>
 
         <!-- Import maps polyfill -->
         <!-- Remove this when import maps will be widely supported -->
-    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
-            <script type="importmap">
+        <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+        <script type="importmap">
             {
-                "imports": {
-                    "three": "https://unpkg.com/three@0.156.1/build/three.module.js",
-                    "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.156.1/examples/jsm/controls/OrbitControls.js",
-                    "three/examples/jsm/loaders/3DMLoader": "https://unpkg.com/three@0.156.1/examples/jsm/loaders/3DMLoader.js",
-                    "rhino3dm":"https://unpkg.com/rhino3dm@8.0.0-beta/rhino3dm.module.js",
-                    "rhinocompute": "https://www.unpkg.com/compute-rhino3d@0.13.0-beta/compute.rhino3d.module.js"
-                }
+              "imports": {
+                "three": "https://unpkg.com/three@0.156.1/build/three.module.js",
+                "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.156.1/examples/jsm/controls/OrbitControls.js",
+                "three/examples/jsm/loaders/3DMLoader": "https://unpkg.com/three@0.156.1/examples/jsm/loaders/3DMLoader.js",
+                "rhino3dm":"https://unpkg.com/rhino3dm@8.0.0-beta/rhino3dm.module.js"
+              }
             }
         </script>
 
@@ -92,7 +82,7 @@ loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta/' )
 
 // initialise 'data' object that will be used by compute()
 const data = {
-  definition: 'BranchNodeRnd.gh',
+  definition: 'Bending_gridshell.gh',
   inputs: getInputs()
 }
 
@@ -107,56 +97,8 @@ init()
 loadContext()
 compute()
 
-/**
- * Gets <input> elements from html and sets handlers
- */
-function getInputs() {
-  const inputs = {}
-  for (const input of document.getElementsByTagName('input')) {
-    switch (input.type) {
-      case 'number':
-        inputs[input.id] = input.valueAsNumber
-        input.onchange = onSliderChange
-        break
-      case 'range':
-        inputs[input.id] = input.valueAsNumber
-        input.oninput = onSliderChange
-        input.onmouseup = onSliderChange
-        input.ontouchend = onSliderChange
-        break
-      case 'checkbox':
-        inputs[input.id] = input.checked
-        input.onclick = onSliderChange
-        break
-      default:
-        break
-    }
-  }
-  console.log(inputs)
-  return inputs
-}
-
-function loadContext() {
-  loader.load('context.3dm', function (object) {
-    object.traverse(child => {
-      child.name = 'context'
-    })
-    console.log(object)
-    scene.add(object)
-  }, (error) => {console.log(error)})
-}
-
 const downloadButton = document.getElementById("downloadButton")
 downloadButton.onclick = download
-
-// Prevent form submission that causes page reload
-const controlsForm = document.getElementById("controls-form")
-controlsForm.addEventListener('submit', (e) => {
-  e.preventDefault()
-  return false
-})
-
-
 
   /////////////////////////////////////////////////////////////////////////////
  //                            HELPER  FUNCTIONS                            //
@@ -172,17 +114,16 @@ function getInputs() {
     switch (input.type) {
       case 'number':
         inputs[input.id] = input.valueAsNumber
-        input.onchange = (e) => onSliderChange(e)
+        input.onchange = onSliderChange
         break
       case 'range':
         inputs[input.id] = input.valueAsNumber
-        input.onmouseup = (e) => onSliderChange(e)
-        input.ontouchend = (e) => onSliderChange(e)
-        input.oninput = (e) => onSliderChange(e)  // Add real-time updates
+        input.onmouseup = onSliderChange
+        input.ontouchend = onSliderChange
         break
       case 'checkbox':
         inputs[input.id] = input.checked
-        input.onclick = (e) => onSliderChange(e)
+        input.onclick = onSliderChange
         break
       default:
         break
@@ -232,6 +173,16 @@ function init() {
     animate()
 }
 
+function loadContext() {
+  loader.load('context.3dm', function (object) {
+    object.traverse(child => {
+      child.name = 'context'
+    })
+    console.log(object)
+    scene.add(object)
+  }, (error) => {console.log(error)})
+}
+
 /**
  * Call appserver
  */
@@ -244,7 +195,7 @@ async function compute() {
 
   try {
     const response = await fetch(url)
-
+  
     if(!response.ok) {
       // TODO: check for errors in response json
       throw new Error(response.statusText)
@@ -261,61 +212,27 @@ async function compute() {
 }
 
 /**
- * Called when a slider value changes in the UI. Collect all of the
- * slider values and call compute to solve for a new scene
- */
-function onSliderChange () {
-  showSpinner(true)
-  // get slider values
-  let inputs = {}
-  for (const input of document.getElementsByTagName('input')) {
-    switch (input.type) {
-    case 'number':
-      inputs[input.id] = input.valueAsNumber
-      break
-    case 'range':
-      inputs[input.id] = input.valueAsNumber
-      break
-    case 'checkbox':
-      inputs[input.id] = input.checked
-      break
-    }
-  }
-
-  data.inputs = inputs
-
-  compute()
-}
-
-/**
  * Parse response
  */
 function collectResults(responseJson) {
-  // clear doc
-  if (doc !== undefined)
-    doc.delete()
 
-  const values = responseJson.values
-  console.log(responseJson)
+    const values = responseJson.values
 
-  // Try to handle as base64 Rhino file first
-  try {
-    const str = values[0].InnerTree['{0}'][0].data
-    const data = JSON.parse(str)
-    const arr = _base64ToArrayBuffer(data)
-    doc = rhino.File3dm.fromByteArray(arr)
-  } catch (e) {
-    // Fall back to handling as regular Rhino geometry objects
+    // clear doc
+    if( doc !== undefined)
+        doc.delete()
+
+    //console.log(values)
     doc = new rhino.File3dm()
 
-    // for each output...
-    for (let i = 0; i < values.length; i++) {
-      // iterate through data tree structure
+    // for each output (RH_OUT:*)...
+    for ( let i = 0; i < values.length; i ++ ) {
+      // ...iterate through data tree structure...
       for (const path in values[i].InnerTree) {
         const branch = values[i].InnerTree[path]
-        // for each branch
-        for (let j = 0; j < branch.length; j++) {
-          // load rhino geometry into doc
+        // ...and for each branch...
+        for( let j = 0; j < branch.length; j ++) {
+          // ...load rhino geometry into doc
           const rhinoObject = decodeItem(branch[j])
           if (rhinoObject !== null) {
             doc.objects().add(rhinoObject, null)
@@ -323,58 +240,47 @@ function collectResults(responseJson) {
         }
       }
     }
-  }
 
-  if (doc.objects().count < 1) {
-    console.error('No rhino objects to load!')
-    showSpinner(false)
-    return
-  }
+    if (doc.objects().count < 1) {
+      console.error('No rhino objects to load!')
+      showSpinner(false)
+      return
+    }
 
-  // set up loader for converting the results to threejs
-  const loader = new Rhino3dmLoader()
-  loader.setLibraryPath('https://unpkg.com/rhino3dm@8.0.0-beta/')
+    // hack (https://github.com/mcneel/rhino3dm/issues/353)
+    const sphereAttrs = new rhino.ObjectAttributes()
+    sphereAttrs.mode = rhino.ObjectMode.Hidden
+    doc.objects().addSphere(new rhino.Sphere([0,0,0], 0.001), sphereAttrs)
 
-  const buffer = new Uint8Array(doc.toByteArray()).buffer
-  loader.parse(buffer, function (object) {
-    // clear previous objects
-    scene.traverse(child => {
-      if (child.userData.hasOwnProperty('objectType') && child.userData.objectType === 'File3dm') {
-        scene.remove(child)
-      }
-    })
+    // load rhino doc into three.js scene
+    const buffer = new Uint8Array(doc.toByteArray()).buffer
+    loader.parse( buffer, function ( object ) 
+    {
+        // debug 
+        /*
+        object.traverse(child => {
+          if (child.material !== undefined)
+            child.material = new THREE.MeshNormalMaterial()
+        }, false)
+        */
 
-    // add object graph from rhino model to three.js scene
-    scene.add(object)
+        // clear objects from scene. do this here to avoid blink
+        scene.traverse(child => {
+            if (!child.isLight && child.name !== 'context') {
+                scene.remove(child)
+            }
+        })
 
-    // zoom to extents
-    zoomCameraToSelection(camera, controls, object.children)
+        // add object graph from rhino model to three.js scene
+        scene.add( object )
 
-    // hide spinner and enable download button
-    showSpinner(false)
-    downloadButton.disabled = false
-  })
-}
+        // hide spinner and enable download button
+        showSpinner(false)
+        downloadButton.disabled = false
 
-// from https://stackoverflow.com/a/21797381
-function _base64ToArrayBuffer(base64) {
-  var binary_string = window.atob(base64);
-  var len = binary_string.length;
-  var bytes = new Uint8Array(len);
-  for (var i = 0; i < len; i++) {
-    bytes[i] = binary_string.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
-
-/**
- * Shows or hides the loading spinner
- */
-function showSpinner(enable) {
-  if (enable)
-    document.getElementById('loader').style.display = 'block'
-  else
-    document.getElementById('loader').style.display = 'none'
+        // zoom to extents
+        zoomCameraToSelection(camera, controls, scene.children)
+    }, (error)=>{console.log(error)})
 }
 
 /**
@@ -404,19 +310,27 @@ function decodeItem(item) {
  * Called when a slider value changes in the UI. Collect all of the
  * slider values and call compute to solve for a new scene
  */
-function onSliderChange (event) {
-  // Prevent form submission that causes page reload
-  if (event) {
-    event.preventDefault()
-  }
-
+function onSliderChange () {
   showSpinner(true)
+  // get slider values
+  let inputs = {}
+  for (const input of document.getElementsByTagName('input')) {
+    switch (input.type) {
+    case 'number':
+      inputs[input.id] = input.valueAsNumber
+      break
+    case 'range':
+      inputs[input.id] = input.valueAsNumber
+      break
+    case 'checkbox':
+      inputs[input.id] = input.checked
+      break
+    }
+  }
+  
+  data.inputs = inputs
 
-  // Debounce the compute calls to avoid too many requests
-  clearTimeout(window.computeTimeout)
-  window.computeTimeout = setTimeout(() => {
-    compute()
-  }, 300) // Wait 300ms after last slider change
+  compute()
 }
 
 /**
@@ -442,36 +356,36 @@ function onWindowResize() {
  * Helper function that behaves like rhino's "zoom to selection", but for three.js!
  */
 function zoomCameraToSelection( camera, controls, selection, fitOffset = 1.2 ) {
-
+  
   const box = new THREE.Box3();
-
+  
   for( const object of selection ) {
     if (object.isLight) continue
     box.expandByObject( object );
   }
-
+  
   const size = box.getSize( new THREE.Vector3() );
   const center = box.getCenter( new THREE.Vector3() );
-
+  
   const maxSize = Math.max( size.x, size.y, size.z );
   const fitHeightDistance = maxSize / ( 2 * Math.atan( Math.PI * camera.fov / 360 ) );
   const fitWidthDistance = fitHeightDistance / camera.aspect;
   const distance = fitOffset * Math.max( fitHeightDistance, fitWidthDistance );
-
+  
   const direction = controls.target.clone()
     .sub( camera.position )
     .normalize()
     .multiplyScalar( distance );
   controls.maxDistance = distance * 10;
   controls.target.copy( center );
-
+  
   camera.near = distance / 100;
   camera.far = distance * 100;
   camera.updateProjectionMatrix();
   camera.position.copy( controls.target ).sub(direction);
-
+  
   controls.update();
-
+  
 }
 
 /**
@@ -499,7 +413,6 @@ function showSpinner(enable) {
   else
     document.getElementById('loader').style.display = 'none'
 }
-    </script>
-</body>
+        </script>
+    </body>
 </html>
-
