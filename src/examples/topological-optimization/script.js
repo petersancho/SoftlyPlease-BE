@@ -39,17 +39,41 @@ links_slider.addEventListener( 'mouseup', onSliderChange, false )
 links_slider.addEventListener( 'touchend', onSliderChange, false )
 
 let _threeMesh, _threeMaterial, doc
+let rhino = null
+let scene, camera, renderer, controls
 
-const rhino = await rhino3dm()
-console.log('Loaded rhino3dm.')
+// Initialize rhino3dm with error handling
+async function initializeRhino() {
+  try {
+    console.log('Initializing rhino3dm...')
+    rhino = await rhino3dm()
+    console.log('Loaded rhino3dm successfully.')
+    return true
+  } catch (error) {
+    console.error('Failed to load rhino3dm:', error)
+    showSpinner(false)
+    alert('Failed to load 3D viewer. Please refresh the page.')
+    return false
+  }
+}
 
-init()
-compute()
+// Initialize application
+async function initializeApp() {
+  const rhinoLoaded = await initializeRhino()
+  if (!rhinoLoaded) return
+
+  init()
+  compute()
+}
+
+// Start the application
+initializeApp()
 
 /**
  * Call appserver
  */
 async function compute(){
+  console.log('Starting compute function...')
 
   showSpinner(true)
 
@@ -69,7 +93,7 @@ async function compute(){
     }
   }
 
-  console.log(data.inputs)
+  console.log('Data to send:', data)
 
   const request = {
     'method':'POST',
@@ -77,14 +101,27 @@ async function compute(){
     'headers': {'Content-Type': 'application/json'}
   }
 
+  // Add timeout to prevent infinite loading
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+
   try {
-    const response = await fetch( '/solve/topological-optimization', request )
+    console.log('Sending request to server...')
+    const response = await fetch( '/solve/topological-optimization', {
+      ...request,
+      signal: controller.signal
+    } )
+
+    clearTimeout(timeoutId)
+    console.log('Response status:', response.status)
 
     if(!response.ok) {
-      throw new Error(response.statusText)
+      const errorText = await response.text()
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
     }
 
     const responseJson = await response.json()
+    console.log('Response received:', responseJson)
 
     // hide spinner
     showSpinner(false)
@@ -93,8 +130,16 @@ async function compute(){
     loadScene(responseJson)
 
   } catch(error) {
-    console.error(error)
-    showSpinner(false)
+    clearTimeout(timeoutId)
+    console.error('API Error:', error)
+
+    if (error.name === 'AbortError') {
+      showSpinner(false)
+      alert('Request timed out after 30 seconds. The server may be busy or unavailable.')
+    } else {
+      showSpinner(false)
+      alert(`Failed to compute optimization: ${error.message}\n\nPlease check that:\n1. Rhino Compute server is running\n2. Your GH definition is valid\n3. Network connection is working\n\nCheck the browser console (F12) for more details.`)
+    }
   }
 }
 
@@ -116,28 +161,49 @@ function showSpinner( enable ){
  * Load a scene from rhino3dm result
  */
 function loadScene( result ){
+  try {
+    console.log('Processing result:', result)
 
-  doc = new rhino.File3dm()
+    if (!result || !result.values || !result.values[0]) {
+      throw new Error('Invalid result format - no values found')
+    }
 
-  // set up loader for converting the results to threejs
-  const loader = new Rhino3dmLoader()
-  loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta/' )
+    doc = new rhino.File3dm()
 
-  // load rhino doc
-  const buffer = base64ToArrayBuffer(result.values[0].InnerTree['{0;0}'][0].data)
-  loader.parse( buffer, function ( object ) {
+    // set up loader for converting the results to threejs
+    const loader = new Rhino3dmLoader()
+    loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta/' )
 
-      // clear objects from scene
-      scene.children = scene.children.filter(child => child.userData.background)
+    // load rhino doc
+    const buffer = base64ToArrayBuffer(result.values[0].InnerTree['{0;0}'][0].data)
+    console.log('Buffer created, parsing...')
 
-      // add object to scene
-      scene.add( object )
-      object.rotation.x = -Math.PI/2
+    loader.parse( buffer, function ( object ) {
+      try {
+        console.log('Object parsed:', object)
 
-      // fit camera to object
-      fitCameraToObject(object)
+        // clear objects from scene
+        scene.children = scene.children.filter(child => child.userData.background)
 
-  } )
+        // add object to scene
+        scene.add( object )
+        object.rotation.x = -Math.PI/2
+
+        // fit camera to object
+        fitCameraToObject(object)
+
+        console.log('Geometry loaded successfully!')
+
+      } catch (parseError) {
+        console.error('Error processing parsed object:', parseError)
+        alert('Failed to process 3D geometry. Check console for details.')
+      }
+    } )
+
+  } catch (error) {
+    console.error('Error in loadScene:', error)
+    alert(`Failed to load geometry: ${error.message}\n\nPlease check your GH definition outputs a valid mesh.`)
+  }
 }
 
 /**
@@ -165,11 +231,12 @@ function init(){
   camera.position.y = 100
   camera.position.z = 100
 
+  const canvas = document.getElementById('canvas')
   controls = new THREE.OrbitControls( camera, canvas )
 
   renderer = new THREE.WebGLRenderer( { antialias: true } )
   renderer.setSize( window.innerWidth, window.innerHeight )
-  document.getElementById('canvas').appendChild( renderer.domElement )
+  canvas.appendChild( renderer.domElement )
 
   // add light
   const directionalLight = new THREE.DirectionalLight( 0xffffff )
