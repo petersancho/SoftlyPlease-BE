@@ -10,7 +10,8 @@ async function getVersion() {
 
   // Use COMPUTE_URL as primary, fallback to RHINO_COMPUTE_URL for backward compatibility
   const computeUrl = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL
-  const response = await fetch( computeUrl + 'version', request )
+  const baseUrl = computeUrl.endsWith('/') ? computeUrl : computeUrl + '/'
+  const response = await fetch( baseUrl + 'version', request )
   console.log(response)
   const result = await response.json()
 
