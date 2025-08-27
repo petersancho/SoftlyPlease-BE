@@ -9,34 +9,49 @@ loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta2/' )
 // reference the definition
 const definitionName = 'topological-optimization.gh'
 
-// setup input change events
-const thickness_slider = document.getElementById( 'thickness' )
-thickness_slider.addEventListener( 'mouseup', onSliderChange, false )
-thickness_slider.addEventListener( 'touchend', onSliderChange, false )
-const minr_slider = document.getElementById( 'min_r' )
-minr_slider.addEventListener( 'mouseup', onSliderChange, false )
-minr_slider.addEventListener( 'touchend', onSliderChange, false )
-const maxr_slider = document.getElementById( 'max_r' )
-maxr_slider.addEventListener( 'mouseup', onSliderChange, false )
-maxr_slider.addEventListener( 'touchend', onSliderChange, false )
-const square_slider = document.getElementById( 'square' )
-square_slider.addEventListener( 'mouseup', onSliderChange, false )
-square_slider.addEventListener( 'touchend', onSliderChange, false )
-const strutsize_slider = document.getElementById( 'strutsize' )
-strutsize_slider.addEventListener( 'mouseup', onSliderChange, false )
-strutsize_slider.addEventListener( 'touchend', onSliderChange, false )
-const segment_slider = document.getElementById( 'segment' )
-segment_slider.addEventListener( 'mouseup', onSliderChange, false )
-segment_slider.addEventListener( 'touchend', onSliderChange, false )
-const cubecorners_slider = document.getElementById( 'cubecorners' )
-cubecorners_slider.addEventListener( 'mouseup', onSliderChange, false )
-cubecorners_slider.addEventListener( 'touchend', onSliderChange, false )
-const smooth_slider = document.getElementById( 'smooth' )
-smooth_slider.addEventListener( 'mouseup', onSliderChange, false )
-smooth_slider.addEventListener( 'touchend', onSliderChange, false )
-const links_slider = document.getElementById( 'links' )
-links_slider.addEventListener( 'mouseup', onSliderChange, false )
-links_slider.addEventListener( 'touchend', onSliderChange, false )
+// Slider variables - will be initialized after DOM is ready
+let thickness_slider, minr_slider, maxr_slider, square_slider, strutsize_slider
+let segment_slider, links_slider, cubecorners_slider, smooth_slider
+
+// Function to initialize sliders after DOM is ready
+function initializeSliders() {
+  console.log('🛠️ DEBUG: Initializing sliders...')
+
+  thickness_slider = document.getElementById('thickness')
+  minr_slider = document.getElementById('min_r')
+  maxr_slider = document.getElementById('max_r')
+  square_slider = document.getElementById('square')
+  strutsize_slider = document.getElementById('strutsize')
+  segment_slider = document.getElementById('segment')
+  links_slider = document.getElementById('links')
+  cubecorners_slider = document.getElementById('cubecorners')
+  smooth_slider = document.getElementById('smooth')
+
+  // Check if all sliders exist
+  const sliders = [thickness_slider, minr_slider, maxr_slider, square_slider, strutsize_slider,
+                  segment_slider, links_slider, cubecorners_slider, smooth_slider]
+
+  const missingSliders = sliders.filter(slider => !slider)
+  if (missingSliders.length > 0) {
+    console.error('❌ ERROR: Missing sliders:', missingSliders.length, 'out of', sliders.length)
+    sliders.forEach((slider, index) => {
+      if (!slider) {
+        const sliderNames = ['thickness', 'min_r', 'max_r', 'square', 'strutsize', 'segment', 'links', 'cubecorners', 'smooth']
+        console.error('❌ ERROR: Missing slider:', sliderNames[index])
+      }
+    })
+    return false
+  }
+
+  // Add event listeners to all sliders
+  sliders.forEach(slider => {
+    slider.addEventListener('mouseup', onSliderChange, false)
+    slider.addEventListener('touchend', onSliderChange, false)
+  })
+
+  console.log('✅ DEBUG: All sliders initialized successfully')
+  return true
+}
 
 // globals
 let definition, doc
@@ -129,6 +144,17 @@ loadDefinition()
  */
 async function compute(){
   try {
+    // Ensure sliders are initialized
+    if (!thickness_slider) {
+      console.log('🛠️ DEBUG: Sliders not initialized in compute(), initializing now...')
+      if (!initializeSliders()) {
+        console.error('❌ ERROR: Failed to initialize sliders in compute()')
+        alert('Sliders not properly initialized. Please refresh the page.')
+        showSpinner(false)
+        return
+      }
+    }
+
     // format data - using "RH_IN:" prefixes to match Grasshopper group names
     // Create a simple box geometry for RH_IN:brep parameter
     console.log('🐛 DEBUG: Creating test geometry for RH_IN:brep...')
@@ -597,17 +623,51 @@ function onSliderChange () {
 
 // Test function accessible from browser console and HTML button
 window.testCompute = function() {
-  console.log('🧪 TEST: testCompute() called manually')
+  console.log('🧪 TEST: testCompute() called manually - BUTTON WORKING!')
+
+  // Add immediate visual feedback
+  const testButton = document.querySelector('button[onclick*="testCompute"]')
+  if (testButton) {
+    testButton.textContent = 'Testing...'
+    testButton.style.background = '#28a745'
+    setTimeout(() => {
+      testButton.textContent = 'Test Compute'
+      testButton.style.background = '#007bff'
+    }, 2000)
+  }
+
+  // Check if RhinoCompute is loaded
+  console.log('🧪 TEST: RhinoCompute object:', window.RhinoCompute)
+  console.log('🧪 TEST: RhinoCompute.url:', window.RhinoCompute?.url)
+  console.log('🧪 TEST: RhinoCompute.apiKey:', window.RhinoCompute?.apiKey ? '***' + window.RhinoCompute.apiKey.slice(-4) : 'undefined')
+
+  // Check if required modules are loaded
+  console.log('🧪 TEST: THREE object:', window.THREE)
+  console.log('🧪 TEST: rhino object:', window.rhino)
+
+  // Check definition loading
+  console.log('🧪 TEST: definition variable:', definition)
+  console.log('🧪 TEST: definitionName:', definitionName)
+
+  // Ensure sliders are initialized
+  if (!thickness_slider) {
+    console.log('🧪 TEST: Sliders not initialized yet, initializing now...')
+    if (!initializeSliders()) {
+      alert('Failed to initialize sliders. Please refresh the page.')
+      return
+    }
+  }
+
   console.log('🧪 TEST: Current slider values:')
-  console.log('  - thickness:', thickness_slider.valueAsNumber)
-  console.log('  - minr:', minr_slider.valueAsNumber)
-  console.log('  - maxr:', maxr_slider.valueAsNumber)
-  console.log('  - square:', square_slider.valueAsNumber)
-  console.log('  - strutsize:', strutsize_slider.valueAsNumber)
-  console.log('  - segment:', segment_slider.valueAsNumber)
-  console.log('  - links:', links_slider.valueAsNumber)
-  console.log('  - cubecorners:', cubecorners_slider.valueAsNumber)
-  console.log('  - smooth:', smooth_slider.valueAsNumber)
+  console.log('  - thickness:', thickness_slider?.valueAsNumber || 'slider not found')
+  console.log('  - minr:', minr_slider?.valueAsNumber || 'slider not found')
+  console.log('  - maxr:', maxr_slider?.valueAsNumber || 'slider not found')
+  console.log('  - square:', square_slider?.valueAsNumber || 'slider not found')
+  console.log('  - strutsize:', strutsize_slider?.valueAsNumber || 'slider not found')
+  console.log('  - segment:', segment_slider?.valueAsNumber || 'slider not found')
+  console.log('  - links:', links_slider?.valueAsNumber || 'slider not found')
+  console.log('  - cubecorners:', cubecorners_slider?.valueAsNumber || 'slider not found')
+  console.log('  - smooth:', smooth_slider?.valueAsNumber || 'slider not found')
 
   showSpinner(true)
   compute()
@@ -653,6 +713,11 @@ function init () {
   controls = new OrbitControls( camera, renderer.domElement  )
 
   window.addEventListener( 'resize', onWindowResize, false )
+
+  // Initialize sliders after DOM is ready
+  if (!initializeSliders()) {
+    console.error('❌ ERROR: Failed to initialize sliders')
+  }
 
   animate()
 }
