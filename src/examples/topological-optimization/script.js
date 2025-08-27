@@ -71,17 +71,58 @@ async function initializeRhino() {
 
 // Load the .gh definition file
 async function loadDefinition() {
-  let url = definitionName
-  let res = await fetch(url)
-  let buffer = await res.arrayBuffer()
-  definition = new Uint8Array(buffer)
-  console.log('Loaded definition:', definitionName)
+  try {
+    console.log('🐛 DEBUG: Loading Grasshopper definition from:', definitionName)
+    let url = definitionName
+    let res = await fetch(url)
+    if (!res.ok) {
+      throw new Error(`Failed to load definition: ${res.status} ${res.statusText}`)
+    }
+    let buffer = await res.arrayBuffer()
+    definition = new Uint8Array(buffer)
+    console.log('✅ DEBUG: Definition loaded successfully:', definitionName, 'Size:', definition.length, 'bytes')
+
+    // Test connection to Rhino Compute server
+    await testRhinoConnection()
+  } catch (error) {
+    console.error('❌ ERROR loading definition:', error)
+    alert('Failed to load Grasshopper definition: ' + error.message)
+  }
+}
+
+// Test basic connection to Rhino Compute server
+async function testRhinoConnection() {
+  try {
+    console.log('🐛 DEBUG: Testing Rhino Compute server connection...')
+    const testUrl = RhinoCompute.url + '/io'
+
+    const response = await fetch(testUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${RhinoCompute.apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    console.log('🐛 DEBUG: Server test response status:', response.status)
+    console.log('🐛 DEBUG: Server test response headers:', Object.fromEntries(response.headers.entries()))
+
+    if (response.status === 401) {
+      console.warn('⚠️ WARNING: Server returns 401 Unauthorized - API key may be invalid')
+      alert('Warning: Server authentication failed. API key may be expired or invalid.')
+    } else if (response.status === 200) {
+      console.log('✅ DEBUG: Server connection test successful')
+    } else {
+      console.warn('⚠️ WARNING: Server returned unexpected status:', response.status)
+    }
+  } catch (error) {
+    console.error('❌ ERROR: Cannot connect to Rhino Compute server:', error)
+    alert('Cannot connect to Rhino Compute server. Check network connection and server status.')
+  }
 }
 
 init()
-loadDefinition().then(() => {
-  compute()
-})
+loadDefinition()
 
 /**
  * Call RhinoCompute
@@ -132,23 +173,49 @@ async function compute(){
     trees.push(param9)
     trees.push(param10)
 
-    console.log('Sending parameters to RhinoCompute:', {
-      url: RhinoCompute.url,
-      apiKey: RhinoCompute.apiKey ? '***' + RhinoCompute.apiKey.slice(-4) : 'undefined',
-      trees: trees.length,
-      parameters: ['links', 'minr', 'maxr', 'thickness', 'square', 'strutsize', 'segment', 'cubecorners', 'smooth']
+    console.log('🐛 DEBUG: Starting RhinoCompute request...')
+    console.log('🐛 DEBUG: RhinoCompute.url:', RhinoCompute.url)
+    console.log('🐛 DEBUG: RhinoCompute.apiKey length:', RhinoCompute.apiKey ? RhinoCompute.apiKey.length : 'undefined')
+    console.log('🐛 DEBUG: Trees count:', trees.length)
+    console.log('🐛 DEBUG: Parameters:', ['links', 'minr', 'maxr', 'thickness', 'square', 'strutsize', 'segment', 'cubecorners', 'smooth'])
+    console.log('🐛 DEBUG: Parameter values:', {
+      links: links_slider.valueAsNumber,
+      minr: minr_slider.valueAsNumber,
+      maxr: maxr_slider.valueAsNumber,
+      thickness: thickness_slider.valueAsNumber,
+      square: square_slider.valueAsNumber,
+      strutsize: strutsize_slider.valueAsNumber,
+      segment: segment_slider.valueAsNumber,
+      cubecorners: cubecorners_slider.valueAsNumber,
+      smooth: smooth_slider.valueAsNumber
     });
 
     // Call RhinoCompute
+    console.log('🐛 DEBUG: Calling RhinoCompute.Grasshopper.evaluateDefinition...')
     const res = await RhinoCompute.Grasshopper.evaluateDefinition(definition, trees)
 
-    console.log('RhinoCompute response received:', res);
+    console.log('✅ DEBUG: RhinoCompute response received successfully:', res);
+    console.log('✅ DEBUG: Response type:', typeof res);
+    console.log('✅ DEBUG: Response keys:', res ? Object.keys(res) : 'null');
+
     collectResults(res)
 
   } catch (error) {
-    console.error('Error in compute():', error)
+    console.error('❌ ERROR in compute():', error)
+    console.error('❌ ERROR message:', error.message)
+    console.error('❌ ERROR stack:', error.stack)
     showSpinner(false)
-    alert('Error: ' + error.message)
+
+    // More detailed error information
+    if (error.message.includes('CORS')) {
+      alert('CORS Error: The Rhino Compute server is blocking your request. This is a server configuration issue.')
+    } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+      alert('Authentication Error: Invalid API key or server not accepting credentials.')
+    } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+      alert('Network Error: Cannot connect to Rhino Compute server. Check if the server is running.')
+    } else {
+      alert('Error: ' + error.message)
+    }
   }
 }
 
