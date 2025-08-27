@@ -77,49 +77,15 @@ async function compute(){
     t0 = t1
 
     // hide spinner
-    //document.getElementById('loader').style.display = 'none'
-    //showSpinner(false)
-    //console.log(responseJson.values[0])
-    //let data = JSON.parse(responseJson.values[0].InnerTree['{0}'][0].data)
-    //let mesh = rhino.DracoCompression.decompressBase64String(data)
+    showSpinner(false)
       
     t1 = performance.now()
     const decodeMeshTime = t1 - t0
     t0 = t1
-/*
-    if (!_threeMaterial) {
-      _threeMaterial = new THREE.MeshNormalMaterial()
-    }
-    
-    let threeMesh = meshToThreejs(mesh, _threeMaterial)
-    mesh.delete()
-    replaceCurrentMesh(threeMesh)
-*/
     t1 = performance.now()
     const rebuildSceneTime = t1 - t0
 
-    //console.group(`[call compute and rebuild scene] = ${Math.round(t1-timeComputeStart)} ms`)
-    //console.log(`[call compute and rebuild scene] = ${Math.round(t1-timeComputeStart)} ms`)
     console.log(`  ${Math.round(computeSolveTime)} ms: appserver request`)
-    /*
-    let timings = headers.split(',')
-    let sum = 0
-    timings.forEach(element => {
-      let name = element.split(';')[0].trim()
-      let time = element.split('=')[1].trim()
-      sum += Number(time)
-      if (name === 'network') {
-        console.log(`  .. ${time} ms: appserver<->compute network latency`)
-      } else {
-        console.log(`  .. ${time} ms: ${name}`)
-      }
-    })
-   
-   // console.log(`  .. ${Math.round(computeSolveTime - sum)} ms: local<->appserver network latency`)
-    console.log(`  ${Math.round(decodeMeshTime)} ms: decode json to rhino3dm mesh`)
-    console.log(`  ${Math.round(rebuildSceneTime)} ms: create threejs mesh and insert in scene`)
-     */
-    //console.groupEnd()
 
   } catch(error) {
     console.error(error)
