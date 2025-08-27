@@ -43,6 +43,7 @@ app.use('/definition', require('./routes/definition'))
 app.use('/solve', require('./routes/solve'))
 app.use('/view', require('./routes/template'))
 app.use('/version', require('./routes/version'))
+app.use('/topological-optimization', require('./routes/topological-optimization'))
 app.use('/', require('./routes/index'))
 
 // ref: https://github.com/expressjs/express/issues/3589
