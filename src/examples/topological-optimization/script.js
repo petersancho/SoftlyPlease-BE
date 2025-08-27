@@ -55,27 +55,51 @@ downloadButton.onclick = download
  */
 async function compute(){
 
-  // construct url for GET /solve/definition.gh?name=value(&...)
-  const url = new URL('/solve/' + definition, window.location.origin)
-  url.searchParams.append('RH_IN:tolerance', tolerance_slider.valueAsNumber)
-  url.searchParams.append('RH_IN:round', round_slider.valueAsNumber)
-  url.searchParams.append('RH_IN:pipe_width', pipe_width_slider.valueAsNumber)
-  url.searchParams.append('RH_IN:segment', segment_slider.valueAsNumber)
-  url.searchParams.append('RH_IN:cube', cube_checkbox.checked)
-  url.searchParams.append('RH_IN:smooth', smooth_slider.valueAsNumber)
-  url.searchParams.append('RH_IN:min_r', min_r_slider.valueAsNumber)
-  url.searchParams.append('RH_IN:max_R', max_R_slider.valueAsNumber)
-  url.searchParams.append('RH_IN:links', links_slider.valueAsNumber)
-  console.log(url.toString())
+  // construct url for POST /solve
+  const url = new URL('/solve', window.location.origin)
+
+  const data = {
+    definition: definition,
+    inputs: {
+      'tolerance': tolerance_slider.valueAsNumber,
+      'round': round_slider.valueAsNumber,
+      'pipe_width': pipe_width_slider.valueAsNumber,
+      'segment': segment_slider.valueAsNumber,
+      'cube': cube_checkbox.checked,
+      'smooth': smooth_slider.valueAsNumber,
+      'min_r': min_r_slider.valueAsNumber,
+      'max_R': max_R_slider.valueAsNumber,
+      'links': links_slider.valueAsNumber
+    }
+  }
+
+  console.log('Sending data:', data)
+
+  const request = {
+    'method':'POST',
+    'body': JSON.stringify(data),
+    'headers': {'Content-Type': 'application/json'}
+  }
 
   try {
-    const response = await fetch(url)
+    const response = await fetch(url, request)
 
     if(!response.ok) {
-      throw new Error(response.statusText)
+      throw new Error(`HTTP error! status: ${response.status}, message: ${response.statusText}`)
     }
 
     const responseJson = await response.json()
+    console.log('Response received:', responseJson)
+
+    if (!responseJson || !responseJson.values) {
+      console.error('Invalid response format:', responseJson)
+      return
+    }
+
+    if (responseJson.values.length === 0) {
+      console.error('No values in response')
+      return
+    }
 
     collectResults(responseJson)
 
@@ -120,35 +144,54 @@ function download () {
  * Parse response
  */
 function collectResults(responseJson) {
+  console.log('Processing response in collectResults:', responseJson)
 
   // clear doc
   if (doc !== undefined)
     doc.delete()
 
-    const values = responseJson.values
+  const values = responseJson.values
+  console.log('Values array:', values)
 
-    // clear doc
-    if( doc !== undefined)
-        doc.delete()
+  if (!values || values.length === 0) {
+    console.error('No values to process')
+    return
+  }
 
-    //console.log(values)
-    doc = new rhino.File3dm()
+  doc = new rhino.File3dm()
+  let objectCount = 0
 
-    // for each output (RH_OUT:*)...
-    for ( let i = 0; i < values.length; i ++ ) {
-      // ...iterate through data tree structure...
-      for (const path in values[i].InnerTree) {
-        const branch = values[i].InnerTree[path]
-        // ...and for each branch...
-        for( let j = 0; j < branch.length; j ++) {
-          // ...load rhino geometry into doc
-          const rhinoObject = decodeItem(branch[j])
-          if (rhinoObject !== null) {
-            doc.objects().add(rhinoObject, null)
-          }
+  // for each output (RH_OUT:*)...
+  for ( let i = 0; i < values.length; i ++ ) {
+    console.log(`Processing value ${i}:`, values[i])
+
+    if (!values[i].InnerTree) {
+      console.warn(`Value ${i} has no InnerTree`)
+      continue
+    }
+
+    // ...iterate through data tree structure...
+    for (const path in values[i].InnerTree) {
+      console.log(`Processing path: ${path}`)
+      const branch = values[i].InnerTree[path]
+
+      // ...and for each branch...
+      for( let j = 0; j < branch.length; j ++) {
+        console.log(`Processing branch item ${j}:`, branch[j])
+
+        // ...load rhino geometry into doc
+        const rhinoObject = decodeItem(branch[j])
+        console.log(`Decoded rhino object:`, rhinoObject)
+
+        if (rhinoObject !== null) {
+          doc.objects().add(rhinoObject, null)
+          objectCount++
         }
       }
     }
+  }
+
+  console.log(`Added ${objectCount} objects to doc`)
 
   if (doc.objects().count < 1) {
     console.error('No rhino objects to load!')
