@@ -48,16 +48,16 @@
                 <div><h2>Spiky Thing</h2></div>
                 <form id="controls-form" novalidate>
                   <div>
-                    <label for="RH_IN:count">count</label>
-                    <input type="range" id="RH_IN:count" min="0" max="100" value="50" step="5">
+                    <label for="count">count</label>
+                    <input type="range" id="count" min="0" max="100" value="50" step="5">
                   </div>
                   <div>
-                    <label for="RH_IN:radius">radius</label>
-                    <input type="range" id="RH_IN:radius" min="1" max="10" value="3" step="0.5">
+                    <label for="radius">radius</label>
+                    <input type="range" id="radius" min="1" max="10" value="3" step="0.5">
                   </div>
                   <div>
-                    <label for="RH_IN:length">length</label>
-                    <input type="range" id="RH_IN:length" min="1" max="10" value="5" step="0.5">
+                    <label for="length">length</label>
+                    <input type="range" id="length" min="1" max="10" value="5" step="0.5">
                   </div>
                   <div><button id="downloadButton" disabled>Download</button></div>
                 </form>
@@ -106,8 +106,7 @@ loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta/' )
 
 // initialise 'data' object that will be used by compute()
 const data = {
-  definition: 'BranchNodeRnd.gh',
-  inputs: getInputs()
+  definition: 'BranchNodeRnd.gh'
 }
 
 // globals
@@ -257,10 +256,13 @@ async function compute() {
 
   // construct url for GET /solve/definition.gh?name=value(&...)
   const url = new URL('/solve/' + data.definition, window.location.origin)
-  console.log(url)
-  Object.keys(data.inputs).forEach(key => url.searchParams.append(key, data.inputs[key]))
-  console.log(url.toString())
 
+  // Add parameters with RH_IN: prefix like the topological optimization page
+  url.searchParams.append('RH_IN:count', document.getElementById('count').valueAsNumber)
+  url.searchParams.append('RH_IN:radius', document.getElementById('radius').valueAsNumber)
+  url.searchParams.append('RH_IN:length', document.getElementById('length').valueAsNumber)
+
+  console.log('Request URL:', url.toString())
   updateRequestInfo(`URL: ${url.toString()}`)
   updateDebugStatus('Sending request to Rhino Compute...')
 
@@ -406,25 +408,6 @@ function onSliderChange (event) {
   updateParamsStatus('🔄 Computing...', '#ffff00')
 
   showSpinner(true)
-  // get slider values
-  let inputs = {}
-  for (const input of document.getElementsByTagName('input')) {
-    switch (input.type) {
-    case 'number':
-      inputs[input.id] = input.valueAsNumber
-      break
-    case 'range':
-      inputs[input.id] = input.valueAsNumber
-      break
-    case 'checkbox':
-      inputs[input.id] = input.checked
-      break
-    }
-  }
-
-  console.log('New slider values:', inputs)
-  data.inputs = inputs
-
   compute()
 }
 
