@@ -4,14 +4,11 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader'
 import rhino3dm from 'rhino3dm'
 
-// global variables
-let scene, camera, renderer, controls, rhino
-
 // set up loader for converting the results to threejs
 const loader = new Rhino3dmLoader()
-loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta/' )
+loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta3/' )
 
-const definition = 'Topological-Optimization'
+const definition = 'topological-optimization.gh'
 
 // setup input change events
 const tolerance_slider = document.getElementById( 'tolerance' )
@@ -41,15 +38,14 @@ const links_slider = document.getElementById( 'links' )
 links_slider.addEventListener( 'mouseup', onSliderChange, false )
 links_slider.addEventListener( 'touchend', onSliderChange, false )
 
-let _threeMesh, _threeMaterial, doc
+let doc
+let scene, camera, renderer, controls
 
-// initialize rhino3dm
-rhino3dm().then(function(rhino3dm) {
-  rhino = rhino3dm
-  console.log('Loaded rhino3dm.')
-  init()
-  compute()
-})
+const rhino = await rhino3dm()
+console.log('Loaded rhino3dm.')
+
+init()
+compute()
 
 /**
  * Call appserver
@@ -60,6 +56,7 @@ async function compute(){
 
   // initialise 'data' object that will be used by compute()
   const data = {
+    definition: definition,
     inputs: {
       'tolerance':tolerance_slider.valueAsNumber,
       'round':round_slider.valueAsNumber,
@@ -82,119 +79,128 @@ async function compute(){
   }
 
   try {
-    const response = await fetch( '/solve/topological-optimization', request )
+    const response = await fetch('/solve', request)
 
-    if(!response.ok) {
+    if(!response.ok)
       throw new Error(response.statusText)
-    }
 
     const responseJson = await response.json()
+    collectResults(responseJson)
 
-    // hide spinner
-    showSpinner(false)
-
-    // Load geometry in the scene
-    loadScene(responseJson)
-
-  } catch(error) {
+  } catch(error){
     console.error(error)
     showSpinner(false)
   }
 }
 
+// from https://stackoverflow.com/a/21797381
+function _base64ToArrayBuffer(base64) {
+  var binary_string = window.atob(base64);
+  var len = binary_string.length;
+  var bytes = new Uint8Array(len);
+  for (var i = 0; i < len; i++) {
+    bytes[i] = binary_string.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
 /**
- * Called when any slider changes
+ * Parse response
  */
-function onSliderChange(){
+function collectResults(responseJson) {
+
+  // clear doc
+  if (doc !== undefined)
+    doc.delete()
+
+  const values = responseJson.values
+  console.log(responseJson)
+
+  const str = values[0].InnerTree['{0}'][0].data
+  const data = JSON.parse(str)
+  const arr = _base64ToArrayBuffer(data)
+  doc = rhino.File3dm.fromByteArray(arr)
+
+  if (doc.objects().count < 1) {
+    console.error('No rhino objects to load!')
+    showSpinner(false)
+    return
+  }
+
+  // set up loader for converting the results to threejs
+  const loader = new Rhino3dmLoader()
+  loader.setLibraryPath('https://unpkg.com/rhino3dm@8.0.0-beta3/')
+
+  // load rhino doc into three.js scene
+  loader.parse(arr, function (object) {
+    console.log(object)
+
+    scene.traverse(child => {
+      if (child.userData.hasOwnProperty('objectType') && child.userData.objectType === 'File3dm') {
+        scene.remove(child)
+      }
+    })
+
+    // zoom to extents
+    zoomCameraToSelection(camera, controls, object.children)
+
+    // add object graph from rhino model to three.js scene
+    scene.add(object)
+
+    // hide spinner
+    showSpinner(false)
+
+  }, (error)=>{console.error(error)})
+}
+
+/**
+ * Called when a slider value changes in the UI. Collect all of the
+ * slider values and call compute to solve for a new scene
+ */
+function onSliderChange () {
+  // show spinner
+  showSpinner(true)
   compute()
 }
 
 /**
  * Shows or hides the loading spinner
  */
-function showSpinner( enable ){
-  document.getElementById('loader').style.display = enable ? 'block' : 'none'
+ function showSpinner(enable) {
+  if (enable)
+    document.getElementById('loader').style.display = 'block'
+  else
+    document.getElementById('loader').style.display = 'none'
 }
 
-/**
- * Load a scene from rhino3dm result
- */
-function loadScene( result ){
+function init () {
 
-  // clear objects from scene
-  scene.children = scene.children.filter(child => child.userData.background)
+  // Rhino models are z-up, so set this as the default
+  THREE.Object3D.DefaultUp = new THREE.Vector3( 0, 0, 1 );
 
-  // check if result has values
-  if (!result.values || result.values.length === 0) {
-    console.error('No values in result')
-    return
-  }
-
-  // set up loader for converting the results to threejs
-  const loader = new Rhino3dmLoader()
-  loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta/' )
-
-  // load rhino doc from base64 data
-  const data = result.values[0].InnerTree['{0;0}'][0].data
-  const buffer = base64ToArrayBuffer(data)
-  loader.parse( buffer, function ( object ) {
-
-      // add object to scene
-      scene.add( object )
-      object.rotation.x = -Math.PI/2
-
-      // fit camera to object
-      fitCameraToObject(object)
-
-  } )
-}
-
-/**
- * base64 to buffer
- */
-function base64ToArrayBuffer( base64 ) {
-  const binaryString = window.atob( base64 )
-  const len = binaryString.length
-  const bytes = new Uint8Array( len )
-  for ( let i = 0; i < len; i++ ) {
-      bytes[i] = binaryString.charCodeAt( i )
-  }
-  return bytes.buffer
-}
-
-/**
- * Initialize the scene, camera and renderer
- */
-function init(){
   scene = new THREE.Scene()
   scene.background = new THREE.Color(1,1,1)
-
   camera = new THREE.PerspectiveCamera( 45, window.innerWidth/window.innerHeight, 1, 1000 )
-  camera.position.x = 100
-  camera.position.y = 100
-  camera.position.z = 100
+  camera.position.x = 50
+  camera.position.y = 50
+  camera.position.z = 50
 
-  const canvas = document.getElementById('canvas')
-  controls = new THREE.OrbitControls( camera, canvas )
+  // add a directional light
+  const directionalLight = new THREE.DirectionalLight(0xffffff)
+  directionalLight.intensity = 2
+  scene.add(directionalLight)
 
-  renderer = new THREE.WebGLRenderer( { antialias: true } )
+  const ambientLight = new THREE.AmbientLight()
+  scene.add(ambientLight)
+
+  renderer = new THREE.WebGLRenderer({antialias: true})
+  renderer.setPixelRatio( window.devicePixelRatio )
   renderer.setSize( window.innerWidth, window.innerHeight )
-  canvas.innerHTML = ''
-  canvas.appendChild( renderer.domElement )
+  document.body.appendChild(renderer.domElement)
 
-  // add light
-  const directionalLight = new THREE.DirectionalLight( 0xffffff )
-  directionalLight.position.set( 0, 0, 2 )
-  scene.add( directionalLight )
+  controls = new OrbitControls( camera, renderer.domElement  )
 
-  // add background geometry
-  const planeGeometry = new THREE.PlaneGeometry( 200, 200 )
-  const planeMaterial = new THREE.MeshBasicMaterial( {color: 0xcccccc} )
-  const plane = new THREE.Mesh( planeGeometry, planeMaterial )
-  plane.rotation.x = -Math.PI/2
-  plane.position.y = -50
-  plane.userData.background = true
-  scene.add( plane )
+  window.addEventListener( 'resize', onWindowResize, false )
 
   animate()
 }
@@ -207,36 +213,45 @@ function animate(){
   renderer.render( scene, camera )
 }
 
-/**
- * Fit camera to object
- */
-function fitCameraToObject( object ){
-
-  const box = new THREE.Box3().setFromObject( object )
-  const size = box.getSize( new THREE.Vector3() )
-  const center = box.getCenter( new THREE.Vector3() )
-
-  const maxDim = Math.max( size.x, size.y, size.z )
-  const fov = camera.fov * ( Math.PI / 180 )
-  let cameraZ = Math.abs( maxDim / 2 / Math.tan( fov / 2 ) )
-
-  cameraZ *= 2.5
-
-  camera.position.z = cameraZ
-  camera.position.x = center.x
-  camera.position.y = center.y
-
-  const minZ = box.min.z
-  const cameraToFarEdge = ( minZ < 0 ) ? -minZ + cameraZ : cameraZ - minZ
-
-  camera.far = cameraToFarEdge * 3
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight
   camera.updateProjectionMatrix()
+  renderer.setSize( window.innerWidth, window.innerHeight )
+  animate()
+}
 
-  if ( controls ) {
+/**
+ * Helper function that behaves like rhino's "zoom to selection", but for three.js!
+ */
+ function zoomCameraToSelection( camera, controls, selection, fitOffset = 1.2 ) {
 
-    controls.target.copy( center )
-    controls.update()
+  const box = new THREE.Box3();
 
+  for( const object of selection ) {
+    if (object.isLight) continue
+    box.expandByObject( object );
   }
+
+  const size = box.getSize( new THREE.Vector3() );
+  const center = box.getCenter( new THREE.Vector3() );
+
+  const maxSize = Math.max( size.x, size.y, size.z );
+  const fitHeightDistance = maxSize / ( 2 * Math.atan( Math.PI * camera.fov / 360 ) );
+  const fitWidthDistance = fitHeightDistance / camera.aspect;
+  const distance = fitOffset * Math.max( fitHeightDistance, fitWidthDistance );
+
+  const direction = controls.target.clone()
+    .sub( camera.position )
+    .normalize()
+    .multiplyScalar( distance );
+  controls.maxDistance = distance * 10;
+  controls.target.copy( center );
+
+  camera.near = distance / 100;
+  camera.far = distance * 100;
+  camera.updateProjectionMatrix();
+  camera.position.copy( controls.target ).sub(direction);
+
+  controls.update();
 
 }
