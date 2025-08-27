@@ -252,5 +252,6 @@ function onWindowResize() {
   camera.position.copy( controls.target ).sub(direction);
   
   controls.update();
-  
+
 }
+
