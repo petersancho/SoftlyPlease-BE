@@ -47,58 +47,73 @@ console.log('Loaded rhino3dm.')
 init()
 compute()
 
+const downloadButton = document.getElementById("downloadButton")
+downloadButton.onclick = download
+
 /**
  * Call appserver
  */
 async function compute(){
 
-  // initialise 'data' object that will be used by compute()
-  const data = {
-    definition: definition,
-    inputs: {
-      'tolerance':tolerance_slider.valueAsNumber,
-      'round':round_slider.valueAsNumber,
-      'pipe_width':pipe_width_slider.valueAsNumber,
-      'segment':segment_slider.valueAsNumber,
-      'cube':cube_checkbox.checked,
-      'smooth':smooth_slider.valueAsNumber,
-      'min_r':min_r_slider.valueAsNumber,
-      'max_R':max_R_slider.valueAsNumber,
-      'links':links_slider.valueAsNumber
-    }
-  }
-
-  console.log(data.inputs)
-
-  const request = {
-    'method':'POST',
-    'body': JSON.stringify(data),
-    'headers': {'Content-Type': 'application/json'}
-  }
+  // construct url for GET /solve/definition.gh?name=value(&...)
+  const url = new URL('/solve/' + definition, window.location.origin)
+  url.searchParams.append('tolerance', tolerance_slider.valueAsNumber)
+  url.searchParams.append('round', round_slider.valueAsNumber)
+  url.searchParams.append('pipe_width', pipe_width_slider.valueAsNumber)
+  url.searchParams.append('segment', segment_slider.valueAsNumber)
+  url.searchParams.append('cube', cube_checkbox.checked)
+  url.searchParams.append('smooth', smooth_slider.valueAsNumber)
+  url.searchParams.append('min_r', min_r_slider.valueAsNumber)
+  url.searchParams.append('max_R', max_R_slider.valueAsNumber)
+  url.searchParams.append('links', links_slider.valueAsNumber)
+  console.log(url.toString())
 
   try {
-    const response = await fetch('/solve', request)
+    const response = await fetch(url)
 
-    if(!response.ok)
+    if(!response.ok) {
       throw new Error(response.statusText)
+    }
 
     const responseJson = await response.json()
+
     collectResults(responseJson)
 
-  } catch(error){
+  } catch(error) {
     console.error(error)
   }
 }
 
-// from https://stackoverflow.com/a/21797381
-function _base64ToArrayBuffer(base64) {
-  var binary_string = window.atob(base64);
-  var len = binary_string.length;
-  var bytes = new Uint8Array(len);
-  for (var i = 0; i < len; i++) {
-    bytes[i] = binary_string.charCodeAt(i);
+/**
+ * Attempt to decode data tree item to rhino geometry
+ */
+function decodeItem(item) {
+  const data = JSON.parse(item.data)
+  if (item.type === 'System.String') {
+    // hack for draco meshes
+    try {
+        return rhino.DracoCompression.decompressBase64String(data)
+    } catch {} // ignore errors (maybe the string was just a string...)
+  } else if (typeof data === 'object') {
+    return rhino.CommonObject.decode(data)
   }
-  return bytes.buffer;
+  return null
+}
+
+/**
+ * This function is called when the download button is clicked
+ */
+function download () {
+    // write rhino doc to "blob"
+    const bytes = doc.toByteArray()
+    const blob = new Blob([bytes], {type: "application/octect-stream"})
+
+    // use "hidden link" trick to get the browser to download the blob
+    const filename = definition.replace(/\.gh$/, '') + '.3dm'
+    const link = document.createElement('a')
+    link.href = window.URL.createObjectURL(blob)
+    link.download = filename
+    link.click()
 }
 
 /**
@@ -110,13 +125,30 @@ function collectResults(responseJson) {
   if (doc !== undefined)
     doc.delete()
 
-  const values = responseJson.values
-  console.log(responseJson)
+    const values = responseJson.values
 
-  const str = values[0].InnerTree['{0}'][0].data
-  const data = JSON.parse(str)
-  const arr = _base64ToArrayBuffer(data)
-  doc = rhino.File3dm.fromByteArray(arr)
+    // clear doc
+    if( doc !== undefined)
+        doc.delete()
+
+    //console.log(values)
+    doc = new rhino.File3dm()
+
+    // for each output (RH_OUT:*)...
+    for ( let i = 0; i < values.length; i ++ ) {
+      // ...iterate through data tree structure...
+      for (const path in values[i].InnerTree) {
+        const branch = values[i].InnerTree[path]
+        // ...and for each branch...
+        for( let j = 0; j < branch.length; j ++) {
+          // ...load rhino geometry into doc
+          const rhinoObject = decodeItem(branch[j])
+          if (rhinoObject !== null) {
+            doc.objects().add(rhinoObject, null)
+          }
+        }
+      }
+    }
 
   if (doc.objects().count < 1) {
     console.error('No rhino objects to load!')
@@ -124,38 +156,39 @@ function collectResults(responseJson) {
     return
   }
 
-  // set up loader for converting the results to threejs
-  const loader = new Rhino3dmLoader()
-  loader.setLibraryPath('https://unpkg.com/rhino3dm@8.0.0-beta3/')
-
-  // const lineMat = new THREE.LineBasicMaterial({color: new THREE.Color('black')});
-  // load rhino doc into three.js scene
-  loader.parse(arr, function (object) {
+    // load rhino doc into three.js scene
+    const buffer = new Uint8Array(doc.toByteArray()).buffer
+    loader.parse( buffer, function ( object )
+    {
     console.log(object)
 
-    scene.traverse(child => {
-      if (child.userData.hasOwnProperty('objectType') && child.userData.objectType === 'File3dm') {
-        scene.remove(child)
-      }
-    })
+///////////////////////////////////////////////////////////////////////////
+        // show mesh edges
+        object.traverse(child => {
+          if (child.isMesh) {
+            const edges = new THREE.EdgesGeometry( child.geometry );
+            const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0x000000 } ) )
+            child.add( line )
+          }
+        }, false)
+///////////////////////////////////////////////////////////////////////////
 
-    object.traverse(child => {
-      if (child.isMesh) {
-        const edges = new THREE.EdgesGeometry( child.geometry );
-        const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0x000000 } ) )
-        child.add( line )
-      }
-    }, false)
+        // clear objects from scene. do this here to avoid blink
+        scene.traverse(child => {
+            if (!child.isLight) {
+                scene.remove(child)
+            }
+        })
 
-    // zoom to extents
-    zoomCameraToSelection(camera, controls, object.children)
+        // add object graph from rhino model to three.js scene
+        scene.add( object )
 
-    // add object graph from rhino model to three.js scene
-    scene.add(object)
+        // hide spinner and enable download button
+        showSpinner(false)
+        downloadButton.disabled = false
 
-    // hide spinner and enable download button
-    showSpinner(false)
-    downloadButton.disabled = false
+        // zoom to extents
+        zoomCameraToSelection(camera, controls, scene.children)
 
   }, (error)=>{console.error(error)})
 }
@@ -165,7 +198,6 @@ function collectResults(responseJson) {
  * slider values and call compute to solve for a new scene
  */
 function onSliderChange () {
-  // show spinner
   showSpinner(true)
   compute()
 }
@@ -182,50 +214,53 @@ function onSliderChange () {
 
 function init () {
 
-  // Rhino models are z-up, so set this as the default
-  THREE.Object3D.DefaultUp = new THREE.Vector3( 0, 0, 1 );
+    // Rhino models are z-up, so set this as the default
+    THREE.Object3D.DefaultUp = new THREE.Vector3( 0, 0, 1 );
 
-  scene = new THREE.Scene()
-  scene.background = new THREE.Color(1,1,1)
-  camera = new THREE.PerspectiveCamera( 45, window.innerWidth/window.innerHeight, 1, 1000 )
-  camera.position.x = 50
-  camera.position.y = 50
-  camera.position.z = 50
+    // create a scene and a camera
+    scene = new THREE.Scene()
+    scene.background = new THREE.Color(1, 1, 1)
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000)
+    camera.position.set(1, -1, 1) // like perspective view
 
-  // add a directional light
-  const directionalLight = new THREE.DirectionalLight(0xffffff)
-  directionalLight.intensity = 2
-  scene.add(directionalLight)
+    // very light grey for background, like rhino
+    scene.background = new THREE.Color('whitesmoke')
 
-  const ambientLight = new THREE.AmbientLight()
-  scene.add(ambientLight)
+    // create the renderer and add it to the html
+    renderer = new THREE.WebGLRenderer({ antialias: true })
+    renderer.setPixelRatio( window.devicePixelRatio )
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    document.body.appendChild(renderer.domElement)
 
-  renderer = new THREE.WebGLRenderer({antialias: true})
-  renderer.setPixelRatio( window.devicePixelRatio )
-  renderer.setSize( window.innerWidth, window.innerHeight )
-  document.body.appendChild(renderer.domElement)
+    // add some controls to orbit the camera
+    controls = new OrbitControls(camera, renderer.domElement)
 
-  controls = new OrbitControls( camera, renderer.domElement  )
+    // add a directional light
+    const directionalLight = new THREE.DirectionalLight( 0xffffff )
+    directionalLight.intensity = 2
+    scene.add( directionalLight )
 
-  window.addEventListener( 'resize', onWindowResize, false )
+    const ambientLight = new THREE.AmbientLight()
+    scene.add( ambientLight )
 
-  animate()
+    // handle changes in the window size
+    window.addEventListener( 'resize', onWindowResize, false )
 
-  // DEBUG: Basic scene setup
-  console.log('Scene initialized:', scene)
-  console.log('Camera initialized:', camera)
-  console.log('Renderer initialized:', renderer)
-  console.log('Controls initialized:', controls)
+    animate()
 }
 
 /**
- * Animate the scene
+ * The animation loop!
  */
-function animate(){
+function animate() {
   requestAnimationFrame( animate )
-  renderer.render( scene, camera )
+  controls.update()
+  renderer.render(scene, camera)
 }
 
+/**
+ * Helper function for window resizes (resets the camera pov and renderer size)
+  */
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight
   camera.updateProjectionMatrix()
