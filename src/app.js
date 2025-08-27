@@ -26,13 +26,12 @@ app.use(compression())
 const argIndex = process.argv.indexOf('--computeUrl')
 if (argIndex > -1)
   process.env.RHINO_COMPUTE_URL = process.argv[argIndex + 1]
-// Use COMPUTE_URL as the primary source, fallback to RHINO_COMPUTE_URL for backward compatibility
-if (!process.env.COMPUTE_URL && !process.env.RHINO_COMPUTE_URL)
-  process.env.COMPUTE_URL = process.env.NODE_ENV === 'production'
-    ? 'http://softlyplease.canadacentral.cloudapp.azure.com/'  // Your Azure VM DNS for production
+if (!process.env.RHINO_COMPUTE_URL)
+  process.env.RHINO_COMPUTE_URL = process.env.NODE_ENV === 'production'
+    ? 'http://4.248.252.92/'  // Your Azure VM IP for production
     : 'http://localhost:6500/' // default for development
 
-console.log('COMPUTE_URL: ' + (process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL))
+console.log('RHINO_COMPUTE_URL: ' + process.env.RHINO_COMPUTE_URL)
 
 app.set('view engine', 'hbs');
 app.set('views', './src/views')
@@ -50,41 +49,6 @@ app.use('/', require('./routes/index'))
 // ref: https://github.com/expressjs/express/issues/3589
 // remove line when express@^4.17
 express.static.mime.types["wasm"] = "application/wasm";
-
-// JSON API Route Handler
-app.get('*', (req, res, next) => {
-  if (req.query.format === 'json') {
-    if (req.path === '/version') {
-      return res.json({
-        message: "Server is running",
-        version: "0.1.12",
-        timestamp: new Date().toISOString()
-      });
-    }
-    if (req.path.endsWith('.gh')) {
-      const definitionName = req.path.split('/').pop();
-      return res.json({
-        definition: definitionName,
-        status: "loaded"
-      });
-    }
-    return res.json({ error: "Not found", path: req.path });
-  }
-  next();
-});
-
-// Serve .gh files (only for direct file requests, not solve requests)
-app.get('/files/*.gh', (req, res) => {
-  const fileName = req.path.split('/').pop();
-  const filePath = require('path').join(__dirname, 'files', fileName);
-  const fs = require('fs');
-
-  if (fs.existsSync(filePath)) {
-    res.sendFile(filePath);
-  } else {
-    res.status(404).json({ error: "File not found", file: fileName });
-  }
-});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -107,4 +71,3 @@ app.use(function(err, req, res, next) {
 })
 
 module.exports = app
-

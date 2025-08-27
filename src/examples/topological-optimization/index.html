@@ -172,6 +172,12 @@
                     <h3>Topological Optimization Controls</h3>
 
                     <div class="control-group">
+                        <label for="brep">Input Geometry (.3dm file)</label>
+                        <input type="file" id="brep" name="brep" accept=".3dm" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white; color: black;">
+                        <small style="color: #aaa;">Upload a 3DM file or use default cube geometry</small>
+                    </div>
+
+                    <div class="control-group">
                         <label for="thickness">Thickness (0-10)</label>
                         <input type="range" id="thickness" name="thickness" min="0" max="10" value="3" step="1">
                     </div>
