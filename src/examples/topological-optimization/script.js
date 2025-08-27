@@ -12,8 +12,8 @@ const definition = 'topological-optimization.gh'
 
 // setup input change events
 const tolerance_slider = document.getElementById( 'tolerance' )
-tolerance_slider.addEventListener( 'mouseup', onSliderChange, false )
-tolerance_slider.addEventListener( 'touchend', onSliderChange, false )
+tolerance_slider .addEventListener( 'mouseup', onSliderChange, false )
+tolerance_slider .addEventListener( 'touchend', onSliderChange, false )
 const round_slider = document.getElementById( 'round' )
 round_slider.addEventListener( 'mouseup', onSliderChange, false )
 round_slider.addEventListener( 'touchend', onSliderChange, false )
@@ -38,7 +38,7 @@ const links_slider = document.getElementById( 'links' )
 links_slider.addEventListener( 'mouseup', onSliderChange, false )
 links_slider.addEventListener( 'touchend', onSliderChange, false )
 
-let _threeMesh, _threeMaterial, doc
+let doc
 let scene, camera, renderer, controls
 
 const rhino = await rhino3dm()
@@ -51,8 +51,6 @@ compute()
  * Call appserver
  */
 async function compute(){
-
-  showSpinner(true)
 
   // initialise 'data' object that will be used by compute()
   const data = {
@@ -85,117 +83,81 @@ async function compute(){
       throw new Error(response.statusText)
 
     const responseJson = await response.json()
-
-    // DEBUG: Log everything
-    console.log('Full response:', responseJson)
-    console.log('Response values:', responseJson.values)
-    console.log('Values length:', responseJson.values ? responseJson.values.length : 'no values')
-
-    if (!responseJson.values || responseJson.values.length === 0) {
-      console.error('No values in response!')
-      showSpinner(false)
-      return
-    }
-
-    // Check if we have the expected structure
-    const firstValue = responseJson.values[0]
-    console.log('First value:', firstValue)
-    console.log('InnerTree:', firstValue.InnerTree)
-
-    if (!firstValue.InnerTree || !firstValue.InnerTree['{0}']) {
-      console.error('Unexpected response structure! InnerTree or {0} missing')
-      showSpinner(false)
-      return
-    }
-
-    // process mesh
-    const rhinoObject = decodeItem(firstValue.InnerTree['{0}'][0])
-    console.log('Decoded rhino object:', rhinoObject)
-
-    if (!rhinoObject) {
-      console.error('Failed to decode rhino object!')
-      showSpinner(false)
-      return
-    }
-
-    let threeMesh = meshToThreejs(rhinoObject, new THREE.MeshBasicMaterial({vertexColors:true}))
-    console.log('Three.js mesh:', threeMesh)
-
-    if (!threeMesh) {
-      console.error('Failed to create three.js mesh!')
-      showSpinner(false)
-      return
-    }
-
-    replaceCurrentMesh(threeMesh)
-
-    // hide spinner
-    showSpinner(false)
+    collectResults(responseJson)
 
   } catch(error){
-    console.error('Error in compute():', error)
-    showSpinner(false)
+    console.error(error)
   }
+}
+
+// from https://stackoverflow.com/a/21797381
+function _base64ToArrayBuffer(base64) {
+  var binary_string = window.atob(base64);
+  var len = binary_string.length;
+  var bytes = new Uint8Array(len);
+  for (var i = 0; i < len; i++) {
+    bytes[i] = binary_string.charCodeAt(i);
+  }
+  return bytes.buffer;
 }
 
 /**
-* Attempt to decode data tree item to rhino geometry
-*/
-function decodeItem(item) {
-  const data = JSON.parse(item.data)
-  if (item.type === 'System.String') {
-    // hack for draco meshes
-    try {
-        return rhino.DracoCompression.decompressBase64String(data)
-    } catch {} // ignore errors (maybe the string was just a string...)
-  } else if (typeof data === 'object') {
-    return rhino.CommonObject.decode(data)
-  }
-  return null
-}
+ * Parse response
+ */
+function collectResults(responseJson) {
 
-function meshToThreejs (mesh, material) {
-  console.log('Converting rhino mesh to three.js:', mesh)
-  console.log('Mesh type:', typeof mesh)
-  console.log('Mesh methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(mesh)))
+  // clear doc
+  if (doc !== undefined)
+    doc.delete()
 
-  if (!mesh || typeof mesh.toThreejsJSON !== 'function') {
-    console.error('Invalid mesh or missing toThreejsJSON method!')
-    return null
+  const values = responseJson.values
+  console.log(responseJson)
+
+  const str = values[0].InnerTree['{0}'][0].data
+  const data = JSON.parse(str)
+  const arr = _base64ToArrayBuffer(data)
+  doc = rhino.File3dm.fromByteArray(arr)
+
+  if (doc.objects().count < 1) {
+    console.error('No rhino objects to load!')
+    showSpinner(false)
+    return
   }
 
-  try {
-    const threejsJson = mesh.toThreejsJSON()
-    console.log('Three.js JSON:', threejsJson)
+  // set up loader for converting the results to threejs
+  const loader = new Rhino3dmLoader()
+  loader.setLibraryPath('https://unpkg.com/rhino3dm@8.0.0-beta3/')
 
-    let loader = new THREE.BufferGeometryLoader()
-    var geometry = loader.parse(threejsJson)
-    console.log('Created geometry:', geometry)
+  // const lineMat = new THREE.LineBasicMaterial({color: new THREE.Color('black')});
+  // load rhino doc into three.js scene
+  loader.parse(arr, function (object) {
+    console.log(object)
 
-    const threeMesh = new THREE.Mesh(geometry, material)
-    console.log('Created three.js mesh:', threeMesh)
-    return threeMesh
-  } catch (error) {
-    console.error('Error converting mesh:', error)
-    return null
-  }
-}
+    scene.traverse(child => {
+      if (child.userData.hasOwnProperty('objectType') && child.userData.objectType === 'File3dm') {
+        scene.remove(child)
+      }
+    })
 
-function replaceCurrentMesh (threeMesh) {
-  console.log('Replacing current mesh with:', threeMesh)
-  console.log('Scene before:', scene.children.length, 'children')
+    object.traverse(child => {
+      if (child.isMesh) {
+        const edges = new THREE.EdgesGeometry( child.geometry );
+        const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0x000000 } ) )
+        child.add( line )
+      }
+    }, false)
 
-  if (_threeMesh) {
-    console.log('Removing previous mesh')
-    scene.remove(_threeMesh)
-    _threeMesh.geometry.dispose()
-  }
+    // zoom to extents
+    zoomCameraToSelection(camera, controls, object.children)
 
-  _threeMesh = threeMesh
-  scene.add(_threeMesh)
+    // add object graph from rhino model to three.js scene
+    scene.add(object)
 
-  console.log('Scene after:', scene.children.length, 'children')
-  console.log('Added mesh to scene:', _threeMesh)
+    // hide spinner and enable download button
+    showSpinner(false)
+    downloadButton.disabled = false
+
+  }, (error)=>{console.error(error)})
 }
 
 /**
