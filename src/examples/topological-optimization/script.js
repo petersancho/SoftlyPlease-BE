@@ -10,29 +10,30 @@ loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta2/' )
 const definitionName = 'topological-optimization.gh'
 
 // setup input change events
-const tolerance_slider = document.getElementById( 'tolerance' )
-tolerance_slider.addEventListener( 'mouseup', onSliderChange, false )
-tolerance_slider.addEventListener( 'touchend', onSliderChange, false )
-const round_slider = document.getElementById( 'round' )
-round_slider.addEventListener( 'mouseup', onSliderChange, false )
-round_slider.addEventListener( 'touchend', onSliderChange, false )
-const pipe_width_slider = document.getElementById( 'pipe_width' )
-pipe_width_slider.addEventListener( 'mouseup', onSliderChange, false )
-pipe_width_slider.addEventListener( 'touchend', onSliderChange, false )
+const thickness_slider = document.getElementById( 'thickness' )
+thickness_slider.addEventListener( 'mouseup', onSliderChange, false )
+thickness_slider.addEventListener( 'touchend', onSliderChange, false )
+const minr_slider = document.getElementById( 'min_r' )
+minr_slider.addEventListener( 'mouseup', onSliderChange, false )
+minr_slider.addEventListener( 'touchend', onSliderChange, false )
+const maxr_slider = document.getElementById( 'max_r' )
+maxr_slider.addEventListener( 'mouseup', onSliderChange, false )
+maxr_slider.addEventListener( 'touchend', onSliderChange, false )
+const square_slider = document.getElementById( 'square' )
+square_slider.addEventListener( 'mouseup', onSliderChange, false )
+square_slider.addEventListener( 'touchend', onSliderChange, false )
+const strutsize_slider = document.getElementById( 'strutsize' )
+strutsize_slider.addEventListener( 'mouseup', onSliderChange, false )
+strutsize_slider.addEventListener( 'touchend', onSliderChange, false )
 const segment_slider = document.getElementById( 'segment' )
 segment_slider.addEventListener( 'mouseup', onSliderChange, false )
 segment_slider.addEventListener( 'touchend', onSliderChange, false )
-const cube_checkbox = document.getElementById( 'cube' )
-cube_checkbox.addEventListener( 'change', onSliderChange, false )
+const cubecorners_slider = document.getElementById( 'cubecorners' )
+cubecorners_slider.addEventListener( 'mouseup', onSliderChange, false )
+cubecorners_slider.addEventListener( 'touchend', onSliderChange, false )
 const smooth_slider = document.getElementById( 'smooth' )
 smooth_slider.addEventListener( 'mouseup', onSliderChange, false )
 smooth_slider.addEventListener( 'touchend', onSliderChange, false )
-const min_r_slider = document.getElementById( 'min_r' )
-min_r_slider.addEventListener( 'mouseup', onSliderChange, false )
-min_r_slider.addEventListener( 'touchend', onSliderChange, false )
-const max_R_slider = document.getElementById( 'max_R' )
-max_R_slider.addEventListener( 'mouseup', onSliderChange, false )
-max_R_slider.addEventListener( 'touchend', onSliderChange, false )
 const links_slider = document.getElementById( 'links' )
 links_slider.addEventListener( 'mouseup', onSliderChange, false )
 links_slider.addEventListener( 'touchend', onSliderChange, false )
@@ -87,32 +88,35 @@ loadDefinition().then(() => {
  */
 async function compute(){
   // format data - using "RH_IN:" prefixes to match Grasshopper group names
-  let param1 = new RhinoCompute.Grasshopper.DataTree('RH_IN:tolerance')
-  param1.append([0], [tolerance_slider.valueAsNumber])
+  let param1 = new RhinoCompute.Grasshopper.DataTree('RH_IN:brep')
+  param1.append([0], [''])  // Empty string for now - this would typically be geometry data
 
-  let param2 = new RhinoCompute.Grasshopper.DataTree('RH_IN:round')
-  param2.append([0], [round_slider.valueAsNumber])
+  let param2 = new RhinoCompute.Grasshopper.DataTree('RH_IN:links')
+  param2.append([0], [links_slider.valueAsNumber])
 
-  let param3 = new RhinoCompute.Grasshopper.DataTree('RH_IN:pipe_width')
-  param3.append([0], [pipe_width_slider.valueAsNumber])
+  let param3 = new RhinoCompute.Grasshopper.DataTree('RH_IN:minr')
+  param3.append([0], [minr_slider.valueAsNumber])
 
-  let param4 = new RhinoCompute.Grasshopper.DataTree('RH_IN:segment')
-  param4.append([0], [segment_slider.valueAsNumber])
+  let param4 = new RhinoCompute.Grasshopper.DataTree('RH_IN:maxr')
+  param4.append([0], [maxr_slider.valueAsNumber])
 
-  let param5 = new RhinoCompute.Grasshopper.DataTree('RH_IN:cube')
-  param5.append([0], [cube_checkbox.checked])
+  let param5 = new RhinoCompute.Grasshopper.DataTree('RH_IN:thickness')
+  param5.append([0], [thickness_slider.valueAsNumber])
 
-  let param6 = new RhinoCompute.Grasshopper.DataTree('RH_IN:smooth')
-  param6.append([0], [smooth_slider.valueAsNumber])
+  let param6 = new RhinoCompute.Grasshopper.DataTree('RH_IN:square')
+  param6.append([0], [square_slider.valueAsNumber])
 
-  let param7 = new RhinoCompute.Grasshopper.DataTree('RH_IN:min_r')
-  param7.append([0], [min_r_slider.valueAsNumber])
+  let param7 = new RhinoCompute.Grasshopper.DataTree('RH_IN:strutsize')
+  param7.append([0], [strutsize_slider.valueAsNumber])
 
-  let param8 = new RhinoCompute.Grasshopper.DataTree('RH_IN:max_R')
-  param8.append([0], [max_R_slider.valueAsNumber])
+  let param8 = new RhinoCompute.Grasshopper.DataTree('RH_IN:segment')
+  param8.append([0], [segment_slider.valueAsNumber])
 
-  let param9 = new RhinoCompute.Grasshopper.DataTree('RH_IN:links')
-  param9.append([0], [links_slider.valueAsNumber])
+  let param9 = new RhinoCompute.Grasshopper.DataTree('RH_IN:cubecorners')
+  param9.append([0], [cubecorners_slider.valueAsNumber])
+
+  let param10 = new RhinoCompute.Grasshopper.DataTree('RH_IN:smooth')
+  param10.append([0], [smooth_slider.valueAsNumber])
 
   // Add all params to an array
   let trees = []
@@ -125,6 +129,7 @@ async function compute(){
   trees.push(param7)
   trees.push(param8)
   trees.push(param9)
+  trees.push(param10)
 
   // Call RhinoCompute
   const res = await RhinoCompute.Grasshopper.evaluateDefinition(definition, trees)
