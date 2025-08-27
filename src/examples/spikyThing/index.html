@@ -62,21 +62,6 @@
                   <div><button id="downloadButton" disabled>Download</button></div>
                 </form>
 <!-- /////////////////////////////////////////////////////////////////////////// -->
-                <!-- Debug panel for development -->
-                <div id="debug-panel" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.9); color: white; padding: 15px; font-size: 11px; max-width: 350px; z-index: 1000; border-radius: 8px; font-family: monospace;">
-                  <div style="color: #00ff00; font-weight: bold; margin-bottom: 8px;">🔧 Spiky Thing Debug Panel</div>
-                  <div><strong>Status:</strong> <span id="status" style="color: #ffff00;">Initializing...</span></div>
-                  <div><strong>Request:</strong> <span id="request-info" style="color: #ffffff;">No request yet</span></div>
-                  <div><strong>Response:</strong> <span id="response-info" style="color: #ffffff;">No response yet</span></div>
-                  <div><strong>Render:</strong> <span id="render-info" style="color: #ffffff;">No geometry rendered</span></div>
-                  <hr style="border: 1px solid #333; margin: 8px 0;">
-                  <div style="font-size: 10px; color: #cccccc;">
-                    <div>• Rhino Compute URL: ✅ Pre-configured</div>
-                    <div>• Three.js: ✅ Loaded & Ready</div>
-                    <div>• Rhino3dm: ✅ Initialized</div>
-                    <div>• API Key: <span id="params-status" style="color: #ff6600;">⏳ Enter when prompted...</span></div>
-                  </div>
-                </div>
             </div>
         </div>
 
@@ -118,7 +103,7 @@ console.log('Loaded rhino3dm.')
 
 // Setup RhinoCompute authentication
 RhinoCompute.url = 'http://4.248.252.92:80'  // Pre-configured Rhino Compute server URL
-RhinoCompute.apiKey = getAuth('RHINO_COMPUTE_KEY')  // Will prompt for API key if not stored
+RhinoCompute.apiKey = 'p2robot-13a6-48f3-b24e-2025computeX'  // Pre-configured API key
 
 // Load the .gh definition file
 let url = definitionName
@@ -126,8 +111,7 @@ let res = await fetch(url)
 let buffer = await res.arrayBuffer()
 definition = new Uint8Array(buffer)
 
-updateDebugStatus('Initializing Three.js scene...')
-updateParamsStatus('⏳ Initializing...', '#ffff00')
+
 
 init()
 compute()
@@ -142,60 +126,7 @@ controlsForm.addEventListener('submit', (e) => {
   return false
 })
 
-// Debug functions
-function updateDebugStatus(message) {
-  const statusEl = document.getElementById('status')
-  if (statusEl) {
-    statusEl.textContent = message
-    console.log('Debug Status:', message)
-  }
-}
 
-function updateRequestInfo(info) {
-  const infoEl = document.getElementById('request-info')
-  if (infoEl) {
-    infoEl.textContent = info
-    console.log('Request Info:', info)
-  }
-}
-
-function updateResponseInfo(info) {
-  const infoEl = document.getElementById('response-info')
-  if (infoEl) {
-    infoEl.textContent = info
-    console.log('Response Info:', info)
-  }
-}
-
-function updateRenderInfo(info) {
-  const infoEl = document.getElementById('render-info')
-  if (infoEl) {
-    infoEl.textContent = info
-    console.log('Render Info:', info)
-  }
-}
-
-function updateParamsStatus(status, color = '#ffffff') {
-  const statusEl = document.getElementById('params-status')
-  if (statusEl) {
-    statusEl.textContent = status
-    statusEl.style.color = color
-    console.log('Params Status:', status)
-  }
-}
-
-function getAuth(key) {
-  let value = localStorage[key]
-  if (value === undefined) {
-    // Only prompt for API key since URL is hardcoded
-    const prompt = key.includes('URL') ? 'Server URL' : 'Server API Key'
-    value = window.prompt('RhinoCompute ' + prompt + ' (will be stored locally)')
-    if (value !== null) {
-      localStorage.setItem(key, value)
-    }
-  }
-  return value
-}
 
   /////////////////////////////////////////////////////////////////////////////
  //                            HELPER  FUNCTIONS                            //
@@ -275,8 +206,6 @@ function init() {
  * Call RhinoCompute
  */
 async function compute() {
-  updateDebugStatus('Building request...')
-
   // format data using RhinoCompute.Grasshopper.DataTree
   let param1 = new RhinoCompute.Grasshopper.DataTree('Count')
   param1.append([0], [document.getElementById('count').valueAsNumber])
@@ -293,27 +222,15 @@ async function compute() {
   trees.push(param2)
   trees.push(param3)
 
-  updateRequestInfo(`Parameters: Count=${document.getElementById('count').valueAsNumber}, Radius=${document.getElementById('radius').valueAsNumber}, Length=${document.getElementById('length').valueAsNumber}`)
-  updateDebugStatus('Sending request to Rhino Compute...')
-
   try {
-    const startTime = performance.now()
-
     // Call RhinoCompute
     const response = await RhinoCompute.Grasshopper.evaluateDefinition(definition, trees)
 
-    const endTime = performance.now()
-
-    updateResponseInfo(`Response received (${(endTime - startTime).toFixed(0)}ms)`)
     console.log('RhinoCompute response:', response)
-
-    updateDebugStatus('Processing Rhino Compute response...')
     collectResults(response)
 
   } catch(error) {
     console.error('RhinoCompute error:', error)
-    updateDebugStatus(`Error: ${error.message}`)
-    updateParamsStatus('❌ Error', '#ff4444')
   }
 }
 
@@ -350,13 +267,8 @@ function collectResults(responseJson) {
     if (doc.objects().count < 1) {
       console.error('No rhino objects to load!')
       showSpinner(false)
-      updateRenderInfo('No geometry objects found')
-      updateParamsStatus('❌ No geometry', '#ff4444')
       return
     }
-
-    updateRenderInfo(`Found ${doc.objects().count} objects`)
-    updateParamsStatus('✅ Parameters working', '#00ff00')
 
     // hack (https://github.com/mcneel/rhino3dm/issues/353)
     const sphereAttrs = new rhino.ObjectAttributes()
@@ -388,9 +300,6 @@ function collectResults(responseJson) {
         // hide spinner and enable download button
         showSpinner(false)
         downloadButton.disabled = false
-
-        updateDebugStatus('Geometry rendered successfully!')
-        updateRenderInfo(`Rendered ${scene.children.length} objects`)
 
         // zoom to extents
         zoomCameraToSelection(camera, controls, scene.children)
@@ -429,9 +338,6 @@ function onSliderChange (event) {
   if (event) {
     event.preventDefault()
   }
-
-  updateDebugStatus('Slider changed - updating geometry...')
-  updateParamsStatus('🔄 Computing...', '#ffff00')
 
   showSpinner(true)
 

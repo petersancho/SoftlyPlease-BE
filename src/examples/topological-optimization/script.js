@@ -60,95 +60,19 @@ async function initializeRhino() {
   return rhino
 }
 
-// Debug functions
-function updateDebugStatus(message) {
-  const statusEl = document.getElementById('status')
-  if (statusEl) {
-    statusEl.textContent = message
-    console.log('Debug Status:', message)
-  }
-}
 
-function updateResponseInfo(info) {
-  const infoEl = document.getElementById('response-info')
-  if (infoEl) {
-    infoEl.textContent = info
-    console.log('Response Info:', info)
-  }
-}
-
-function updateRenderInfo(info) {
-  const infoEl = document.getElementById('render-info')
-  if (infoEl) {
-    infoEl.textContent = info
-    console.log('Render Info:', info)
-  }
-}
-
-function updateServerInfo(info) {
-  const infoEl = document.getElementById('server-info')
-  if (infoEl) {
-    infoEl.textContent = info
-    console.log('Server Info:', info)
-  }
-}
-
-function updateComputeStatus(status, color = '#ffffff') {
-  const statusEl = document.getElementById('compute-status')
-  if (statusEl) {
-    statusEl.textContent = status
-    statusEl.style.color = color
-    console.log('Compute Status:', status)
-  }
-}
-
-// Test compute server connection
-async function testComputeServer() {
-  try {
-    updateComputeStatus('🔄 Testing connection...', '#ffff00')
-
-    const testUrl = new URL('/solve/' + definition, window.location.origin)
-    testUrl.searchParams.append('RH_IN:tolerance', '0.01')
-
-    const response = await fetch(testUrl, { method: 'HEAD' }) // Use HEAD to avoid full computation
-
-    if (response.status === 401) {
-      updateComputeStatus('❌ 401 Unauthorized', '#ff4444')
-      updateServerInfo('Compute server requires authentication')
-    } else if (response.status === 200) {
-      updateComputeStatus('✅ Connected', '#00ff00')
-      updateServerInfo('Compute server ready')
-    } else {
-      updateComputeStatus(`⚠️ Status: ${response.status}`, '#ffaa00')
-      updateServerInfo(`Server responded with: ${response.status}`)
-    }
-  } catch (error) {
-    updateComputeStatus('❌ Connection Failed', '#ff4444')
-    updateServerInfo(`Error: ${error.message}`)
-    console.error('Compute server test failed:', error)
-  }
-}
 
 init()
-updateDebugStatus('Initializing Rhino Compute AppServer...')
-updateServerInfo('Appserver running on port 3001')
-
-// Test compute server connection first
-testComputeServer().then(() => {
-  // After testing connection, try to compute
-  compute()
-})
+compute()
 
 /**
  * Call appserver
  */
 async function compute(){
   try {
-    updateDebugStatus('Initializing Rhino3dm...')
     // Initialize rhino3dm if not already done
     await initializeRhino()
 
-    updateDebugStatus('Building request parameters...')
     // construct url for GET /solve/definition.gh?name=value(&...)
     const url = new URL('/solve/' + definition, window.location.origin)
     url.searchParams.append('RH_IN:tolerance', tolerance_slider.valueAsNumber)
@@ -162,30 +86,22 @@ async function compute(){
     url.searchParams.append('RH_IN:links', links_slider.valueAsNumber)
 
     console.log('Request URL:', url.toString())
-    updateDebugStatus('Sending request to Rhino Compute...')
 
-    const startTime = performance.now()
     const response = await fetch(url)
-    const endTime = performance.now()
-
-    updateResponseInfo(`Response: ${response.status} (${(endTime - startTime).toFixed(0)}ms)`)
 
     if(!response.ok) {
       console.error('Response status:', response.status)
       console.error('Response headers:', Object.fromEntries(response.headers.entries()))
       const errorText = await response.text()
       console.error('Error response body:', errorText)
-      updateDebugStatus(`Error: ${response.status} ${response.statusText}`)
       throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
     }
 
-    updateDebugStatus('Processing Rhino Compute response...')
     const responseText = await response.text()
     collectResults(responseText)
 
   } catch(error){
     console.error('Compute error:', error)
-    updateDebugStatus(`Error: ${error.message}`)
   }
 }
 
@@ -206,29 +122,24 @@ function _base64ToArrayBuffer(base64) {
  */
 function collectResults(responseText) {
   try {
-    updateDebugStatus('Clearing previous geometry...')
     // Clear previous geometry from scene
     clearSceneGeometry()
 
     console.log('Response received, length:', responseText.length)
-    updateResponseInfo(`Received ${responseText.length} chars`)
 
     // Try to parse as JSON first (typical Rhino Compute response)
     let responseData
     try {
       responseData = JSON.parse(responseText)
       console.log('Parsed JSON response:', responseData)
-      updateDebugStatus('Processing JSON response...')
     } catch (jsonError) {
       // If JSON parsing fails, try as base64 encoded Rhino file
       console.log('Response is not JSON, trying as base64 Rhino file')
-      updateDebugStatus('Processing base64 Rhino file...')
       const arr = _base64ToArrayBuffer(responseText)
       doc = rhino.File3dm.fromByteArray(arr)
 
       if (doc.objects().count < 1) {
         console.error('No rhino objects to load!')
-        updateRenderInfo('No geometry objects found')
         showSpinner(false)
         return
       }
@@ -241,7 +152,6 @@ function collectResults(responseText) {
     // Handle JSON response (typical for Rhino Compute)
     if (responseData.values && Array.isArray(responseData.values)) {
       console.log('Processing Rhino Compute JSON response with', responseData.values.length, 'outputs')
-      updateRenderInfo(`Processing ${responseData.values.length} outputs`)
 
       let totalObjects = 0
 
@@ -270,24 +180,18 @@ function collectResults(responseText) {
         }
       }
 
-      updateRenderInfo(`Rendered ${totalObjects} objects`)
     } else {
       console.warn('Unexpected response format:', responseData)
-      updateRenderInfo('Unexpected response format')
     }
 
     // Zoom to fit all geometry
-    updateDebugStatus('Fitting camera to geometry...')
     zoomCameraToSelection(camera, controls, scene.children)
 
     console.log('Three.js rendering complete')
-    updateDebugStatus('Rendering complete')
     showSpinner(false)
 
   } catch (error) {
     console.error('Error in collectResults:', error)
-    updateDebugStatus(`Render error: ${error.message}`)
-    updateRenderInfo('Error during rendering')
     showSpinner(false)
   }
 }
