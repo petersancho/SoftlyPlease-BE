@@ -19,9 +19,15 @@
         </div>
         <div id="loader" style="display: none;">Loading...</div>
 
-        <script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
-        <script src="https://unpkg.com/three@0.158.0/examples/jsm/controls/OrbitControls.js"></script>
-        <script src="https://unpkg.com/three@0.158.0/examples/jsm/loaders/3DMLoader.js"></script>
+        <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+                "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.158.0/examples/jsm/controls/OrbitControls.js",
+                "three/examples/jsm/loaders/3DMLoader.js": "https://unpkg.com/three@0.158.0/examples/jsm/loaders/3DMLoader.js"
+            }
+        }
+        </script>
         <script src="https://unpkg.com/rhino3dm@8.0.0-beta3/rhino3dm.min.js"></script>
 
         <script type="module" src="./script.js"></script>

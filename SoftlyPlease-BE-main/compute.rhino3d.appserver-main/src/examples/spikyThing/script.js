@@ -1,5 +1,9 @@
-// Using global THREE and rhino3dm from script tags
-const loader = new THREE.3DMLoader()
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { 3DMLoader } from 'three/examples/jsm/loaders/3DMLoader.js';
+
+// Initialize loader
+const loader = new 3DMLoader()
 loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta3/' )
 
 // rhino3dm will be loaded asynchronously
