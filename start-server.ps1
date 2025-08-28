@@ -5,13 +5,13 @@ Write-Host ""
 # Set environment variables
 $env:NODE_ENV = "development"
 $env:PORT = "3000"
-$env:RHINO_COMPUTE_URL = "http://localhost:6001/"
+$env:RHINO_RHINO_COMPUTE_URL = "http://localhost:6001/"
 $env:RHINO_COMPUTE_KEY = "p2robot-13a6-48f3-b24e-2025computeX"
 
 Write-Host "Environment variables set:" -ForegroundColor Yellow
 Write-Host "NODE_ENV: $env:NODE_ENV"
 Write-Host "PORT: $env:PORT"
-Write-Host "RHINO_COMPUTE_URL: $env:RHINO_COMPUTE_URL"
+Write-Host "RHINO_RHINO_COMPUTE_URL: $env:RHINO_RHINO_COMPUTE_URL"
 Write-Host "RHINO_COMPUTE_KEY: $env:RHINO_COMPUTE_KEY"
 Write-Host ""
 

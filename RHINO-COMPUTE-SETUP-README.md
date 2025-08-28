@@ -72,7 +72,7 @@ curl http://localhost/health
 # Make the script executable
 chmod +x heroku-update.sh
 
-# Update the NEW_COMPUTE_URL in heroku-update.sh (line 5)
+# Update the NEW_RHINO_COMPUTE_URL in heroku-update.sh (line 5)
 # Use the DNS name from your Azure VM
 nano heroku-update.sh
 

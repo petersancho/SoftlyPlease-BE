@@ -91,7 +91,7 @@ ${GREEN}📋 Next Steps:${NC}
    curl http://localhost:5000/version
 
 7. ${YELLOW}Update Heroku config:${NC}
-   heroku config:set COMPUTE_URL=http://$DNS_LABEL.$LOCATION.cloudapp.azure.com:5000/ -a softlyplease-appserver
+   heroku config:set RHINO_COMPUTE_URL=http://$DNS_LABEL.$LOCATION.cloudapp.azure.com:5000/ -a softlyplease-appserver
    heroku config:set COMPUTE_KEY=<same_as_RHINO_COMPUTE_KEY> -a softlyplease-appserver
 
 ${GREEN}🎉 Your Rhino Compute will be available at:${NC}

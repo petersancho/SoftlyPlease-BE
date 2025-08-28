@@ -38,7 +38,7 @@ function registerDefinitions() {
 
 async function getParams(definitionUrl) {
   // TODO: set and forget!
-  compute.url = process.env.RHINO_COMPUTE_URL
+  compute.url = process.env.RHINO_RHINO_COMPUTE_URL
   compute.apiKey = process.env.RHINO_COMPUTE_KEY
 
   const response = await compute.computeFetch('io', { 'pointer': definitionUrl }, false)

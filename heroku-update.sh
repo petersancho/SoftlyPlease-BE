@@ -2,29 +2,29 @@
 # Update Heroku config to use new Rhino Compute Docker setup
 
 # Replace with your actual Azure DNS name
-NEW_COMPUTE_URL="http://compute-softlyplease.eastus.cloudapp.azure.com:5000/"
+NEW_RHINO_COMPUTE_URL="http://compute-softlyplease.eastus.cloudapp.azure.com:5000/"
 COMPUTE_KEY="<your_32char_api_key>"
 
 echo "🔄 Updating Heroku config to use Windows Docker-based Rhino Compute..."
-echo "New COMPUTE_URL: $NEW_COMPUTE_URL"
+echo "New RHINO_COMPUTE_URL: $NEW_RHINO_COMPUTE_URL"
 echo "COMPUTE_KEY: (set to match RHINO_COMPUTE_KEY from Azure VM)"
 
 # Update Heroku config (using consistent RHINO_COMPUTE_* naming)
-heroku config:set RHINO_COMPUTE_URL="$NEW_COMPUTE_URL" -a softlyplease-appserver
+heroku config:set RHINO_RHINO_COMPUTE_URL="$NEW_RHINO_COMPUTE_URL" -a softlyplease-appserver
 heroku config:set RHINO_COMPUTE_KEY="$COMPUTE_KEY" -a softlyplease-appserver
 
 # Remove old inconsistent variables if they exist
-heroku config:unset COMPUTE_URL -a softlyplease-appserver 2>/dev/null || true
+heroku config:unset RHINO_COMPUTE_URL -a softlyplease-appserver 2>/dev/null || true
 heroku config:unset COMPUTE_KEY -a softlyplease-appserver 2>/dev/null || true
 
 # Verify the config was updated
 echo "✅ Heroku config updated!"
-heroku config:get RHINO_COMPUTE_URL -a softlyplease-appserver
+heroku config:get RHINO_RHINO_COMPUTE_URL -a softlyplease-appserver
 heroku config:get RHINO_COMPUTE_KEY -a softlyplease-appserver
 
 # Test the new endpoint
 echo "🧪 Testing new Rhino Compute endpoint..."
-curl -s "$NEW_COMPUTE_URL/version" || echo "Endpoint not responding yet - this is normal during initial setup"
+curl -s "$NEW_RHINO_COMPUTE_URL/version" || echo "Endpoint not responding yet - this is normal during initial setup"
 
 echo ""
 echo "🎉 Setup complete!"

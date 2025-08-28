@@ -38,7 +38,7 @@ SetEnvVar 'RHINO_TOKEN' $RhinoToken -secret
 if ($PSBoundParameters.ContainsKey('ApiKey')) {
     SetEnvVar 'RHINO_COMPUTE_KEY' $ApiKey
 }
-SetEnvVar 'RHINO_COMPUTE_URLS' 'http://+:80'
+SetEnvVar 'RHINO_RHINO_COMPUTE_URLS' 'http://+:80'
 
 # Download and install Rhino
 Write-Step 'Download latest Rhino 8'

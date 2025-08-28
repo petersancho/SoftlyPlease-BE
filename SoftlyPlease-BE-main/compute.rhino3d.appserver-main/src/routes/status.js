@@ -3,7 +3,7 @@ const router = express.Router();
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 router.get('/', async (req, res) => {
-  const base = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL || 'http://localhost:6500';
+  const base = process.env.RHINO_COMPUTE_URL || process.env.RHINO_RHINO_COMPUTE_URL || 'http://localhost:6500';
   let compute = 'down';
   let version = null;
   let health = null;

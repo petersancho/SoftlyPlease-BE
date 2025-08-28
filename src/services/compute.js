@@ -18,7 +18,7 @@ async function solve(definition, inputs = {}, defUrl) {
       : `${definition}.gh`;
 
     // Set compute URL from environment
-    compute.url = process.env.COMPUTE_URL;
+    compute.url = process.env.RHINO_RHINO_COMPUTE_URL;
     compute.apiKey = process.env.RHINO_COMPUTE_KEY;
 
     // Build absolute URL for Rhino Compute (hotfix)
@@ -27,7 +27,7 @@ async function solve(definition, inputs = {}, defUrl) {
     // Debug logging
     if(process.env.NODE_ENV !== 'production') {
       console.log('Definition URL:', absoluteDefUrl);
-      console.log('Compute URL:', process.env.COMPUTE_URL);
+      console.log('Compute URL:', process.env.RHINO_RHINO_COMPUTE_URL);
       console.log('API Key present:', !!process.env.RHINO_COMPUTE_KEY);
     }
 

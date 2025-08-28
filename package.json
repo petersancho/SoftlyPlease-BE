@@ -39,7 +39,7 @@
   },
   "scripts": {
     "start": "node ./src/bin/www",
-    "start:prod": "cross-env NODE_ENV=production PORT=80 RHINO_COMPUTE_URL=http://localhost:5000/ node src/bin/www",
+    "start:prod": "cross-env NODE_ENV=production PORT=80 RHINO_RHINO_COMPUTE_URL=http://localhost:5000/ node src/bin/www",
     "install-service": "powershell -ExecutionPolicy Bypass -File scripts/install-service.ps1",
     "uninstall-service": "powershell -ExecutionPolicy Bypass -File scripts/uninstall-service.ps1",
     "lint": "eslint src/*.js --fix && eslint src/routes/*.js --fix && eslint src/bin/www --fix",

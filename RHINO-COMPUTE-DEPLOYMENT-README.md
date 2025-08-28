@@ -93,7 +93,7 @@ Choose one of the deployment methods above, then configure:
 
 ```bash
 # Set environment variables (standardized naming)
-heroku config:set RHINO_COMPUTE_URL="http://your-azure-vm:8081" -a softlyplease-appserver
+heroku config:set RHINO_RHINO_COMPUTE_URL="http://your-azure-vm:8081" -a softlyplease-appserver
 heroku config:set RHINO_COMPUTE_KEY="your-api-key" -a softlyplease-appserver
 ```
 
@@ -178,7 +178,7 @@ nslookup compute.softlyplease.com
 
 ```bash
 # Set environment variables (replace with actual values)
-heroku config:set COMPUTE_URL=https://compute.softlyplease.com -a softlyplease-appserver
+heroku config:set RHINO_COMPUTE_URL=https://compute.softlyplease.com -a softlyplease-appserver
 heroku config:set COMPUTE_KEY=<same_token_as_BEARER_in_bootstrap> -a softlyplease-appserver
 
 # Verify configuration
@@ -358,7 +358,7 @@ Test-NetConnection -ComputerName compute.softlyplease.com -Port 443
 - [ ] Rhino Compute repository cloned and container built
 - [ ] Caddy installed and configured with TLS
 - [ ] DNS A record configured (compute.softlyplease.com → VM IP)
-- [ ] Heroku environment variables set (COMPUTE_URL, COMPUTE_KEY)
+- [ ] Heroku environment variables set (RHINO_COMPUTE_URL, COMPUTE_KEY)
 - [ ] All acceptance tests passing
 - [ ] SSL certificate issued by Let's Encrypt
 - [ ] Firewall configured (only 80/443 open to internet)
@@ -382,7 +382,7 @@ docker run -d --restart=always --name rhino-compute-rollback `
 ### Full Infrastructure Rollback
 ```bash
 # Heroku: Revert to direct Azure VM connection
-heroku config:set COMPUTE_URL=http://<vm_ip>:6001 -a softlyplease-appserver
+heroku config:set RHINO_COMPUTE_URL=http://<vm_ip>:6001 -a softlyplease-appserver
 heroku config:unset COMPUTE_KEY -a softlyplease-appserver
 
 # Azure: Delete new resources

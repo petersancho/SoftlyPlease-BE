@@ -27,9 +27,9 @@ https://myappname.herokuapp.com | https://git.heroku.com/myappname.git
 ```
 5. Add configuration variables.
 (This step can also be completed via the Heroku dashboard)
-   - From the terminal, set the `RHINO_COMPUTE_URL` variable. The VALUE of this should be the address to the server running compute. Ensure this address ends in a `/`.
+   - From the terminal, set the `RHINO_RHINO_COMPUTE_URL` variable. The VALUE of this should be the address to the server running compute. Ensure this address ends in a `/`.
    ```bash
-   $ heroku config:set RHINO_COMPUTE_URL=http://your-compute-server-address/
+   $ heroku config:set RHINO_RHINO_COMPUTE_URL=http://your-compute-server-address/
    ```
    - From the terminal, set the `RHINO_COMPUTE_KEY` variable. The VALUE of this should be the API Key set for the server running compute.
    ```bash

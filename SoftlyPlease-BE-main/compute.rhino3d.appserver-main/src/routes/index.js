@@ -18,7 +18,7 @@ const router = express.Router()
 const compute = require('compute-rhino3d')
 // Removed md5-file dependency - using filename as ID instead
 const getParams = require('../definitions.js').getParams
-const config = require('../config/config')
+const config = require('../../config/config')
 
 /**
  * Set url and apikey used to communicate with a compute server

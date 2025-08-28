@@ -23,15 +23,13 @@ app.use(express.static(path.join(process.cwd(), 'public'), { index: 'index.html'
 // Define URL for our compute server
 // - For local debugging on the same computer, rhino.compute.exe is
 //   typically running at http://localhost:5000/ (compute.geometry.exe) or http://localhost:6500/ (rhino.compute.exe)
-// - For a production environment it is good to use an environment variable
-//   named RHINO_COMPUTE_URL to define where the compute server is located
-// - And just in case, you can pass an address as a command line arg
+// - For production environment, use RHINO_COMPUTE_URL environment variable
 
-const argIndex = process.argv.indexOf('--computeUrl')
-if (argIndex > -1)
-  process.env.RHINO_COMPUTE_URL = process.argv[argIndex + 1]
-if (!process.env.RHINO_COMPUTE_URL)
-  process.env.RHINO_COMPUTE_URL = 'http://localhost:6500/' // default if nothing else exists
+if (!process.env.RHINO_COMPUTE_URL) {
+  process.env.RHINO_COMPUTE_URL = process.env.NODE_ENV === 'production'
+    ? 'https://softlyplease.canadacentral.cloudapp.azure.com:443'
+    : 'http://localhost:6500/'
+}
 
 console.log('RHINO_COMPUTE_URL: ' + process.env.RHINO_COMPUTE_URL)
 

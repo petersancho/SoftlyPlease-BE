@@ -14,7 +14,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - RHINO_COMPUTE_URL=http://mock-compute:8081
+      - RHINO_RHINO_COMPUTE_URL=http://mock-compute:8081
       - RHINO_COMPUTE_KEY=mock-key-for-dev
       - PUBLIC_APP_ORIGIN=http://localhost:3000
     depends_on:

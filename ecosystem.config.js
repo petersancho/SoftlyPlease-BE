@@ -5,7 +5,7 @@ module.exports = {
     env: {
       NODE_ENV: "production",
       PORT: "5000",
-      COMPUTE_URL: "http://localhost:6001/",
+      RHINO_COMPUTE_URL: "http://localhost:6001/",
       RHINO_COMPUTE_KEY: "p2robot-13a6-48f3-b24e-2025computeX"
     },
     autorestart: true,

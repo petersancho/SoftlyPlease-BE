@@ -1,4 +1,4 @@
-﻿using Serilog;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,7 +8,7 @@ namespace compute.geometry
     static class Config
     {
         /// <summary>
-        /// RHINO_COMPUTE_URLS: the list of URLs that compute will listen on.
+        /// RHINO_RHINO_COMPUTE_URLS: the list of URLs that compute will listen on.
         /// </summary>
         public static string[] Urls { get; set; }
 
@@ -51,7 +51,7 @@ namespace compute.geometry
         /// </summary>
         public static void Load()
         {
-            Urls = GetEnvironmentVariable(RHINO_COMPUTE_URLS, "http://localhost:8081", COMPUTE_BIND_URLS).Split(';');
+            Urls = GetEnvironmentVariable(RHINO_RHINO_COMPUTE_URLS, "http://localhost:8081", COMPUTE_BIND_URLS).Split(';');
             ApiKey = GetEnvironmentVariable<string>(RHINO_COMPUTE_KEY, null);
             LogPath = GetEnvironmentVariable(RHINO_COMPUTE_LOG_PATH, Path.Combine(Path.GetTempPath(), "Compute", "Logs"), COMPUTE_LOG_PATH);
             LogRetainDays = GetEnvironmentVariable(RHINO_COMPUTE_LOG_RETAIN_DAYS, 10, COMPUTE_LOG_RETAIN_DAYS);
@@ -74,7 +74,7 @@ namespace compute.geometry
         #region private
 
         // environment variables
-        const string RHINO_COMPUTE_URLS = "RHINO_COMPUTE_URLS";
+        const string RHINO_RHINO_COMPUTE_URLS = "RHINO_RHINO_COMPUTE_URLS";
         const string RHINO_COMPUTE_KEY = "RHINO_COMPUTE_KEY";
         const string RHINO_COMPUTE_LOG_PATH = "RHINO_COMPUTE_LOG_PATH";
         const string RHINO_COMPUTE_LOG_RETAIN_DAYS = "RHINO_COMPUTE_LOG_RETAIN_DAYS";

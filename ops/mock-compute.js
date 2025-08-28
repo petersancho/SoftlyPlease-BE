@@ -97,6 +97,6 @@ app.listen(PORT, () => {
   console.log(`   GET  /version`);
   console.log(`   GET  /health`);
   console.log(`   POST /solve`);
-  console.log(`\n🚀 Use COMPUTE_URL=http://localhost:${PORT} for local development`);
+  console.log(`\n🚀 Use RHINO_COMPUTE_URL=http://localhost:${PORT} for local development`);
   console.log(`🔧 Stop with Ctrl+C`);
 });

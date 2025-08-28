@@ -122,5 +122,5 @@ Write-Host "• Run this script on the Azure VM after deployment" -ForegroundCol
 Write-Host ""
 Write-Host "📞 Next Steps:" -ForegroundColor Yellow
 Write-Host "1. Configure DNS: $DOMAIN → Azure VM public IP" -ForegroundColor White
-Write-Host "2. Update Heroku: COMPUTE_URL=https://$DOMAIN" -ForegroundColor White
+Write-Host "2. Update Heroku: RHINO_COMPUTE_URL=https://$DOMAIN" -ForegroundColor White
 Write-Host "3. Test again after DNS propagates" -ForegroundColor White

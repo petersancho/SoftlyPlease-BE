@@ -23,7 +23,7 @@ const getParams = require('../definitions.js').getParams
  * Set url and apikey used to communicate with a compute server
  */
 function setComputeParams (){
-  compute.url = process.env.RHINO_COMPUTE_URL
+  compute.url = process.env.RHINO_RHINO_COMPUTE_URL
   compute.apiKey = process.env.RHINO_COMPUTE_KEY
 }
 

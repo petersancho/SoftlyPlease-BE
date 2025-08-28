@@ -75,7 +75,7 @@ Set these in your Heroku dashboard or via CLI:
 
 ```bash
 # Required: Your Rhino Compute server
-heroku config:set COMPUTE_URL=http://4.248.252.92:6001/
+heroku config:set RHINO_COMPUTE_URL=http://4.248.252.92:6001/
 
 # Optional: If your Compute server uses authentication
 heroku config:set RHINO_COMPUTE_KEY=your_api_key_here
@@ -214,7 +214,7 @@ heroku logs --tail | grep "three-js-load-failure"
 - [ ] `npm run setup-vendor` ran without errors
 - [ ] `npm run patch-examples` updated HTML files
 - [ ] `npm run gen-examples-index` created index page
-- [ ] Heroku config vars set (`COMPUTE_URL`, etc.)
+- [ ] Heroku config vars set (`RHINO_COMPUTE_URL`, etc.)
 - [ ] `git push heroku main` completed
 - [ ] `./scripts/health.sh` shows all green
 - [ ] Examples load at `https://your-app.herokuapp.com/examples/`
