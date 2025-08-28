@@ -1,12 +1,8 @@
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader'
-import rhino3dm from 'rhino3dm'
+import rhino3dm from 'https://cdn.jsdelivr.net/npm/rhino3dm@8.17.0/rhino3dm.module.js'
 
 /* eslint no-undef: "off", no-unused-vars: "off" */
 
-const loader = new Rhino3dmLoader()
-loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta3/' )
+const loader = window.__rhino3dmLoader
 
 const definition = 'BranchNodeRnd.gh'
 
@@ -250,7 +246,7 @@ function init () {
   renderer.setSize( window.innerWidth, window.innerHeight )
   document.body.appendChild(renderer.domElement)
 
-  controls = new OrbitControls( camera, renderer.domElement  )
+  controls = new THREE.OrbitControls( camera, renderer.domElement  )
 
   camera.position.z = 50
 
