@@ -92,9 +92,9 @@ docker-compose -f docker-compose.dev.yml up
 Choose one of the deployment methods above, then configure:
 
 ```bash
-# Set environment variables
-heroku config:set COMPUTE_URL="http://your-azure-vm:8081" -a softlyplease-appserver
-heroku config:set COMPUTE_KEY="your-api-key" -a softlyplease-appserver
+# Set environment variables (standardized naming)
+heroku config:set RHINO_COMPUTE_URL="http://your-azure-vm:8081" -a softlyplease-appserver
+heroku config:set RHINO_COMPUTE_KEY="your-api-key" -a softlyplease-appserver
 ```
 
 ### Step 2: Azure Windows Infrastructure Setup

@@ -3,7 +3,7 @@
 
 $DOMAIN = "compute.softlyplease.com"
 $HEROKU_APP = "softlyplease-appserver"
-$COMPUTE_KEY = "<your_compute_key>"  # Same as in bootstrap.ps1
+$RHINO_COMPUTE_KEY = "<your_compute_key>"  # Same as in bootstrap.ps1
 
 Write-Host "🧪 Running Acceptance Tests..." -ForegroundColor Green
 
@@ -50,6 +50,15 @@ try {
     } else {
         Write-Host "❌ Authentication test failed: $($_.Exception.Message)" -ForegroundColor Red
     }
+}
+
+# Test 3b: Authentication with valid token (should work)
+Write-Host "3b. Testing authentication with valid token..." -ForegroundColor Yellow
+try {
+    $response = Invoke-WebRequest -Uri "https://$DOMAIN/solve" -Method POST -Body '{"test": "data"}' -ContentType "application/json" -Headers @{"Authorization" = "Bearer $RHINO_COMPUTE_KEY"} -UseBasicParsing
+    Write-Host "✅ Authentication with valid token works" -ForegroundColor Green
+} catch {
+    Write-Host "❌ Authentication with valid token failed: $($_.Exception.Message)" -ForegroundColor Red
 }
 
 # Test 4: Heroku status endpoint
