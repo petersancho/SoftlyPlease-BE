@@ -20,11 +20,19 @@ function getFilesSync(dir) {
 }
 
 function registerDefinitions() {
-  let files = getFilesSync(path.join(__dirname, 'files/'))
+  // Use the definitions directory from config
+  const definitionsDir = config.definitions.directory
+
+  // If config path is relative, make it absolute from the project root
+  const absolutePath = path.isAbsolute(definitionsDir)
+    ? definitionsDir
+    : path.join(process.cwd(), definitionsDir)
+
+  let files = getFilesSync(absolutePath)
   let definitions = []
   files.forEach( file => {
     if(file.includes('.gh') || file.includes('.ghx')) {
-      const fullPath = path.join(__dirname, 'files/' + file)
+      const fullPath = path.join(absolutePath, file)
       // Use filename as ID instead of MD5 hash to avoid potential issues
       const id = file.replace('.gh', '').replace('.ghx', '')
 
