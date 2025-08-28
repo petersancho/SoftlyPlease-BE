@@ -1,55 +1,32 @@
-const compute = require('compute-rhino3d');
-const { PUBLIC_APP_ORIGIN, COMPUTE_URL, RHINO_COMPUTE_KEY } = require('../config');
+const fetch = (...a) => import('node-fetch').then(({ default: f }) => f(...a));
 
-/**
- * Solve a Grasshopper definition
- * @param {string} definition - Definition name (with or without .gh extension)
- * @param {object} inputs - Input parameters
- * @param {string} defUrl - Optional pre-built definition URL (for hash-based routing)
- * @returns {Promise<object>} - Solve result
- */
-async function solve(definition, inputs = {}, defUrl) {
-  try {
-    // Ensure definition has .gh extension
-    const defName = definition.endsWith('.gh') || definition.endsWith('.ghx')
-      ? definition
-      : `${definition}.gh`;
-
-    // Make sure your compute client/library is pointed at COMPUTE_URL elsewhere in this module.
-    compute.url = COMPUTE_URL;
-    if (RHINO_COMPUTE_KEY) compute.apiKey = RHINO_COMPUTE_KEY;
-
-    // Build a fully-qualified, publicly reachable URL to the GH file we host.
-    // definition is a filename like "BranchNodeRnd.gh"
-    const defUrlFinal = defUrl || new URL(`/files/${encodeURIComponent(defName)}`, PUBLIC_APP_ORIGIN).toString();
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[compute] definition:', defName, 'url:', defUrlFinal);
-    }
-
-    // Prepare inputs for compute
-    const trees = [];
-    for (const [key, value] of Object.entries(inputs)) {
-      const param = new compute.Grasshopper.DataTree(key);
-      param.append([0], Array.isArray(value) ? value : [value]);
-      trees.push(param);
-    }
-
-    // Then call evaluateDefinition with the absolute URL:
-    const response = await compute.Grasshopper.evaluateDefinition(defUrlFinal, trees, false);
-
-    if (!response.ok) {
-      throw new Error(response.statusText);
-    }
-
-    const result = await response.text();
-    return JSON.parse(result);
-
-  } catch (error) {
-    console.error('Compute solve error:', error);
-    throw error;
-  }
+function buildUrl(base, path) {
+  const u = new URL(path, base);
+  return u.toString();
 }
 
-module.exports = {
-  solve
+exports.solve = async (definition, inputs) => {
+  const base = process.env.COMPUTE_URL;
+  if (!base) {
+    const e = new Error('COMPUTE_URL not set');
+    e.status = 503;
+    throw e;
+  }
+
+  const url = buildUrl(base, './grasshopper/solve'); // matches appserver-style proxy; change if yours differs
+  const headers = { 'Content-Type': 'application/json' };
+  if (process.env.RHINO_COMPUTE_KEY) headers.Authorization = `Bearer ${process.env.RHINO_COMPUTE_KEY}`;
+
+  const payload = { definition, inputs };
+  const r = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+
+  if (!r.ok) {
+    let detail;
+    try { detail = await r.text(); } catch { detail = ''; }
+    const e = new Error(`Compute ${r.status} ${r.statusText}${detail ? `: ${detail.slice(0,200)}` : ''}`);
+    e.status = r.status;
+    throw e;
+  }
+
+  return r.json();
 };
