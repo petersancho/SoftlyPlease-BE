@@ -9,7 +9,7 @@ const cache = new NodeCache()
 const memjs = require('memjs')
 let mc = null
 
-const config = require('../../../../config/config')
+const config = require('../config/config')
 
 let definition = null
 
@@ -213,8 +213,30 @@ function commonSolve (req, res, next){
       const r = JSON.parse(result)
       delete r.pointer
       res.send(JSON.stringify(r))
-    }).catch( (error) => { 
-      next(error)
+    }).catch( (error) => {
+      console.error('Compute server error:', error.message)
+      console.error('Error code:', error.code)
+      console.error('Compute URL:', compute.url)
+      console.error('API Key:', compute.apiKey ? 'SET' : 'NOT SET')
+
+      // Provide more specific error messages
+      let errorMessage = 'Rhino Compute Server Error'
+
+      if (error.code === 'ETIMEDOUT') {
+        errorMessage = 'Rhino Compute Server is not reachable. Please check:\n' +
+                      '1. Is the compute server running?\n' +
+                      '2. Is the server accessible from the internet?\n' +
+                      '3. Is the firewall allowing connections on port 8443?'
+      } else if (error.code === 'ECONNREFUSED') {
+        errorMessage = 'Rhino Compute Server refused connection. Server may be down or not listening on port 8443.'
+      } else if (error.code === 'ENOTFOUND') {
+        errorMessage = 'Rhino Compute Server hostname not found. Please check the server URL.'
+      }
+
+      const customError = new Error(errorMessage)
+      customError.originalError = error
+      customError.code = error.code
+      next(customError)
     })
   }
 }

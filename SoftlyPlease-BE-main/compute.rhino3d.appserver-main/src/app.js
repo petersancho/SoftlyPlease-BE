@@ -41,12 +41,61 @@ app.set('views', __dirname + '/views')
 
 // Routes for this app
 app.use('/examples', express.static(__dirname + '/examples'))
+app.use('/rhino3dm', express.static(__dirname + '/../public/rhino3dm'))
 app.get('/favicon.ico', (req, res) => res.status(200))
 app.use('/definition', require('./routes/definition'))
 app.use('/solve', require('./routes/solve'))
 app.use('/view', require('./routes/template'))
 app.use('/version', require('./routes/version'))
 app.use('/mcneel-examples', require('./routes/mcneel-examples'))
+
+// Add status endpoint to test compute server connectivity
+app.get('/status', async (req, res) => {
+  const config = require('./config/config')
+  const compute = require('compute-rhino3d')
+
+  try {
+    compute.url = config.rhino.url
+    if (!compute.url.endsWith('/')) {
+      compute.url += '/'
+    }
+    compute.apiKey = config.rhino.apiKey
+
+    console.log('Testing compute server connectivity...')
+    console.log('Compute URL:', compute.url)
+    console.log('API Key set:', !!compute.apiKey)
+
+    // Try to get version info from compute server
+    const response = await compute.computeFetch('version', {}, false)
+
+    if (response.ok) {
+      const version = await response.text()
+      res.json({
+        status: 'CONNECTED',
+        message: 'Rhino Compute Server is reachable',
+        version: version,
+        url: compute.url,
+        timestamp: new Date().toISOString()
+      })
+    } else {
+      res.status(503).json({
+        status: 'ERROR',
+        message: `Compute server responded with status ${response.status}`,
+        url: compute.url,
+        timestamp: new Date().toISOString()
+      })
+    }
+  } catch (error) {
+    console.error('Compute server connectivity test failed:', error)
+    res.status(503).json({
+      status: 'ERROR',
+      message: error.message,
+      code: error.code,
+      url: config.rhino.url,
+      timestamp: new Date().toISOString()
+    })
+  }
+})
 app.use('/my-examples', require('./routes/my-examples'))
 app.use('/', require('./routes/index'))
 

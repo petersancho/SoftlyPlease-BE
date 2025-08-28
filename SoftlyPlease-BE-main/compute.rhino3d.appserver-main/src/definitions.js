@@ -3,7 +3,9 @@ const path = require('path')
 const md5File = require('md5-file')
 const compute = require('compute-rhino3d')
 const camelcaseKeys = require('camelcase-keys')
-const config = require('../../config/config');
+
+// Use local config file
+const config = require('../config/config')
 
 /*
 function getFiles(dir) {

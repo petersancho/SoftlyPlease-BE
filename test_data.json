@@ -1,0 +1,8 @@
+{
+  "definition": "BranchNodeRnd.gh",
+  "inputs": {
+    "Count": 5,
+    "Radius": 3,
+    "Length": 10
+  }
+}
