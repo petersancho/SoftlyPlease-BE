@@ -14,6 +14,11 @@ app.set('trust proxy', true)
 app.disable('x-powered-by')
 app.use(express.json({ limit: '2mb' }))
 
+// API routes (must come before static files to avoid SPA fallback interference)
+app.use('/solve', require('./routes/solve'))
+app.use('/status', require('./routes/status'))
+app.use('/status/definitions', require('./routes/status-defs'))
+
 // --- Static mounts (serve site and assets) -------------------------------
 // Serve homepage and assets at /
 app.use(express.static(paths.public, { index: 'index.html', extensions: ['html'] }))
@@ -28,18 +33,9 @@ app.use('/my-examples', express.static(path.join(process.cwd(), 'my-examples')))
 // Helpful boot log (no secrets)
 console.log('[boot]', { compute: COMPUTE_URL || '(unset)', origin: PUBLIC_APP_ORIGIN, files: paths.files })
 
-// API routes
-app.use('/solve', require('./routes/solve'))
-app.use('/status', require('./routes/status'))
-app.use('/status/definitions', require('./routes/status-defs'))
-
-// --- SPA fallback (keep APIs intact) -------------------------------------
-// Place this just before module.exports if you want unknown routes to load /index.html
-app.get('*', (req, res, next) => {
-  const p = req.path || '';
-  if (p.startsWith('/solve') || p.startsWith('/status') || p.startsWith('/examples') || p.startsWith('/files') || p.startsWith('/definition') || p.startsWith('/api')) {
-    return next();
-  }
+// --- SPA fallback ------------------------------------------------------
+// Catch-all handler: serve index.html for client-side routing
+app.get('*', (req, res) => {
   res.sendFile(path.join(paths.public, 'index.html'));
 });
 
