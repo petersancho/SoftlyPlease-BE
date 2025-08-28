@@ -7,7 +7,7 @@ const config = {
   // Rhino Compute Server Configuration
   rhino: {
     url: process.env.RHINO_COMPUTE_URL || (process.env.NODE_ENV === 'production'
-      ? 'https://softlyplease.canadacentral.cloudapp.azure.com:8443/'
+      ? 'http://4.248.252.92:6001/'
       : 'http://localhost:5000/'),
     apiKey: process.env.RHINO_COMPUTE_KEY || process.env.RHINO_COMPUTE_APIKEY || 'p2robot-13a6-48f3-b24e-2025computeX',
     timeout: 30000,
@@ -45,7 +45,7 @@ const config = {
 
   // Definition Configuration
   definitions: {
-    directory: './SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/files',
+    directory: 'SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/files',
     extensions: ['.gh', '.ghx'],
     cacheDefinitions: true
   },
@@ -53,7 +53,7 @@ const config = {
   // Bootstrap Configuration (for VM deployment)
   bootstrap: {
     computeUrl: process.env.COMPUTE_URL || (process.env.NODE_ENV === 'production'
-      ? 'https://softlyplease.canadacentral.cloudapp.azure.com:8443'
+      ? 'http://4.248.252.92:6001'
       : 'http://localhost:5000'),
     appServerUrl: process.env.APPSERVER_URL || (process.env.NODE_ENV === 'production'
       ? 'https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com'
