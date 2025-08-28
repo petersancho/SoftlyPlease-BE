@@ -1,0 +1,37 @@
+# Rhino Compute Docker Setup for Azure (Windows Containers)
+version: '3.8'
+
+services:
+  rhino-compute:
+    image: rhino-compute:8
+    container_name: rhino-compute
+    build:
+      context: .
+      dockerfile: Dockerfile
+      isolation: process  # Required for Rhino installer on Windows
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_URLS=http://*:5000
+      - RHINO_TOKEN=<your_core_hour_token>
+      - RHINO_COMPUTE_KEY=<your_api_key>
+      - RhinoCompute_AllowOrigins=*
+      - RhinoCompute_EnableSwagger=true
+    volumes:
+      - rhino_data:C:\app\data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl.exe", "-f", "http://localhost:5000/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - rhino-network
+
+volumes:
+  rhino_data:
+    driver: local
+
+networks:
+  rhino-network:
+    driver: nat  # Use NAT networking for Windows containers

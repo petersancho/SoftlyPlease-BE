@@ -1,0 +1,24 @@
+# Rhino Compute Dockerfile for Windows Containers
+# Build with: docker build --isolation=process -f Dockerfile.rhino -t rhino-compute:8 .
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-windowsservercore-ltsc2022
+
+# Set working directory
+WORKDIR /app
+
+# Copy source code from Rhino Compute repository
+# You'll need to clone mcneel/compute.rhino3d and copy its contents here
+COPY . .
+
+# Install Rhino and build Rhino Compute
+# Note: The official Rhino Compute build process will install Rhino during the build
+# The process isolation ensures the Rhino installer can run properly
+
+# Build the application
+RUN dotnet publish -c Release -o out
+
+# Expose port 5000
+EXPOSE 5000
+
+# Set the entry point
+ENTRYPOINT ["dotnet", "out/Rhino.Compute.dll"]

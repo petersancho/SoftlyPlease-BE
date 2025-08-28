@@ -1,0 +1,40 @@
+# Rhino Compute Dockerfile for Windows Containers
+# Build with: docker build --isolation=process -t softly/rhino-compute:8 .
+# This must be placed in C:\softlycompute\compute\ on the Azure VM
+
+# Base image must match VM OS version for process isolation
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+
+# Set escape character for Windows
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
+
+# Set working directory
+WORKDIR /app
+
+# (1) Install prerequisites
+# Visual C++ Redistributables, .NET hosting, etc.
+# Add your prerequisite installations here
+# Example:
+# ADD https://aka.ms/vs/17/release/vc_redist.x64.exe /temp/vc_redist.x64.exe
+# RUN Start-Process -Wait -FilePath /temp/vc_redist.x64.exe -ArgumentList '/quiet', '/norestart'
+
+# (2) Install Rhino (headless) + Compute
+# You'll need to add your Rhino installer and Compute installer to the build context
+# COPY installers/ ./installers/
+
+# Install Rhino (example - replace with your actual installer)
+# RUN Start-Process -Wait -FilePath .\installers\rhino_installer.exe -ArgumentList '/quiet', '/norestart'
+
+# Install Rhino Compute (example - replace with your actual installer)
+# RUN Start-Process -Wait -FilePath .\installers\compute_installer.msi -ArgumentList '/quiet', '/norestart'
+
+# (3) Set up app environment
+ENV ASPNETCORE_URLS=http://*:8081
+EXPOSE 8081
+
+# (4) Start Compute
+# Replace with the actual path to your Compute executable
+# ENTRYPOINT ["C:\Program Files\Rhino Compute\Compute.Server.exe"]
+
+# Placeholder entrypoint for now
+ENTRYPOINT ["powershell", "-Command", "Write-Host 'Rhino Compute would start here'"]
