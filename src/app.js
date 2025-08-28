@@ -15,6 +15,7 @@ app.use(express.static(path.join(process.cwd(), 'public')))
 // Serve examples, files, and my-examples
 app.use('/examples', express.static(path.join(process.cwd(), 'examples')))
 app.use('/files', express.static(path.join(process.cwd(), 'files')))
+app.use('/vendor', express.static(path.join(process.cwd(), 'public', 'vendor')))
 app.use('/my-examples', express.static(path.join(process.cwd(), 'my-examples')))
 
 // log requests to the terminal when running in a local debug setup
@@ -28,48 +29,32 @@ app.use(compression())
 
 // Define URL for our compute server
 // - For local debugging on the same computer, rhino.compute.exe is
-//   typically running at http://localhost:5000/ (compute.geometry.exe) or http://localhost:6500/ (rhino.compute.exe)
+//   typically running at http://localhost:6001/
 // - For a production environment it is good to use an environment variable
-//   named RHINO_COMPUTE_URL to define where the compute server is located
+//   named COMPUTE_URL to define where the compute server is located
 // - And just in case, you can pass an address as a command line arg
 
 const argIndex = process.argv.indexOf('--computeUrl')
 if (argIndex > -1)
-  process.env.RHINO_COMPUTE_URL = process.argv[argIndex + 1]
-if (!process.env.RHINO_COMPUTE_URL)
-  process.env.RHINO_COMPUTE_URL = 'http://localhost:6500/' // default if nothing else exists
+  process.env.COMPUTE_URL = process.argv[argIndex + 1]
+if (!process.env.COMPUTE_URL)
+  process.env.COMPUTE_URL = 'http://localhost:6001/' // default if nothing else exists
 
-console.log('RHINO_COMPUTE_URL: ' + process.env.RHINO_COMPUTE_URL)
+console.log('COMPUTE_URL: ' + process.env.COMPUTE_URL)
 
 app.set('view engine', 'hbs');
 app.set('views', './src/views')
 
 // Routes for this app
-app.use('/examples', express.static(__dirname + '/examples'))
 app.get('/favicon.ico', (req, res) => res.status(200))
 app.use('/definition', require('./routes/definition'))
 app.use('/solve', require('./routes/solve'))
+app.use('/status', require('./routes/status'))
 app.use('/view', require('./routes/template'))
 app.use('/version', require('./routes/version'))
 app.use('/', require('./routes/index'))
 
-// Status endpoint to check compute service health
-app.get('/status', async (req, res) => {
-  try {
-    const fetch = require('node-fetch')
-    const response = await fetch(process.env.RHINO_COMPUTE_URL + 'version', {
-      timeout: 5000
-    })
-    if (response.ok) {
-      res.json({ compute: 'up' })
-    } else {
-      res.json({ compute: 'down', status: response.status })
-    }
-  } catch (error) {
-    console.error('Status check error:', error.message)
-    res.json({ compute: 'down', error: error.message })
-  }
-})
+
 
 // ref: https://github.com/expressjs/express/issues/3589
 // remove line when express@^4.17
@@ -82,17 +67,16 @@ app.use(function(req, res, next) {
 
 // error handler
 app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message
-  console.error(err)
-  res.locals.error = req.app.get('env') === 'development' ? err : {}
-  data = { message: err.message }
-  if (req.app.get('env') === 'development')
-  {
-    data.stack = err.stack
+  // Log server errors to stderr
+  console.error('[error]', err);
+
+  // Always respond with JSON
+  const errorResponse = { error: err.message || 'Internal Server Error' };
+  if (req.app.get('env') === 'development') {
+    errorResponse.stack = err.stack;
   }
-  // send the error
-  res.status(err.status || 500).send(data)
+
+  res.status(err.status || 500).json(errorResponse);
 })
 
 module.exports = app

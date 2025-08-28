@@ -1,162 +1,30 @@
-const express = require('express')
-const router = express.Router()
-const compute = require('compute-rhino3d')
-const {performance} = require('perf_hooks')
-const cache = require('../services/cache')
+const express = require('express');
+const router = express.Router();
+const computeService = require('../services/compute');
 
-let definition = null
-
-function computeParams (req, res, next){
-  compute.url = process.env.RHINO_COMPUTE_URL
-  compute.apiKey = process.env.RHINO_COMPUTE_KEY
-  next()
-}
-
-/**
- * Collect request parameters
- * This middleware function stores request parameters in the same manner no matter the request method
- */
-
-function collectParams (req, res, next){
-  res.locals.params = {}
-  switch (req.method){
-  case 'HEAD':
-  case 'GET':
-    res.locals.params.definition = req.params.definition
-    res.locals.params.inputs = req.query
-    break
-  case 'POST':
-    res.locals.params = req.body
-    break
-  default:
-    next()
-    break
-  }
-
-  let definitionName = res.locals.params.definition
-  if (definitionName===undefined)
-    definitionName = res.locals.params.pointer
-  definition = req.app.get('definitions').find(o => o.name === definitionName)
-  if(!definition)
-    throw new Error('Definition not found on server.')
-
-  //replace definition data with object that includes definition hash
-  res.locals.params.definition = definition
-
-  next()
-
-}
-
-/**
- * Check cache
- * This middleware function checks if a cache value exist for a cache key
- */
-
-async function checkCache (req, res, next){
-
-  const key = {}
-  key.definition = { 'name': res.locals.params.definition.name, 'id': res.locals.params.definition.id }
-  key.inputs = res.locals.params.inputs
-  if (res.locals.params.values!==undefined)
-    key.inputs = res.locals.params.values
-  res.locals.cacheKey = JSON.stringify(key)
-  res.locals.cacheResult = null
-
-  // Use our cache service (supports memcached if configured)
+// Canonical: POST /solve/ with body { definition: "Name.gh|.ghx", inputs: {...} }
+async function solveHandler(req, res, next) {
   try {
-    const result = await cache.get(res.locals.cacheKey)
-    res.locals.cacheResult = result !== null ? result : null
-  } catch (error) {
-    console.error('Cache get error:', error)
-    // Continue without cache on error
-  }
-
-  next()
-}
-
-/**
- * Solve GH definition
- * This is the core "workhorse" function for the appserver. Client apps post
- * json data to the appserver at this endpoint and that json is passed on to
- * compute for solving with Grasshopper.
- */
-
-async function commonSolve (req, res, next){
-  const timePostStart = performance.now()
-
-  // set general headers
-  // what is the proper max-age, 31536000 = 1 year, 86400 = 1 day
-  res.setHeader('Cache-Control', 'public, max-age=31536000')
-  res.setHeader('Content-Type', 'application/json')
-
-  if(res.locals.cacheResult !== null) {
-    //send
-    //console.log(res.locals.cacheResult)
-    const timespanPost = Math.round(performance.now() - timePostStart)
-    res.setHeader('Server-Timing', `cacheHit;dur=${timespanPost}`)
-    res.send(res.locals.cacheResult)
-    return
-  } else {
-    //solve
-    //console.log('solving')
-    // set parameters
-    let trees = []
-    if(res.locals.params.inputs !== undefined) { //TODO: handle no inputs
-      for (let [key, value] of Object.entries(res.locals.params.inputs)) {
-        let param = new compute.Grasshopper.DataTree(key)
-        param.append([0], Array.isArray(value) ? value : [value])
-        trees.push(param)
-      }
+    const { definition, inputs } = req.body || {};
+    if (!definition) {
+      return res.status(400).json({ error: 'Missing "definition"' });
     }
-    if(res.locals.params.values !== undefined) {
-      for (let index=0; index<res.locals.params.values.length; index++) {
-        let param = new compute.Grasshopper.DataTree('')
-        param.data = res.locals.params.values[index]
-        trees.push(param)
-      }
-    }
-
-    let fullUrl = req.protocol + '://' + req.get('host')
-    let definitionPath = `${fullUrl}/definition/${definition.id}`
-    const timePreComputeServerCall = performance.now()
-    let computeServerTiming = null
-
-    // call compute server
-    compute.Grasshopper.evaluateDefinition(definitionPath, trees, false).then( (response) => {
-        
-      // Throw error if response not ok
-      if(!response.ok) {
-        throw new Error(response.statusText)
-      } else {
-        computeServerTiming = response.headers
-        return response.text()
-      }
-
-    }).then( (result) => {
-      // Note: IIS does not send these headers which was causing an issue with the appserver response
-      // Cache the result (600s = 10 minutes TTL)
-      try {
-        await cache.set(res.locals.cacheKey, result, 600)
-      } catch (error) {
-        console.error('Cache set error:', error)
-        // Continue without caching on error
-      }
-
-      const r = JSON.parse(result)
-      delete r.pointer
-      res.send(JSON.stringify(r))
-    }).catch( (error) => { 
-      next(error)
-    })
+    const result = await computeService.solve(definition, inputs || {});
+    res.json(result);
+  } catch (err) {
+    next(err);
   }
 }
 
-// Collect middleware functions into a pipeline
-const pipeline = [computeParams, collectParams, checkCache, commonSolve]
+// Compatibility shim: POST /solve/:definition accepts { inputs } and coerces :definition to .gh if extension absent
+router.post('/:definition', (req, res, next) => {
+  const base = req.params.definition || '';
+  const def = base.endsWith('.gh') || base.endsWith('.ghx') ? base : `${base}.gh`;
+  req.body = { definition: def, inputs: (req.body && req.body.inputs) || {} };
+  return solveHandler(req, res, next);
+});
 
-// Handle different http methods
-router.head('/:definition',pipeline) // do we need HEAD?
-router.get('/:definition', pipeline)
-router.post('/', pipeline)
+// Main solve endpoint
+router.post('/', solveHandler);
 
-module.exports = router
+module.exports = router;
