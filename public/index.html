@@ -207,10 +207,10 @@
     Object.assign(state, {dx,dy,dw,dh});
 
     off.width = dw; off.height = dh;
-    if (img.complete && img.naturalWidth) {
+    if (portraitCanvas && portraitCanvas.width && portraitCanvas.height) {
       octx.setTransform(1,0,0,1,0,0);
       octx.clearRect(0,0,off.width,off.height);
-      octx.drawImage(img, 0, 0, off.width, off.height);
+      octx.drawImage(portraitCanvas, 0, 0, off.width, off.height);
     }
   }
 
