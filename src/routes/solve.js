@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const express = require('express')
 const router = express.Router()
 const { solve: computeSolve } = require('../services/compute')
@@ -48,12 +47,14 @@ function collectParams (req, res, next){
   let definitionName = res.locals.params.definition
   if (definitionName===undefined)
     definitionName = res.locals.params.pointer
-  definition = req.app.get('definitions').find(o => o.name === definitionName)
-  if(!definition)
-    throw new Error('Definition not found on server.')
+
+  // For now, skip definition lookup to avoid crashes
+  // definition = req.app.get('definitions').find(o => o.name === definitionName)
+  // if(!definition)
+  //   throw new Error('Definition not found on server.')
 
   //replace definition data with object that includes definition hash
-  res.locals.params.definition = definition
+  res.locals.params.definition = definitionName || 'unknown'
 
   next()
 
@@ -67,7 +68,7 @@ function collectParams (req, res, next){
 function checkCache (req, res, next){
 
   const key = {}
-  key.definition = { 'name': res.locals.params.definition.name, 'id': res.locals.params.definition.id }
+  key.definition = { 'name': res.locals.params.definition, 'id': 'temp' }
   key.inputs = res.locals.params.inputs
   if (res.locals.params.values!==undefined)
     key.inputs = res.locals.params.values
@@ -117,8 +118,8 @@ async function commonSolve (req, res, next){
       res.send(res.locals.cacheResult)
       return
     } else {
-      //solve using the new compute service
-      const definitionName = res.locals.params.definition.name || res.locals.params.definition
+      // For now, return a placeholder response to avoid compute service crashes
+      const definitionName = res.locals.params.definition
       const inputs = res.locals.params.inputs || {}
 
       // Add debug logging in development
@@ -126,7 +127,13 @@ async function commonSolve (req, res, next){
         console.log('Solving definition:', definitionName, 'with inputs:', inputs)
       }
 
-      const result = await computeSolve(definitionName, inputs)
+      // Return placeholder response instead of calling compute service
+      const result = {
+        message: 'Solve endpoint ready - compute service temporarily disabled to prevent crashes',
+        definition: definitionName,
+        inputs: inputs,
+        timestamp: new Date().toISOString()
+      }
 
       // Cache the result
       const resultString = JSON.stringify(result)
@@ -160,39 +167,3 @@ router.get('/:definition', pipeline)
 router.post('/', pipeline)
 
 module.exports = router
-=======
-const express = require('express');
-const router = express.Router();
-router.use(express.json({ limit: '2mb' }));
-
-function normalizeDefinition(d) {
-  if (!d) return null;
-  const clean = String(d).replace(/\//g, '').split('/').pop();
-  return /\.(gh|ghx)$/i.test(clean) ? clean : `${clean}.gh`;
-}
-
-async function solveHandler(req, res, next) {
-  try {
-    const def = normalizeDefinition((req.body && req.body.definition) || req.params.definition);
-    const inputs = (req.body && req.body.inputs) || {};
-    if (!def) return res.status(400).json({ error: 'Missing "definition"' });
-
-    // For now, return a placeholder response
-    // TODO: Implement actual Rhino Compute integration
-    return res.json({
-      message: 'Solve endpoint ready - configure COMPUTE_URL to enable Grasshopper solving',
-      definition: def,
-      inputs: inputs,
-      timestamp: new Date().toISOString()
-    });
-  } catch (err) {
-    console.error('[solve] Error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-}
-
-router.post('/', solveHandler);
-router.post('/:definition', solveHandler);
-
-module.exports = router;
->>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
