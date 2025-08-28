@@ -9,7 +9,7 @@ const cache = new NodeCache()
 const memjs = require('memjs')
 let mc = null
 
-const config = require('../../../config/config')
+const config = require('../../../../config/config')
 
 let definition = null
 
