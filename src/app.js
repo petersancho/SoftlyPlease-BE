@@ -10,6 +10,8 @@ const { paths, PUBLIC_APP_ORIGIN, COMPUTE_URL } = require('./config')
 const app = express()
 app.set('trust proxy', true)
 
+// Force rebuild marker: updated at 2024-01-28 18:45 UTC
+
 // Core middleware
 app.disable('x-powered-by')
 app.use(express.json({ limit: '2mb' }))
