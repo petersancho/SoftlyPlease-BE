@@ -1,0 +1,20 @@
+PLACEHOLDER: Replace this file with michelangelo.jpg
+
+This is a placeholder file. To complete the monochrome pointillism homepage:
+
+1. Download or obtain a high-contrast, public-domain portrait image
+2. Save it as: assets/michelangelo.jpg
+3. Delete this .placeholder file
+
+The portrait should be:
+- High contrast (good for pointillism conversion)
+- Square or landscape orientation preferred
+- Public domain or properly licensed
+- Good resolution (at least 1000px on the longest side)
+
+Example sources:
+- Wikimedia Commons public domain portraits
+- Project Gutenberg illustrations
+- Your own photography (if you have permission)
+
+Once you have the actual image file, the homepage will automatically use it for the pointillism rendering.

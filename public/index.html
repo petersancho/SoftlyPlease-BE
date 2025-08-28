@@ -1,16 +1,244 @@
 <!doctype html>
-<meta charset="utf-8">
-<title>SoftlyPlease</title>
-<link rel="stylesheet" href="/styles/softly.css">
-<header>
-  <h1>geometry calculator, a rhino compute appserver.</h1>
-  <nav>
-    <a href="/examples/">McNeel Examples</a>
-    <a href="/my-examples/">My Examples</a>
-  </nav>
-</header>
-<main>
-  <p>Welcome. Use the links above to explore.</p>
-  <hr>
-  <p>Compute status: <a href="/status">/status</a></p>
-</main>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SoftlyPlease — Monochrome Points</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="SoftlyPlease — raw, black & white, Times New Roman. Frontpage enhanced with a deterministic monochrome pointillism portrait.">
+  <style>
+    /* Raw, black-and-white, Times New Roman aesthetic */
+    html,body{height:100%;margin:0;background:#fff;color:#000;font:16px "Times New Roman", Times, serif;line-height:1.4}
+    /* Canvas occupies the full viewport; links sit above it */
+    #art{position:fixed;inset:0;z-index:0;display:block;width:100vw;height:100vh;background:#fff}
+    /* Content layer with your raw hyperlinks */
+    #content{position:relative;z-index:1;max-width:720px;margin:40px auto;padding:0 16px}
+    #content h1{font-size:28px;margin:0 0 12px 0;font-weight:700}
+    #content p{margin:8px 0}
+    #links a{color:#000;text-decoration:underline}
+    #links a:hover{background:#000;color:#fff}
+    /* Minimal tuning UI (hidden by default; show with ?ui=1) */
+    #ui{position:fixed;left:12px;bottom:12px;padding:8px 10px;border:1px solid #000;background:#fff;
+        display:none;gap:12px;align-items:center;border-radius:8px}
+    #ui label{display:flex;align-items:center;gap:6px;white-space:nowrap}
+    #ui input[type="range"]{width:120px}
+    #ui input[type="text"]{width:160px}
+    #ui button{padding:6px 10px;border-radius:6px;border:1px solid #000;background:#000;color:#fff;cursor:pointer}
+    #banner{position:fixed;right:12px;bottom:12px;background:#eee;border:1px solid #000;padding:8px 10px;border-radius:6px}
+    noscript{position:relative;z-index:1;display:block;margin:12px 16px;padding:8px 10px;border:1px solid #000;background:#fff}
+  </style>
+</head>
+<body>
+  <!-- Progressive enhancement: raw content stays functional without JS/canvas -->
+  <canvas id="art" aria-label="Monochrome pointillism portrait"></canvas>
+
+  <div id="content" role="main">
+    <h1>SoftlyPlease</h1>
+    <div id="links" aria-label="Site links">
+      <p><a href="/examples/">McNeel Examples</a> · <a href="/my-examples/">My Examples</a> · <a href="/status">Compute Status</a></p>
+      <p>This is the raw frontpage. Black and white. Times New Roman. The art behind this text is algorithmic and deterministic.</p>
+    </div>
+  </div>
+
+  <!-- Hidden controls; visit with ?ui=1 to reveal during tuning/export -->
+  <div id="ui" aria-hidden="true" title="Hidden by default. Add ?ui=1 to the URL to show this.">
+    <label>Step <input id="step" type="range" min="3" max="16" value="6"></label>
+    <label>Dot size <input id="dot" type="range" min="1" max="6" value="3.2" step="0.1"></label>
+    <label>Seed <input id="seed" type="text" placeholder="SOFTLYPLEASE-001"></label>
+    <button id="download">Download 4K PNG</button>
+  </div>
+
+  <noscript>This page enhances with a black-and-white pointillism canvas when JavaScript is enabled.</noscript>
+
+  <script>
+  // ——— Config (monochrome only) ———
+  const BG = '#ffffff';           // white background
+  const INK = '#000000';          // black dots
+  const MARGIN_CSS = 40;          // content margin in CSS px
+  let stepCSS = 6;                // grid step (lower = more dots)
+  let dotMaxCSS = 3.2;            // max dot radius in CSS px
+  const dotMinCSS = 0.25;         // min dot radius
+  const jitterScale = 0.35;       // organic jitter as fraction of step
+  const params = new URLSearchParams(location.search);
+  // Default seed keeps output deterministic; override with ?seed=
+  let seedStr = (params.get('seed') || 'SOFTLYPLEASE-001').trim();
+  const showUI = params.get('ui') === '1';
+  // Image selection: prefer bundled asset; allow override with ?img=
+  const IMG_SRC = params.get('img') || 'assets/michelangelo.jpg';
+
+  // ——— Seeded RNG (deterministic) ———
+  function cyrb128(str){let h1=1779033703,h2=3144134277,h3=1013904242,h4=2773480762;for(let i=0;i<str.length;i++){let ch=str.charCodeAt(i);h1=h2^Math.imul(h1^ch,597399067);h2=h3^Math.imul(h2^ch,2869860233);h3=h4^Math.imul(h3^ch,951274213);h4=h1^Math.imul(h4^ch,2716044179);}h1=Math.imul(h3^(h1>>>18),597399067);h2=Math.imul(h4^(h2>>>22),2869860233);h3=Math.imul(h1^(h3>>>17),951274213);h4=Math.imul(h2^(h4>>>19),2716044179);return[(h1^h2^h3^h4)>>>0,h1>>>0,h2>>>0,h3>>>0];}
+  function sfc32(a,b,c,d){return function(){a|=0;b|=0;c|=0;d|=0;let t=(a+b|0)+d|0;d=d+1|0;a=b^(b>>>9);b=c+(c<<3)|0;c=(c<<21)|(c>>>11);c=c+t|0;return(t>>>0)/4294967296;}}
+  function makeRng(seed){const h=cyrb128(seed||String(Math.random()));return sfc32(h[0],h[1],h[2],h[3]);}
+  let rng = makeRng(seedStr);
+
+  // ——— Elements ———
+  const canvas = document.getElementById('art');
+  const ctx = canvas.getContext('2d', { alpha:false, desynchronized:true });
+  const off = document.createElement('canvas');
+  const octx = off.getContext('2d', { willReadFrequently:true });
+  const state = { dpr:1, dx:0, dy:0, dw:0, dh:0 };
+
+  const ui = document.getElementById('ui');
+  const stepEl = document.getElementById('step');
+  const dotEl  = document.getElementById('dot');
+  const seedEl = document.getElementById('seed');
+  const dlBtn  = document.getElementById('download');
+  if (showUI) { ui.style.display = 'flex'; ui.setAttribute('aria-hidden','false'); }
+
+  // ——— Load image ———
+  const img = new Image();
+  img.crossOrigin = 'anonymous'; // allows remote images that permit CORS
+  img.src = IMG_SRC;
+  img.onload = () => { fit(); render(); };
+  img.onerror = () => {
+    const b = document.createElement('div');
+    b.id='banner'; b.textContent='Image failed to load. Place assets/michelangelo.jpg or pass ?img=URL (must allow CORS).';
+    document.body.appendChild(b);
+    fit(); ctx.fillStyle=BG; ctx.fillRect(0,0,canvas.width,canvas.height);
+  };
+
+  // ——— UI bindings ———
+  stepEl && stepEl.addEventListener('input', e => { stepCSS = +e.target.value; render(); });
+  dotEl  && dotEl.addEventListener('input',  e => { dotMaxCSS = +e.target.value; render(); });
+  seedEl && seedEl.addEventListener('change', e => { seedStr = e.target.value.trim() || 'SOFTLYPLEASE-001'; rng = makeRng(seedStr); render(); });
+  dlBtn  && dlBtn.addEventListener('click', download4k);
+  window.addEventListener('resize', () => { fit(); render(); });
+
+  // ——— Layout & offscreen prep ———
+  function fit(){
+    const dpr = window.devicePixelRatio || 1;
+    state.dpr = dpr;
+    canvas.width  = Math.floor(window.innerWidth  * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.fillStyle = BG; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    const margin = MARGIN_CSS * dpr;
+    const iw = img.naturalWidth || 1, ih = img.naturalHeight || 1;
+    const scale = Math.min((canvas.width - 2*margin)/iw, (canvas.height - 2*margin)/ih);
+    const dw = Math.max(1, Math.floor(iw * scale));
+    const dh = Math.max(1, Math.floor(ih * scale));
+    const dx = Math.floor((canvas.width  - dw) / 2);
+    const dy = Math.floor((canvas.height - dh) / 2);
+    Object.assign(state, {dx,dy,dw,dh});
+
+    off.width = dw; off.height = dh;
+    if (img.complete && img.naturalWidth) {
+      octx.setTransform(1,0,0,1,0,0);
+      octx.clearRect(0,0,off.width,off.height);
+      octx.drawImage(img, 0, 0, off.width, off.height);
+    }
+  }
+
+  // ——— Render (display) ———
+  function render(){
+    const { dpr, dx, dy, dw, dh } = state;
+    if (!dw || !dh) return;
+    ctx.fillStyle = BG; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.save(); ctx.translate(dx,dy);
+
+    const data = octx.getImageData(0,0,off.width,off.height).data;
+    const stepPx   = Math.max(2, Math.round(stepCSS * dpr));
+    const dotMaxPx = dotMaxCSS * dpr;
+    const dotMinPx = dotMinCSS * dpr;
+    const jitter   = jitterScale * stepPx;
+
+    // Re-seed per render for determinism
+    const r = rng = makeRng(seedStr);
+
+    for (let y=0; y<dh; y+=stepPx){
+      const row = y * dw * 4;
+      for (let x=0; x<dw; x+=stepPx){
+        const i = row + x*4;
+        const R=data[i], G=data[i+1], B=data[i+2], A=data[i+3];
+        if (A===0) continue;
+        // Luminance -> dot size (brighter = smaller)
+        const L=(0.2126*R + 0.7152*G + 0.0722*B)/255;
+        const radius = dotMaxPx - (dotMaxPx - dotMinPx)*L;
+        if (radius < 0.15*dpr) continue;
+        const jx=(r()*2-1)*jitter, jy=(r()*2-1)*jitter;
+        ctx.beginPath();
+        ctx.arc(x + jx, y + jy, radius, 0, Math.PI*2);
+        ctx.fillStyle = INK;
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  // ——— High-res export (4K longest side) ———
+  async function download4k(){
+    if (!img.naturalWidth) return;
+    const btn = document.getElementById('download');
+    if (btn) btn.disabled = true;
+    try{
+      const targetLong = 4096; // 4K long side
+      const iw = img.naturalWidth, ih = img.naturalHeight;
+      const out = document.createElement('canvas');
+      const long = Math.max(iw, ih);
+      const scale = targetLong / long;
+      out.width  = Math.round(iw * scale);
+      out.height = Math.round(ih * scale);
+
+      const margin = Math.round(MARGIN_CSS * (out.width / (state.dw || out.width)));
+      const dw = out.width  - 2*margin;
+      const dh = out.height - 2*margin;
+
+      const src = document.createElement('canvas');
+      src.width = dw; src.height = dh;
+      const sctx = src.getContext('2d', { willReadFrequently:true });
+      sctx.drawImage(img,0,0,dw,dh);
+      const sdata = sctx.getImageData(0,0,dw,dh).data;
+
+      const octx2 = out.getContext('2d');
+      octx2.fillStyle = BG; octx2.fillRect(0,0,out.width,out.height);
+      octx2.save(); octx2.translate(margin,margin);
+
+      // Scale step/dots relative to export size
+      const stepPx   = Math.max(2, Math.round(stepCSS * (dw / (state.dw || dw))));
+      const dotMaxPx = dotMaxCSS * (dw / (state.dw || dw));
+      const dotMinPx = dotMinCSS * (dw / (state.dw || dw));
+      const jitter   = jitterScale * stepPx;
+
+      const r = makeRng(seedStr);
+
+      for (let y=0; y<dh; y+=stepPx){
+        const row = y * dw * 4;
+        for (let x=0; x<dw; x+=stepPx){
+          const i = row + x*4;
+          const R=sdata[i], G=sdata[i+1], B=sdata[i+2], A=sdata[i+3];
+          if (A===0) continue;
+          const L=(0.2126*R + 0.7152*G + 0.0722*B)/255;
+          const radius = dotMaxPx - (dotMaxPx - dotMinPx)*L;
+          if (radius < 0.15) continue;
+          const jx=(r()*2-1)*jitter, jy=(r()*2-1)*jitter;
+          octx2.beginPath();
+          octx2.arc(x + jx, y + jy, radius, 0, Math.PI*2);
+          octx2.fillStyle = INK;
+          octx2.fill();
+        }
+      }
+      octx2.restore();
+
+      // Small, optional seed mark for provenance
+      if (seedStr){
+        octx2.fillStyle = '#000'; octx2.globalAlpha = 0.65;
+        octx2.font = '600 18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+        octx2.textAlign = 'right';
+        octx2.fillText(`#${seedStr}`, out.width - 14, out.height - 14);
+        octx2.globalAlpha = 1;
+      }
+
+      const url = out.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `softlyplease_monochrome_points_${seedStr || 'unseeded'}.png`;
+      a.click();
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+  </script>
+</body>
+</html>
