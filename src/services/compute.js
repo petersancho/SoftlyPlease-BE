@@ -24,6 +24,13 @@ async function solve(definition, inputs = {}, defUrl) {
     // Build absolute URL for Rhino Compute (hotfix)
     const absoluteDefUrl = defUrl || new URL(`/files/${encodeURIComponent(defName)}`, ORIGIN).toString();
 
+    // Debug logging
+    if(process.env.NODE_ENV !== 'production') {
+      console.log('Definition URL:', absoluteDefUrl);
+      console.log('Compute URL:', process.env.COMPUTE_URL);
+      console.log('API Key present:', !!process.env.RHINO_COMPUTE_KEY);
+    }
+
     // Prepare inputs for compute
     const trees = [];
     for (const [key, value] of Object.entries(inputs)) {
