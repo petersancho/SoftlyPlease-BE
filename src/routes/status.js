@@ -1,17 +1,19 @@
+'use strict';
 const express = require('express');
 const router = express.Router();
-const fetch = (...a)=>import('node-fetch').then(({default:fetch})=>fetch(...a));
+const { COMPUTE_URL } = require('../config');
 
-router.get('/', async (req,res)=>{
-  const base = process.env.COMPUTE_URL || '';
-  let compute='down';
+router.get('/', async (req, res) => {
+  let compute = 'down';
   try {
-    const u = new URL('version', base).toString();
-    const r = await fetch(u, { timeout: 3000 });
-    if (r.ok) compute='up';
-  } catch(e) {
-    console.error('Status check error:', e.message);
-  }
+    if (COMPUTE_URL) {
+      const ac = new AbortController();
+      const t = setTimeout(() => ac.abort(), 3000);
+      const r = await fetch(new URL('version', COMPUTE_URL), { signal: ac.signal });
+      clearTimeout(t);
+      if (r.ok) compute = 'up';
+    }
+  } catch (_) {}
   res.json({ ok: true, compute, time: new Date().toISOString() });
 });
 
