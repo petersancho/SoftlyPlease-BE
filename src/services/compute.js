@@ -1,12 +1,16 @@
 const compute = require('compute-rhino3d');
 
+// Hotfix: Build absolute URLs for Rhino Compute
+const ORIGIN = process.env.PUBLIC_APP_ORIGIN || 'https://www.softlyplease.com';
+
 /**
  * Solve a Grasshopper definition
  * @param {string} definition - Definition name (with or without .gh extension)
  * @param {object} inputs - Input parameters
+ * @param {string} defUrl - Optional pre-built definition URL (for hash-based routing)
  * @returns {Promise<object>} - Solve result
  */
-async function solve(definition, inputs = {}) {
+async function solve(definition, inputs = {}, defUrl) {
   try {
     // Ensure definition has .gh extension
     const defName = definition.endsWith('.gh') || definition.endsWith('.ghx')
@@ -17,8 +21,8 @@ async function solve(definition, inputs = {}) {
     compute.url = process.env.COMPUTE_URL;
     compute.apiKey = process.env.RHINO_COMPUTE_KEY;
 
-    // Get definition from our files
-    const definitionPath = `/${defName}`;
+    // Build absolute URL for Rhino Compute (hotfix)
+    const absoluteDefUrl = defUrl || new URL(`/files/${encodeURIComponent(defName)}`, ORIGIN).toString();
 
     // Prepare inputs for compute
     const trees = [];
@@ -28,8 +32,8 @@ async function solve(definition, inputs = {}) {
       trees.push(param);
     }
 
-    // Solve the definition
-    const response = await compute.Grasshopper.evaluateDefinition(definitionPath, trees, false);
+    // Solve the definition with absolute URL
+    const response = await compute.Grasshopper.evaluateDefinition(absoluteDefUrl, trees, false);
 
     if (!response.ok) {
       throw new Error(response.statusText);
