@@ -25,15 +25,17 @@ function registerDefinitions() {
   files.forEach( file => {
     if(file.includes('.gh') || file.includes('.ghx')) {
       const fullPath = path.join(__dirname, 'files/' + file)
-      const hash = md5File.sync(fullPath)
-      
+      // Use filename as ID instead of MD5 hash to avoid potential issues
+      const id = file.replace('.gh', '').replace('.ghx', '')
+
       definitions.push({
         name: file,
-        id:hash,
+        id: id,
         path: fullPath
       })
     }
   })
+  console.log('Loaded definitions:', definitions.map(d => d.name))
   return definitions
 }
 
