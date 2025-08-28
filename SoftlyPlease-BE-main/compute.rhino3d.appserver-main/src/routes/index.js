@@ -18,13 +18,14 @@ const router = express.Router()
 const compute = require('compute-rhino3d')
 const md5File = require('md5-file')
 const getParams = require('../definitions.js').getParams
+const config = require('../config.js')
 
 /**
  * Set url and apikey used to communicate with a compute server
  */
 function setComputeParams (){
-  compute.url = process.env.RHINO_COMPUTE_URL
-  compute.apiKey = process.env.RHINO_COMPUTE_KEY
+  compute.url = config.rhino.url
+  compute.apiKey = config.rhino.apiKey
 }
 
 /**
