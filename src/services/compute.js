@@ -1,4 +1,4 @@
-const fetch = require('node-fetch').default || require('node-fetch');
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 function buildUrl(base, path) {
   const u = new URL(path, base);
