@@ -1,12 +1,8 @@
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader'
-import rhino3dm from 'rhino3dm'
-
-/* eslint no-undef: "off", no-unused-vars: "off" */
-
-const loader = new Rhino3dmLoader()
+// Using global THREE and rhino3dm from script tags
+const loader = new THREE.3DMLoader()
 loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta3/' )
+
+// rhino3dm will be loaded asynchronously
 
 const definition = 'BranchNodeRnd.gh'
 
@@ -23,17 +19,15 @@ length_slider.addEventListener( 'touchend', onSliderChange, false )
 
 // load the rhino3dm library
 let doc
-
-const rhino = await rhino3dm()
-console.log('Loaded rhino3dm.')
-
-init()
-updateConnectionStatus('🔄 Connecting...', 'orange')
-compute()
-
-
-
 let _threeMesh, _threeMaterial
+
+// Initialize when rhino3dm is loaded
+rhino3dm().then((r) => {
+  rhino = r
+  console.log('Loaded rhino3dm.')
+  init()
+  compute()
+})
 
 /**
  * Call appserver
@@ -62,8 +56,6 @@ async function compute(){
   let headers = null
 
   try {
-    updateConnectionStatus('🔄 Processing...', 'orange')
-
     const response = await fetch('/solve', request)
 
     if(!response.ok)
@@ -82,8 +74,6 @@ async function compute(){
     // hide spinner
     showSpinner(false)
 
-    updateConnectionStatus('✅ Connected - Ready', 'green')
-
     t1 = performance.now()
     const decodeMeshTime = t1 - t0
     t0 = t1
@@ -98,16 +88,12 @@ async function compute(){
     // Hide spinner and show error message
     showSpinner(false)
 
-    // Update connection status
-    updateConnectionStatus('❌ Connection Failed', 'red')
-
     // Show user-friendly error message
     showErrorMessage(getErrorMessage(error))
 
     // Try to retry after a delay if it's a network error
     if (isNetworkError(error)) {
       console.log('Network error detected, will retry in 5 seconds...')
-      updateConnectionStatus('🔄 Retrying...', 'orange')
       setTimeout(() => {
         console.log('Retrying...')
         showErrorMessage('Retrying connection...')
@@ -192,20 +178,9 @@ async function compute(){
  * Shows or hides the loading spinner
  */
  function showSpinner(enable) {
-  if (enable)
-    document.getElementById('loader').style.display = 'block'
-  else
-    document.getElementById('loader').style.display = 'none'
-}
-
-/**
- * Updates connection status indicator
- */
-function updateConnectionStatus(message, color = 'black') {
-  const statusElement = document.getElementById('connection-status')
-  if (statusElement) {
-    statusElement.textContent = message
-    statusElement.style.color = color
+  const loader = document.getElementById('loader')
+  if (loader) {
+    loader.style.display = enable ? 'block' : 'none'
   }
 }
 
@@ -213,39 +188,9 @@ function updateConnectionStatus(message, color = 'black') {
  * Shows error message to user
  */
 function showErrorMessage(message) {
-  // Remove any existing error message
-  const existingError = document.getElementById('error-message')
-  if (existingError) {
-    existingError.remove()
-  }
-
-  // Create error message element
-  const errorDiv = document.createElement('div')
-  errorDiv.id = 'error-message'
-  errorDiv.style.cssText = `
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #ff4444;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    z-index: 1000;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-  `
-  errorDiv.textContent = message
-
-  document.body.appendChild(errorDiv)
-
-  // Auto-hide after 10 seconds
-  setTimeout(() => {
-    if (errorDiv.parentNode) {
-      errorDiv.remove()
-    }
-  }, 10000)
+  console.error('Rhino Compute Error:', message)
+  // Simple alert for now - can be enhanced later if needed
+  alert('Error: ' + message)
 }
 
 /**
