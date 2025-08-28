@@ -1,7 +1,7 @@
 'use strict';
 const express = require('express');
 const router = express.Router();
-const fetch = (...a) => import('node-fetch').then(({ default: f }) => f(...a));
+const fetch = require('node-fetch').default || require('node-fetch');
 
 router.get('/', async (req, res) => {
   const base = process.env.COMPUTE_URL;

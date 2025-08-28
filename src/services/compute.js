@@ -1,4 +1,4 @@
-const fetch = (...a) => import('node-fetch').then(({ default: f }) => f(...a));
+const fetch = require('node-fetch').default || require('node-fetch');
 
 function buildUrl(base, path) {
   const u = new URL(path, base);
@@ -13,7 +13,7 @@ exports.solve = async (definition, inputs) => {
     throw e;
   }
 
-  const url = buildUrl(base, './grasshopper/solve'); // matches appserver-style proxy; change if yours differs
+  const url = buildUrl(base, './grasshopper/solve');
   const headers = { 'Content-Type': 'application/json' };
   if (process.env.RHINO_COMPUTE_KEY) headers.Authorization = `Bearer ${process.env.RHINO_COMPUTE_KEY}`;
 
