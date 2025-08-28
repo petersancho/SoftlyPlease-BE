@@ -63,8 +63,7 @@
   // Default seed keeps output deterministic; override with ?seed=
   let seedStr = (params.get('seed') || 'SOFTLYPLEASE-001').trim();
   const showUI = params.get('ui') === '1';
-  // Image selection: prefer bundled asset; allow override with ?img=
-  const IMG_SRC = params.get('img') || 'assets/michelangelo.jpg';
+  // Portrait is generated programmatically - no external image needed
 
   // ——— Seeded RNG (deterministic) ———
   function cyrb128(str){let h1=1779033703,h2=3144134277,h3=1013904242,h4=2773480762;for(let i=0;i<str.length;i++){let ch=str.charCodeAt(i);h1=h2^Math.imul(h1^ch,597399067);h2=h3^Math.imul(h2^ch,2869860233);h3=h4^Math.imul(h3^ch,951274213);h4=h1^Math.imul(h4^ch,2716044179);}h1=Math.imul(h3^(h1>>>18),597399067);h2=Math.imul(h4^(h2>>>22),2869860233);h3=Math.imul(h1^(h3>>>17),951274213);h4=Math.imul(h2^(h4>>>19),2716044179);return[(h1^h2^h3^h4)>>>0,h1>>>0,h2>>>0,h3>>>0];}
@@ -86,17 +85,101 @@
   const dlBtn  = document.getElementById('download');
   if (showUI) { ui.style.display = 'flex'; ui.setAttribute('aria-hidden','false'); }
 
-  // ——— Load image ———
-  const img = new Image();
-  img.crossOrigin = 'anonymous'; // allows remote images that permit CORS
-  img.src = IMG_SRC;
+  // ——— Generate programmatic portrait ———
+  const img = { naturalWidth: 512, naturalHeight: 512, complete: true };
   img.onload = () => { fit(); render(); };
-  img.onerror = () => {
-    const b = document.createElement('div');
-    b.id='banner'; b.textContent='Image failed to load. Place assets/michelangelo.jpg or pass ?img=URL (must allow CORS).';
-    document.body.appendChild(b);
-    fit(); ctx.fillStyle=BG; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Create programmatic portrait using canvas drawing
+  function generatePortrait() {
+    const portraitCanvas = document.createElement('canvas');
+    portraitCanvas.width = 512;
+    portraitCanvas.height = 512;
+    const pctx = portraitCanvas.getContext('2d');
+
+    // Fill with skin tone background
+    pctx.fillStyle = '#F5DEB3'; // Wheat color for skin
+    pctx.fillRect(0, 0, 512, 512);
+
+    // Draw simple face outline
+    pctx.strokeStyle = '#8B4513'; // SaddleBrown for outline
+    pctx.lineWidth = 3;
+    pctx.beginPath();
+    pctx.ellipse(256, 200, 120, 150, 0, 0, Math.PI * 2);
+    pctx.stroke();
+
+    // Draw eyes
+    pctx.fillStyle = '#000000';
+    pctx.beginPath();
+    pctx.ellipse(220, 180, 8, 8, 0, 0, Math.PI * 2);
+    pctx.fill();
+    pctx.beginPath();
+    pctx.ellipse(292, 180, 8, 8, 0, 0, Math.PI * 2);
+    pctx.fill();
+
+    // Draw nose
+    pctx.strokeStyle = '#8B4513';
+    pctx.lineWidth = 2;
+    pctx.beginPath();
+    pctx.moveTo(256, 190);
+    pctx.lineTo(256, 220);
+    pctx.lineTo(246, 235);
+    pctx.moveTo(256, 220);
+    pctx.lineTo(266, 235);
+    pctx.stroke();
+
+    // Draw mouth
+    pctx.beginPath();
+    pctx.arc(256, 250, 20, 0, Math.PI);
+    pctx.stroke();
+
+    // Draw hair
+    pctx.fillStyle = '#4B0082'; // Indigo for hair
+    pctx.beginPath();
+    pctx.arc(256, 130, 80, Math.PI, 0);
+    pctx.fill();
+
+    // Draw neck
+    pctx.strokeStyle = '#F5DEB3';
+    pctx.lineWidth = 20;
+    pctx.beginPath();
+    pctx.moveTo(236, 320);
+    pctx.lineTo(236, 380);
+    pctx.moveTo(276, 320);
+    pctx.lineTo(276, 380);
+    pctx.stroke();
+
+    // Add some shading/highlights for better pointillism
+    pctx.fillStyle = 'rgba(0,0,0,0.1)'; // subtle shadows
+    pctx.beginPath();
+    pctx.ellipse(240, 190, 100, 120, 0, Math.PI*1.2, Math.PI*0.8);
+    pctx.fill();
+
+    pctx.fillStyle = 'rgba(255,255,255,0.3)'; // subtle highlights
+    pctx.beginPath();
+    pctx.ellipse(280, 160, 40, 40, 0, 0, Math.PI * 2);
+    pctx.fill();
+
+    return portraitCanvas;
+  }
+
+  // Generate the portrait
+  const portraitCanvas = generatePortrait();
+
+  // Set up img properties to mimic loaded image
+  img.naturalWidth = portraitCanvas.width;
+  img.naturalHeight = portraitCanvas.height;
+
+  // Override getImageData to use our generated portrait
+  const originalGetImageData = octx.getImageData;
+  octx.getImageData = function(sx, sy, sw, sh) {
+    // Draw our portrait to offscreen canvas
+    octx.clearRect(0, 0, off.width, off.height);
+    octx.drawImage(portraitCanvas, 0, 0, off.width, off.height);
+    return originalGetImageData.call(octx, sx, sy, sw, sh);
   };
+
+  // Trigger onload
+  img.onload();
 
   // ——— UI bindings ———
   stepEl && stepEl.addEventListener('input', e => { stepCSS = +e.target.value; render(); });
@@ -169,12 +252,12 @@
 
   // ——— High-res export (4K longest side) ———
   async function download4k(){
-    if (!img.naturalWidth) return;
+    if (!portraitCanvas) return;
     const btn = document.getElementById('download');
     if (btn) btn.disabled = true;
     try{
       const targetLong = 4096; // 4K long side
-      const iw = img.naturalWidth, ih = img.naturalHeight;
+      const iw = portraitCanvas.width, ih = portraitCanvas.height;
       const out = document.createElement('canvas');
       const long = Math.max(iw, ih);
       const scale = targetLong / long;
@@ -188,7 +271,7 @@
       const src = document.createElement('canvas');
       src.width = dw; src.height = dh;
       const sctx = src.getContext('2d', { willReadFrequently:true });
-      sctx.drawImage(img,0,0,dw,dh);
+      sctx.drawImage(portraitCanvas,0,0,dw,dh);
       const sdata = sctx.getImageData(0,0,dw,dh).data;
 
       const octx2 = out.getContext('2d');
