@@ -1,8 +1,8 @@
 // Compute Client for Heroku → Azure Rhino Compute communication
 const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
 
-const COMPUTE_URL = process.env.COMPUTE_URL;
-const COMPUTE_KEY = process.env.COMPUTE_KEY;
+const RHINO_COMPUTE_URL = process.env.RHINO_COMPUTE_URL;
+const RHINO_COMPUTE_KEY = process.env.RHINO_COMPUTE_KEY;
 
 /**
  * Check Compute server status
@@ -11,15 +11,15 @@ const COMPUTE_KEY = process.env.COMPUTE_KEY;
  * @returns {Promise<{up: boolean, code?: number, error?: string}>}
  */
 async function computeStatus(signal, timeoutMs = 1500) {
-  if (!COMPUTE_URL) {
-    return { up: false, error: 'COMPUTE_URL not configured' };
+  if (!RHINO_COMPUTE_URL) {
+    return { up: false, error: 'RHINO_COMPUTE_URL not configured' };
   }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(`${COMPUTE_URL}/version`, {
+    const response = await fetch(`${RHINO_COMPUTE_URL}/version`, {
       method: 'GET',
       signal: controller.signal,
     });
@@ -39,8 +39,8 @@ async function computeStatus(signal, timeoutMs = 1500) {
  * @returns {Promise<object>} - Compute response
  */
 async function solveWithCompute(defFullPath, inputs) {
-  if (!COMPUTE_URL) {
-    const error = new Error('COMPUTE_URL not configured');
+  if (!RHINO_COMPUTE_URL) {
+    const error = new Error('RHINO_COMPUTE_URL not configured');
     error.status = 503;
     throw error;
   }
@@ -51,11 +51,11 @@ async function solveWithCompute(defFullPath, inputs) {
     inputs: inputs || {}
   };
 
-  const response = await fetch(`${COMPUTE_URL}/solve`, {
+  const response = await fetch(`${RHINO_COMPUTE_URL}/solve`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${COMPUTE_KEY}`,
+      'Authorization': `Bearer ${RHINO_COMPUTE_KEY}`,
     },
     body: JSON.stringify(payload),
     timeout: 120000, // 2 minute timeout for compute operations

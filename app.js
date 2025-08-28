@@ -33,7 +33,7 @@ app.use('/my-examples', express.static(path.join(process.cwd(), 'my-examples')))
 
 // Helpful boot log (no secrets)
 console.log('[boot]', {
-  compute: process.env.COMPUTE_URL || '(unset)',
+  rhino_compute: process.env.RHINO_COMPUTE_URL || '(unset)',
   origin: process.env.PUBLIC_APP_ORIGIN || 'https://www.softlyplease.com',
   files: path.join(process.cwd(), 'files')
 });
