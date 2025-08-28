@@ -1,7 +1,7 @@
 const compute = require('compute-rhino3d');
 
-// Hotfix: Build absolute URLs for Rhino Compute
-const ORIGIN = process.env.PUBLIC_APP_ORIGIN || 'https://www.softlyplease.com';
+// Build absolute URLs for Rhino Compute using the current app's origin
+const ORIGIN = process.env.PUBLIC_APP_ORIGIN || 'https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com';
 
 /**
  * Solve a Grasshopper definition
