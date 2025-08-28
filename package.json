@@ -40,9 +40,13 @@
   "scripts": {
     "start": "node ./src/bin/www",
     "lint": "eslint src/*.js --fix && eslint src/routes/*.js --fix && eslint src/bin/www --fix",
-    "start-args": "node ./src/bin/www --computeUrl http://localhost:6500/",
+    "start-args": "node ./src/bin/www --computeUrl http://localhost:6001/",
     "sync:examples": "node scripts/sync-upstream-examples.js",
-    "sync:upstream": "git fetch mcneel-appserver && git subtree pull --prefix vendor/mcneel-appserver mcneel-appserver main --squash && npm run sync:examples"
+    "sync:upstream": "git fetch mcneel-appserver && git subtree pull --prefix vendor/mcneel-appserver mcneel-appserver main --squash && npm run sync:examples",
+    "verify:defs": "node scripts/scan-examples-for-defs.js && node scripts/check-defs.js",
+    "smoke:solve": "node scripts/smoke-solve.js",
+    "patch:paths": "node scripts/patch-examples-defpaths.js",
+    "post-sync": "npm run sync:examples && node scripts/patch-examples.js && npm run patch:paths && npm run verify:defs"
   },
   "dependencies": {
     "camelcase-keys": "^6.2.2",
@@ -70,6 +74,7 @@
     "cheerio": "^1.1.2",
     "eslint": "8.7.0",
     "fast-glob": "^3.3.3",
-    "fs-extra": "^11.3.1"
+    "fs-extra": "^11.3.1",
+    "p-limit": "^7.1.1"
   }
 }
