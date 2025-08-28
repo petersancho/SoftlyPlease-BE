@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>SoftlyPlease — Monochrome Points</title>
+  <title>SoftlyPlease</title>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
   <meta name="color-scheme" content="light">
-  <meta name="description" content="SoftlyPlease — raw, black & white, Times New Roman. Frontpage enhanced with a deterministic monochrome pointillism portrait.">
+  <meta name="description" content="SoftlyPlease — raw, black & white, Times New Roman. Monochrome pointillism art with deterministic generation and 4K export.">
   <style>
     /* Raw, black-and-white, Times New Roman aesthetic */
     html,body{height:100%;margin:0;background:#fff;color:#000;font:16px "Times New Roman", Times, serif;line-height:1.4;
@@ -18,9 +18,9 @@
     #content p{margin:8px 0}
     #links a{color:#000;text-decoration:underline}
     #links a:hover{background:#000;color:#fff}
-    /* Mobile-responsive tuning UI (hidden by default; show with ?ui=1) */
+    /* Mobile-responsive tuning UI (visible by default; hide with ?ui=0) */
     #ui{position:fixed;left:8px;bottom:8px;right:8px;padding:12px;border:1px solid #000;background:#fff;
-        display:none;border-radius:12px;max-width:100%;box-sizing:border-box;
+        display:flex;border-radius:12px;max-width:100%;box-sizing:border-box;
         z-index:10;backdrop-filter:blur(4px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
     #ui label{display:flex;flex-direction:column;gap:4px;text-align:left;font-size:14px;font-weight:500}
     #ui .control-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -52,6 +52,10 @@
         #ui{display:none !important}
         #ui.show{display:flex !important}
     }
+
+    /* Show UI by default on all screens */
+    #ui { display: flex !important; }
+    #ui[aria-hidden="true"] { display: none !important; }
     #banner{position:fixed;right:12px;bottom:12px;background:#eee;border:1px solid #000;padding:8px 10px;border-radius:6px}
     noscript{position:relative;z-index:1;display:block;margin:12px 16px;padding:8px 10px;border:1px solid #000;background:#fff}
   </style>
@@ -100,7 +104,7 @@
   const params = new URLSearchParams(location.search);
   // Default seed keeps output deterministic; override with ?seed=
   let seedStr = (params.get('seed') || 'SOFTLYPLEASE-001').trim();
-  const showUI = params.get('ui') === '1';
+  const showUI = params.get('ui') !== '0'; // Show UI by default, hide only with ?ui=0
   // Portrait is generated programmatically - no external image needed
 
   // ——— Seeded RNG (deterministic) ———
@@ -122,12 +126,15 @@
   const seedEl = document.getElementById('seed');
   const dlBtn  = document.getElementById('download');
 
-  // Mobile-friendly UI handling
+  // UI handling - show by default, hide only with ?ui=0
   if (showUI) {
     ui.style.display = 'flex';
     ui.setAttribute('aria-hidden','false');
-    // Add .show class for mobile override
     ui.classList.add('show');
+  } else {
+    ui.style.display = 'none';
+    ui.setAttribute('aria-hidden','true');
+    ui.classList.remove('show');
   }
 
   // Touch-friendly slider handling
