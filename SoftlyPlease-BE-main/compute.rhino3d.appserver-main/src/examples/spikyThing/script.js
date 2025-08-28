@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import * as ThreeDMLoaderModule from 'three/examples/jsm/loaders/3DMLoader.js';
+import 3DMLoader from 'three/examples/jsm/loaders/3DMLoader.js';
 
 // Initialize loader
-const loader = new ThreeDMLoaderModule.3DMLoader()
+const loader = new 3DMLoader()
 loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta3/' )
 
 // rhino3dm will be loaded asynchronously
