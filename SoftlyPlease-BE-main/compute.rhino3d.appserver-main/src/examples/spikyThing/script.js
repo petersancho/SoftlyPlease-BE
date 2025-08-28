@@ -28,6 +28,7 @@ const rhino = await rhino3dm()
 console.log('Loaded rhino3dm.')
 
 init()
+updateConnectionStatus('🔄 Connecting...', 'orange')
 compute()
 
 
@@ -61,11 +62,13 @@ async function compute(){
   let headers = null
 
   try {
+    updateConnectionStatus('🔄 Processing...', 'orange')
+
     const response = await fetch('/solve', request)
 
     if(!response.ok)
       throw new Error(response.statusText)
-      
+
     headers = response.headers.get('server-timing')
     const responseJson = await response.json()
 
@@ -78,7 +81,9 @@ async function compute(){
 
     // hide spinner
     showSpinner(false)
-      
+
+    updateConnectionStatus('✅ Connected - Ready', 'green')
+
     t1 = performance.now()
     const decodeMeshTime = t1 - t0
     t0 = t1
@@ -88,7 +93,27 @@ async function compute(){
     console.log(`  ${Math.round(computeSolveTime)} ms: appserver request`)
 
   } catch(error) {
-    console.error(error)
+    console.error('Solve request failed:', error)
+
+    // Hide spinner and show error message
+    showSpinner(false)
+
+    // Update connection status
+    updateConnectionStatus('❌ Connection Failed', 'red')
+
+    // Show user-friendly error message
+    showErrorMessage(getErrorMessage(error))
+
+    // Try to retry after a delay if it's a network error
+    if (isNetworkError(error)) {
+      console.log('Network error detected, will retry in 5 seconds...')
+      updateConnectionStatus('🔄 Retrying...', 'orange')
+      setTimeout(() => {
+        console.log('Retrying...')
+        showErrorMessage('Retrying connection...')
+        compute()
+      }, 5000)
+    }
   }
   
 }
@@ -171,6 +196,88 @@ async function compute(){
     document.getElementById('loader').style.display = 'block'
   else
     document.getElementById('loader').style.display = 'none'
+}
+
+/**
+ * Updates connection status indicator
+ */
+function updateConnectionStatus(message, color = 'black') {
+  const statusElement = document.getElementById('connection-status')
+  if (statusElement) {
+    statusElement.textContent = message
+    statusElement.style.color = color
+  }
+}
+
+/**
+ * Shows error message to user
+ */
+function showErrorMessage(message) {
+  // Remove any existing error message
+  const existingError = document.getElementById('error-message')
+  if (existingError) {
+    existingError.remove()
+  }
+
+  // Create error message element
+  const errorDiv = document.createElement('div')
+  errorDiv.id = 'error-message'
+  errorDiv.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ff4444;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    z-index: 1000;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  `
+  errorDiv.textContent = message
+
+  document.body.appendChild(errorDiv)
+
+  // Auto-hide after 10 seconds
+  setTimeout(() => {
+    if (errorDiv.parentNode) {
+      errorDiv.remove()
+    }
+  }, 10000)
+}
+
+/**
+ * Gets user-friendly error message
+ */
+function getErrorMessage(error) {
+  if (error.message.includes('timeout') || error.message.includes('ETIMEDOUT')) {
+    return 'Connection timeout - Rhino Compute server is not responding. Retrying...'
+  } else if (error.message.includes('fetch')) {
+    return 'Network error - Unable to connect to Rhino Compute server'
+  } else if (error.message.includes('404')) {
+    return 'Definition not found - BranchNodeRnd.gh may not be available'
+  } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+    return 'Authentication error - API key may be invalid'
+  } else if (error.message.includes('500')) {
+    return 'Server error - Rhino Compute server encountered an internal error'
+  } else {
+    return `Error: ${error.message || 'Unknown error occurred'}`
+  }
+}
+
+/**
+ * Checks if error is network-related and worth retrying
+ */
+function isNetworkError(error) {
+  const message = error.message.toLowerCase()
+  return message.includes('timeout') ||
+         message.includes('etimedout') ||
+         message.includes('enotfound') ||
+         message.includes('econnrefused') ||
+         message.includes('network') ||
+         message.includes('fetch')
 }
 
 /**
