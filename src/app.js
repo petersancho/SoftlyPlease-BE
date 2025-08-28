@@ -19,7 +19,7 @@ app.use(express.json({ limit: '2mb' }))
 // API routes (must come before static files to avoid SPA fallback interference)
 // Status routes must come BEFORE solve routes to avoid /solve/status conflicts
 app.use('/status', require('./src/routes/status'))
-app.use('/status/definitions', require('./src/routes/status-defs'))
+// app.use('/status/definitions', require('./src/routes/status-defs'))  // Temporarily disabled
 app.use('/solve', require('./src/routes/solve'))
 
 // --- Static mounts (serve site and assets) -------------------------------
