@@ -93,8 +93,13 @@ router.get('/definition_description', function(req, res, next){
 /**
  * This route needs to be declared after /definition_description so it won't be
  * called when '/definition_description' is requested
+ * Exclude API routes that shouldn't be treated as definition requests
  */
 router.get('/:name', function(req, res, next){
+  const excludedRoutes = ['status', 'solve', 'definition', 'api'];
+  if (excludedRoutes.includes(req.params.name)) {
+    return next();
+  }
   let definition = req.app.get('definitions').find(o => o.name === req.params.name)
   describeDefinition(definition, req, res, next)
 })
