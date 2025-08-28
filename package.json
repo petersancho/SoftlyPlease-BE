@@ -33,17 +33,17 @@
   "engines": {
     "node": "16.x"
   },
-  "main": "SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/bin/www",
+  "main": "src/bin/www",
   "bin": {
-    "compute-rhino3d-appserver": "SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/bin/www"
+    "compute-rhino3d-appserver": "src/bin/www"
   },
   "scripts": {
-    "start": "node ./SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/bin/www",
-    "start:prod": "cross-env NODE_ENV=production PORT=80 RHINO_COMPUTE_URL=http://localhost:5000/ node SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/bin/www",
+    "start": "node ./src/bin/www",
+    "start:prod": "cross-env NODE_ENV=production PORT=80 RHINO_COMPUTE_URL=http://localhost:5000/ node src/bin/www",
     "install-service": "powershell -ExecutionPolicy Bypass -File scripts/install-service.ps1",
     "uninstall-service": "powershell -ExecutionPolicy Bypass -File scripts/uninstall-service.ps1",
-    "lint": "eslint SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/*.js --fix && eslint SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/routes/*.js --fix && eslint SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/bin/www --fix",
-    "start-args": "node SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/bin/www --computeUrl http://localhost:5000/"
+    "lint": "eslint src/*.js --fix && eslint src/routes/*.js --fix && eslint src/bin/www --fix",
+    "start-args": "node src/bin/www --computeUrl http://localhost:5000/"
   },
   "dependencies": {
     "camelcase-keys": "^6.2.2",
