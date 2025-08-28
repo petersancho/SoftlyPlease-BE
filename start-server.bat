@@ -5,13 +5,21 @@ echo.
 REM Set environment variables
 set NODE_ENV=development
 set PORT=3000
+<<<<<<< HEAD
 set RHINO_RHINO_COMPUTE_URL=https://softlyplease.canadacentral.cloudapp.azure.com:8443/
+=======
+set RHINO_COMPUTE_URL=https://softlyplease.canadacentral.cloudapp.azure.com:8443/
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
 set RHINO_COMPUTE_KEY=p2robot-13a6-48f3-b24e-2025computeX
 
 echo Environment variables set:
 echo NODE_ENV=%NODE_ENV%
 echo PORT=%PORT%
+<<<<<<< HEAD
 echo RHINO_RHINO_COMPUTE_URL=%RHINO_RHINO_COMPUTE_URL%
+=======
+echo RHINO_COMPUTE_URL=%RHINO_COMPUTE_URL%
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
 echo RHINO_COMPUTE_KEY=%RHINO_COMPUTE_KEY%
 echo.
 

@@ -1,8 +1,15 @@
 /* eslint no-undef: "off", no-unused-vars: "off" */
+<<<<<<< HEAD
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader'
 import rhino3dm from 'rhino3dm'
+=======
+
+
+
+import rhino3dm from 'https://cdn.jsdelivr.net/npm/rhino3dm@8.17.0/rhino3dm.module.js';
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
 
 // set up loader for converting the results to threejs
 const loader = new Rhino3dmLoader()
@@ -152,7 +159,11 @@ function init () {
   renderer.setSize( window.innerWidth, window.innerHeight )
   document.body.appendChild(renderer.domElement)
 
+<<<<<<< HEAD
   controls = new OrbitControls( camera, renderer.domElement  )
+=======
+  controls = new THREE.OrbitControls( camera, renderer.domElement  )
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
 
   camera.position.z = 50
 

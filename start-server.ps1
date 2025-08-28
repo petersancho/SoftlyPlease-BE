@@ -5,13 +5,21 @@ Write-Host ""
 # Set environment variables
 $env:NODE_ENV = "development"
 $env:PORT = "3000"
+<<<<<<< HEAD
 $env:RHINO_RHINO_COMPUTE_URL = "http://localhost:6001/"
+=======
+$env:RHINO_COMPUTE_URL = "http://localhost:6001/"
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
 $env:RHINO_COMPUTE_KEY = "p2robot-13a6-48f3-b24e-2025computeX"
 
 Write-Host "Environment variables set:" -ForegroundColor Yellow
 Write-Host "NODE_ENV: $env:NODE_ENV"
 Write-Host "PORT: $env:PORT"
+<<<<<<< HEAD
 Write-Host "RHINO_RHINO_COMPUTE_URL: $env:RHINO_RHINO_COMPUTE_URL"
+=======
+Write-Host "RHINO_COMPUTE_URL: $env:RHINO_COMPUTE_URL"
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
 Write-Host "RHINO_COMPUTE_KEY: $env:RHINO_COMPUTE_KEY"
 Write-Host ""
 
@@ -26,4 +34,8 @@ Write-Host ""
 Write-Host "Starting server..." -ForegroundColor Green
 npm start
 
+<<<<<<< HEAD
 Read-Host "Press Enter to exit"
+=======
+Read-Host "Press Enter to exit"
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d

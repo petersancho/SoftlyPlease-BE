@@ -6,7 +6,11 @@
 const config = {
   // Rhino Compute Server Configuration
   rhino: {
+<<<<<<< HEAD
     url: process.env.RHINO_RHINO_COMPUTE_URL || 'http://4.248.252.92:80/',
+=======
+    url: process.env.RHINO_COMPUTE_URL || 'http://4.248.252.92:80/',
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
     apiKey: process.env.RHINO_COMPUTE_APIKEY || 'p2robot-13a6-48f3-b24e-2025computeX',
     timeout: 30000,
     retries: 3
@@ -48,7 +52,11 @@ const config = {
 
   // Bootstrap Configuration (for VM deployment)
   bootstrap: {
+<<<<<<< HEAD
     computeUrl: process.env.RHINO_COMPUTE_URL || 'http://4.248.252.92:80',
+=======
+    computeUrl: process.env.COMPUTE_URL || 'http://4.248.252.92:80',
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
     appServerUrl: process.env.APPSERVER_URL || 'http://localhost:80',
     networkInterface: '0.0.0.0'
   }

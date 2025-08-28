@@ -23,7 +23,11 @@ const getParams = require('../definitions.js').getParams
  * Set url and apikey used to communicate with a compute server
  */
 function setComputeParams (){
+<<<<<<< HEAD
   compute.url = process.env.RHINO_RHINO_COMPUTE_URL
+=======
+  compute.url = process.env.RHINO_COMPUTE_URL
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
   compute.apiKey = process.env.RHINO_COMPUTE_KEY
 }
 
@@ -93,8 +97,18 @@ router.get('/definition_description', function(req, res, next){
 /**
  * This route needs to be declared after /definition_description so it won't be
  * called when '/definition_description' is requested
+<<<<<<< HEAD
  */
 router.get('/:name', function(req, res, next){
+=======
+ * Exclude API routes that shouldn't be treated as definition requests
+ */
+router.get('/:name', function(req, res, next){
+  const excludedRoutes = ['status', 'solve', 'definition', 'api'];
+  if (excludedRoutes.includes(req.params.name)) {
+    return next();
+  }
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
   let definition = req.app.get('definitions').find(o => o.name === req.params.name)
   describeDefinition(definition, req, res, next)
 })

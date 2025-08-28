@@ -1,12 +1,18 @@
 {
+<<<<<<< HEAD
   "name": "@mcneel/compute.rhino3d.appserver",
   "version": "0.1.12",
+=======
+  "name": "softlyplease",
+  "version": "1.0.1",
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
   "keywords": [
     "node.js",
     "expressjs",
     "compute.rhino3d",
     "rhino3d",
     "rhino3dm",
+<<<<<<< HEAD
     "grasshopper3d"
   ],
   "description": "A node.js/expressjs server which communicates to a rhino3d compute geometry server to remote solve Grasshopper definitions.",
@@ -26,11 +32,38 @@
       "name": "Luis E. Fraguada",
       "email": "luis@mcneel.com",
       "url": "https://github.com/fraguada"
+=======
+    "grasshopper3d",
+    "geometry",
+    "calculator"
+  ],
+  "description": "Geometry calculator and Rhino Compute appserver - A web-based interface for solving Grasshopper definitions using Rhino Compute.",
+  "homepage": "https://www.softlyplease.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/petersancho/SoftlyPlease-BE"
+  },
+  "bugs": {
+    "url": "https://github.com/petersancho/SoftlyPlease-BE/issues"
+  },
+  "author": {
+    "name": "Peter Sancho"
+  },
+  "contributors": [
+    {
+      "name": "Peter Sancho",
+      "url": "https://github.com/petersancho"
+    },
+    {
+      "name": "McNeel Upstream",
+      "url": "https://github.com/mcneel/compute.rhino3d.appserver"
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
     }
   ],
   "license": "MIT",
   "preferGlobal": true,
   "engines": {
+<<<<<<< HEAD
     "node": "16.x"
   },
   "main": "src/bin/www",
@@ -44,6 +77,22 @@
     "uninstall-service": "powershell -ExecutionPolicy Bypass -File scripts/uninstall-service.ps1",
     "lint": "eslint src/*.js --fix && eslint src/routes/*.js --fix && eslint src/bin/www --fix",
     "start-args": "node src/bin/www --computeUrl http://localhost:5000/"
+=======
+    "node": "18.x"
+  },
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "NODE_ENV=development node app.js",
+    "lint": "eslint src/*.js --fix && eslint src/routes/*.js --fix && eslint src/bin/www --fix",
+    "sync:examples": "node scripts/sync-upstream-examples.js",
+    "sync:upstream": "git fetch mcneel-appserver && git subtree pull --prefix vendor/mcneel-appserver mcneel-appserver main --squash && npm run sync:examples",
+    "verify:defs": "node scripts/scan-examples-for-defs.js && node scripts/check-defs.js",
+    "smoke:solve": "node scripts/smoke-solve.js",
+    "patch:examples": "node scripts/patch-examples.js && node scripts/patch-examples-defpaths.js",
+    "gen:examples-index": "node scripts/gen-examples-index.js",
+    "post-sync": "npm run sync:examples && npm run patch:examples && npm run gen:examples-index && npm run verify:defs"
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
   },
   "dependencies": {
     "camelcase-keys": "^6.2.2",
@@ -58,6 +107,7 @@
     "memjs": "^1.2.2",
     "morgan": "~1.9.1",
     "node-cache": "^5.1.1",
+<<<<<<< HEAD
     "node-fetch": "2.6.7",
     "rhino3dm": "7.15.0",
     "throng": "4.0.0"
@@ -65,5 +115,22 @@
   "devDependencies": {
     "eslint": "8.7.0",
     "cross-env": "^7.0.3"
+=======
+    "node-fetch": "^3.3.2",
+    "path": "^0.12.7",
+    "rhino3dm": "7.15.0",
+    "three": "^0.158.0",
+    "throng": "4.0.0"
+  },
+  "devDependencies": {
+    "@babel/parser": "^7.28.3",
+    "@babel/traverse": "^7.28.3",
+    "@playwright/test": "^1.55.0",
+    "cheerio": "^1.1.2",
+    "eslint": "8.7.0",
+    "fast-glob": "^3.3.2",
+    "fs-extra": "^11.3.1",
+    "p-limit": "^4.0.0"
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
   }
 }

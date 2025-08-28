@@ -6,8 +6,13 @@
 const config = {
   // Rhino Compute Server Configuration
   rhino: {
+<<<<<<< HEAD
     url: process.env.RHINO_RHINO_COMPUTE_URL || (process.env.NODE_ENV === 'production'
       ? 'http://4.248.252.92:6500/'
+=======
+    url: process.env.RHINO_COMPUTE_URL || (process.env.NODE_ENV === 'production'
+      ? 'http://4.248.252.92:6001/'
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
       : 'http://localhost:5000/'),
     apiKey: process.env.RHINO_COMPUTE_KEY || process.env.RHINO_COMPUTE_APIKEY || 'p2robot-13a6-48f3-b24e-2025computeX',
     timeout: 30000,
@@ -52,8 +57,13 @@ const config = {
 
   // Bootstrap Configuration (for VM deployment)
   bootstrap: {
+<<<<<<< HEAD
     computeUrl: process.env.RHINO_COMPUTE_URL || (process.env.NODE_ENV === 'production'
       ? 'https://softlyplease.canadacentral.cloudapp.azure.com:443'
+=======
+    computeUrl: process.env.COMPUTE_URL || (process.env.NODE_ENV === 'production'
+      ? 'http://4.248.252.92:6001'
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
       : 'http://localhost:5000'),
     appServerUrl: process.env.APPSERVER_URL || (process.env.NODE_ENV === 'production'
       ? 'https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com'
@@ -62,4 +72,8 @@ const config = {
   }
 };
 
+<<<<<<< HEAD
 module.exports = config;
+=======
+module.exports = config;
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d

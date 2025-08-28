@@ -84,7 +84,11 @@ SetEnvVar 'RHINO_TOKEN' $RhinoToken -secret
 if ($PSBoundParameters.ContainsKey('ApiKey')) {
     SetEnvVar 'RHINO_COMPUTE_KEY' $ApiKey
 }
+<<<<<<< HEAD
 SetEnvVar 'RHINO_RHINO_COMPUTE_URLS' 'http://+:80'
+=======
+SetEnvVar 'RHINO_COMPUTE_URLS' 'http://+:80'
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
 
 
 
@@ -113,4 +117,8 @@ if ($process.ExitCode -eq 0) {
     Write-Host "Process '$setupFullPath' finished with an error. Exit Code: $($process.ExitCode)"
 }
 
+<<<<<<< HEAD
 Stop-Transcript
+=======
+Stop-Transcript
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d

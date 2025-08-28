@@ -19,6 +19,7 @@ function getFilesSync(dir) {
 }
 
 function registerDefinitions() {
+<<<<<<< HEAD
   let files = getFilesSync(path.join(__dirname, '..', 'files/'))
   let definitions = []
   files.forEach( file => {
@@ -26,6 +27,17 @@ function registerDefinitions() {
       const fullPath = path.join(__dirname, '..', 'files', file)
       const hash = md5File.sync(fullPath)
       
+=======
+  // Use root ./files directory as single source of truth
+  const filesDir = path.join(process.cwd(), 'files');
+  let files = getFilesSync(filesDir)
+  let definitions = []
+  files.forEach( file => {
+    if(file.includes('.gh') || file.includes('.ghx')) {
+      const fullPath = path.join(filesDir, file)
+      const hash = md5File.sync(fullPath)
+
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
       definitions.push({
         name: file,
         id:hash,
@@ -38,7 +50,11 @@ function registerDefinitions() {
 
 async function getParams(definitionUrl) {
   // TODO: set and forget!
+<<<<<<< HEAD
   compute.url = process.env.RHINO_RHINO_COMPUTE_URL
+=======
+  compute.url = process.env.COMPUTE_URL
+>>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
   compute.apiKey = process.env.RHINO_COMPUTE_KEY
 
   const response = await compute.computeFetch('io', { 'pointer': definitionUrl }, false)
