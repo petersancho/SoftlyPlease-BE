@@ -4,7 +4,7 @@ import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader.js';
 
 // Initialize loader
 const loader = new Rhino3dmLoader()
-loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta3/' )
+loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0/' )
 
 // rhino3dm will be loaded asynchronously
 
@@ -30,12 +30,12 @@ function waitForRhino3dm() {
   if (typeof rhino3dm !== 'undefined') {
     rhino3dm().then((r) => {
       rhino = r
-      console.log('Loaded rhino3dm.')
+      console.log('Loaded rhino3dm successfully.')
       init()
       compute()
     }).catch((error) => {
-      console.error('Failed to load rhino3dm:', error)
-      showErrorMessage('Failed to load Rhino3DM library. Please refresh the page.')
+      console.error('Failed to initialize rhino3dm:', error)
+      showErrorMessage('Failed to initialize Rhino3DM library. Please refresh the page.')
     })
   } else {
     console.log('Waiting for rhino3dm to load...')
@@ -43,7 +43,16 @@ function waitForRhino3dm() {
   }
 }
 
+// Start waiting for rhino3dm with a timeout
 waitForRhino3dm()
+
+// Safety timeout - if rhino3dm doesn't load within 10 seconds, show error
+setTimeout(() => {
+  if (typeof rhino3dm === 'undefined') {
+    console.error('rhino3dm failed to load within timeout period')
+    showErrorMessage('Rhino3DM library failed to load. Please check your internet connection and refresh the page.')
+  }
+}, 10000)
 
 /**
  * Call appserver
