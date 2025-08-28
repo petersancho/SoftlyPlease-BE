@@ -2,24 +2,9 @@ const express = require('express')
 const router = express.Router()
 const compute = require('compute-rhino3d')
 const {performance} = require('perf_hooks')
-
-const NodeCache = require('node-cache')
-const cache = new NodeCache()
-
-const memjs = require('memjs')
-let mc = null
+const cache = require('../services/cache')
 
 let definition = null
-
-// In case you have a local memached server
-// process.env.MEMCACHIER_SERVERS = '127.0.0.1:11211'
-if(process.env.MEMCACHIER_SERVERS !== undefined) {
-  mc = memjs.Client.create(process.env.MEMCACHIER_SERVERS, {
-    failover: true,  // default: false
-    timeout: 1,      // default: 0.5 (seconds)
-    keepAlive: true  // default: false
-  })
-}
 
 function computeParams (req, res, next){
   compute.url = process.env.RHINO_COMPUTE_URL
@@ -67,7 +52,7 @@ function collectParams (req, res, next){
  * This middleware function checks if a cache value exist for a cache key
  */
 
-function checkCache (req, res, next){
+async function checkCache (req, res, next){
 
   const key = {}
   key.definition = { 'name': res.locals.params.definition.name, 'id': res.locals.params.definition.id }
@@ -77,24 +62,16 @@ function checkCache (req, res, next){
   res.locals.cacheKey = JSON.stringify(key)
   res.locals.cacheResult = null
 
-  if(mc === null){
-    // use node cache
-    //console.log('using node-cache')
-    const result = cache.get(res.locals.cacheKey)
-    res.locals.cacheResult = result !== undefined ? result : null
-    next()
-  } else {
-    // use memcached
-    //console.log('using memcached')
-    if(mc !== null) {
-      mc.get(res.locals.cacheKey, function(err, val) {
-        if(err == null) {
-          res.locals.cacheResult = val
-        }
-        next()
-      })
-    }
+  // Use our cache service (supports memcached if configured)
+  try {
+    const result = await cache.get(res.locals.cacheKey)
+    res.locals.cacheResult = result !== null ? result : null
+  } catch (error) {
+    console.error('Cache get error:', error)
+    // Continue without cache on error
   }
+
+  next()
 }
 
 /**
@@ -104,7 +81,7 @@ function checkCache (req, res, next){
  * compute for solving with Grasshopper.
  */
 
-function commonSolve (req, res, next){
+async function commonSolve (req, res, next){
   const timePostStart = performance.now()
 
   // set general headers
@@ -157,32 +134,14 @@ function commonSolve (req, res, next){
 
     }).then( (result) => {
       // Note: IIS does not send these headers which was causing an issue with the appserver response
-      /*const timeComputeServerCallComplete = performance.now()
-
-      let computeTimings = computeServerTiming.get('server-timing')
-      let sum = 0
-      computeTimings.split(',').forEach(element => {
-        let t = element.split('=')[1].trim()
-        sum += Number(t)
-      })
-      const timespanCompute = timeComputeServerCallComplete - timePreComputeServerCall
-      const timespanComputeNetwork = Math.round(timespanCompute - sum)
-      const timespanSetup = Math.round(timePreComputeServerCall - timePostStart)
-      const timing = `setup;dur=${timespanSetup}, ${computeTimings}, network;dur=${timespanComputeNetwork}`
-        
-      if(mc !== null) {
-        //set memcached
-        mc.set(res.locals.cacheKey, result, {expires:0}, function(err, val){
-          console.log(err)
-          console.log(val)
-        })
-      } else {
-        //set node-cache
-        cache.set(res.locals.cacheKey, result)
+      // Cache the result (600s = 10 minutes TTL)
+      try {
+        await cache.set(res.locals.cacheKey, result, 600)
+      } catch (error) {
+        console.error('Cache set error:', error)
+        // Continue without caching on error
       }
 
-      res.setHeader('Server-Timing', timing)*/
-      
       const r = JSON.parse(result)
       delete r.pointer
       res.send(JSON.stringify(r))

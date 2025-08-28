@@ -3,9 +3,19 @@ const express = require('express')
 const compression = require('compression')
 const logger = require('morgan')
 const cors = require('cors')
+const path = require('path')
 
 // create express web server app
 const app = express()
+app.set('trust proxy', true)
+
+// Serve static files from public directory
+app.use(express.static(path.join(process.cwd(), 'public')))
+
+// Serve examples, files, and my-examples
+app.use('/examples', express.static(path.join(process.cwd(), 'examples')))
+app.use('/files', express.static(path.join(process.cwd(), 'files')))
+app.use('/my-examples', express.static(path.join(process.cwd(), 'my-examples')))
 
 // log requests to the terminal when running in a local debug setup
 if(process.env.NODE_ENV !== 'production')
@@ -42,6 +52,24 @@ app.use('/solve', require('./routes/solve'))
 app.use('/view', require('./routes/template'))
 app.use('/version', require('./routes/version'))
 app.use('/', require('./routes/index'))
+
+// Status endpoint to check compute service health
+app.get('/status', async (req, res) => {
+  try {
+    const fetch = require('node-fetch')
+    const response = await fetch(process.env.RHINO_COMPUTE_URL + 'version', {
+      timeout: 5000
+    })
+    if (response.ok) {
+      res.json({ compute: 'up' })
+    } else {
+      res.json({ compute: 'down', status: response.status })
+    }
+  } catch (error) {
+    console.error('Status check error:', error.message)
+    res.json({ compute: 'down', error: error.message })
+  }
+})
 
 // ref: https://github.com/expressjs/express/issues/3589
 // remove line when express@^4.17
