@@ -1,0 +1,57 @@
+# Development Environment with Mock Rhino.Compute
+# Start with: docker-compose -f docker-compose.dev.yml up
+# This gives you a complete local development environment
+
+version: '3.8'
+
+services:
+  # Your Node.js web app
+  web:
+    build:
+      context: ./compute.rhino3d.appserver
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - COMPUTE_URL=http://mock-compute:8081
+      - COMPUTE_KEY=mock-key-for-dev
+      - PUBLIC_APP_ORIGIN=http://localhost:3000
+    depends_on:
+      - mock-compute
+    volumes:
+      # Mount source for hot reload during development
+      - ./compute.rhino3d.appserver:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Mock Rhino.Compute service (Windows-free development)
+  mock-compute:
+    build:
+      context: .
+      dockerfile: Dockerfile.mock
+    ports:
+      - "8081:8081"
+    environment:
+      - MOCK_COMPUTE_PORT=8081
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Redis for caching (if your app uses it)
+  # redis:
+  #   image: redis:7-alpine
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis-data:/data
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+
+# volumes:
+#   redis-data:
