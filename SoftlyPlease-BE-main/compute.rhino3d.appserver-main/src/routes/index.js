@@ -101,4 +101,22 @@ router.get('/:name', function(req, res, next){
   describeDefinition(definition, req, res, next)
 })
 
+/* GET diagnostics */
+router.get('/diagnostics', function(req, res, next) {
+  const diagnostics = {
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    cwd: process.cwd(),
+    definitions: req.app.get('definitions') || [],
+    config: {
+      rhinoUrl: config.rhino.url,
+      apiKey: config.rhino.apiKey ? 'SET (length: ' + config.rhino.apiKey.length + ')' : 'NOT SET',
+      definitionsDir: config.definitions.directory
+    },
+    memory: process.memoryUsage()
+  }
+
+  res.json(diagnostics)
+})
+
 module.exports = router

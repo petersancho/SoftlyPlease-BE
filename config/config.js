@@ -6,7 +6,7 @@
 const config = {
   // Rhino Compute Server Configuration
   rhino: {
-    url: process.env.COMPUTE_URL || 'http://softlyplease.canadacentral.cloudapp.azure.com:6001',
+    url: process.env.RHINO_COMPUTE_URL || 'http://localhost:5000/',
     apiKey: process.env.RHINO_COMPUTE_KEY || process.env.RHINO_COMPUTE_APIKEY || 'p2robot-13a6-48f3-b24e-2025computeX',
     timeout: 30000,
     retries: 3
@@ -54,7 +54,7 @@ const config = {
       ? 'http://softlyplease.canadacentral.cloudapp.azure.com:6001'
       : 'http://localhost:6001'),
     appServerUrl: process.env.APPSERVER_URL || (process.env.NODE_ENV === 'production'
-      ? 'https://softlyplease-appserver.herokuapp.com'
+      ? 'https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com'
       : 'http://localhost:3000'),
     networkInterface: '0.0.0.0'
   }

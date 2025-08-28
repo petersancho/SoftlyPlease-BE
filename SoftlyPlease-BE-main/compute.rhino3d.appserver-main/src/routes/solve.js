@@ -53,12 +53,26 @@ function collectParams (req, res, next){
     break
   }
 
+  console.log('🔍 Processing request:', req.method, req.url)
+  console.log('📝 Request params:', res.locals.params)
+
   let definitionName = res.locals.params.definition
   if (definitionName===undefined)
     definitionName = res.locals.params.pointer
-  definition = req.app.get('definitions').find(o => o.name === definitionName)
-  if(!definition)
+
+  console.log('🎯 Looking for definition:', definitionName)
+
+  const allDefinitions = req.app.get('definitions')
+  console.log('📚 Available definitions:', allDefinitions ? allDefinitions.map(d => d.name) : 'NONE')
+
+  definition = allDefinitions ? allDefinitions.find(o => o.name === definitionName) : null
+
+  if(!definition) {
+    console.error('❌ Definition not found:', definitionName)
     throw new Error('Definition not found on server.')
+  }
+
+  console.log('✅ Found definition:', definition.name, 'at', definition.path)
 
   //replace definition data with object that includes definition hash
   res.locals.params.definition = definition
@@ -118,7 +132,7 @@ function commonSolve (req, res, next){
   }
   compute.apiKey = config.rhino.apiKey;
 
-  let definition = req.body.definition;
+  let definition = res.locals.params.definition;
 
   // set general headers
   // what is the proper max-age, 31536000 = 1 year, 86400 = 1 day

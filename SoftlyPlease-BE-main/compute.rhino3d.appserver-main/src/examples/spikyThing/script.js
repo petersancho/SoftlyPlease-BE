@@ -26,12 +26,24 @@ let doc
 let _threeMesh, _threeMaterial
 
 // Initialize when rhino3dm is loaded
-rhino3dm().then((r) => {
-  rhino = r
-  console.log('Loaded rhino3dm.')
-  init()
-  compute()
-})
+function waitForRhino3dm() {
+  if (typeof rhino3dm !== 'undefined') {
+    rhino3dm().then((r) => {
+      rhino = r
+      console.log('Loaded rhino3dm.')
+      init()
+      compute()
+    }).catch((error) => {
+      console.error('Failed to load rhino3dm:', error)
+      showErrorMessage('Failed to load Rhino3DM library. Please refresh the page.')
+    })
+  } else {
+    console.log('Waiting for rhino3dm to load...')
+    setTimeout(waitForRhino3dm, 100)
+  }
+}
+
+waitForRhino3dm()
 
 /**
  * Call appserver

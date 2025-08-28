@@ -28,13 +28,25 @@ function registerDefinitions() {
     ? definitionsDir
     : path.join(process.cwd(), definitionsDir)
 
+  console.log('🔍 Looking for definitions in:', absolutePath)
+  console.log('📂 Directory exists:', fs.existsSync(absolutePath))
+
+  if (!fs.existsSync(absolutePath)) {
+    console.error('❌ Definitions directory does not exist:', absolutePath)
+    return []
+  }
+
   let files = getFilesSync(absolutePath)
+  console.log('📋 Found files in directory:', files)
+
   let definitions = []
   files.forEach( file => {
     if(file.includes('.gh') || file.includes('.ghx')) {
       const fullPath = path.join(absolutePath, file)
       // Use filename as ID instead of MD5 hash to avoid potential issues
       const id = file.replace('.gh', '').replace('.ghx', '')
+
+      console.log('✅ Found definition:', file, '-> ID:', id, '-> Path:', fullPath)
 
       definitions.push({
         name: file,
@@ -43,7 +55,8 @@ function registerDefinitions() {
       })
     }
   })
-  console.log('Loaded definitions:', definitions.map(d => d.name))
+
+  console.log('📚 Loaded', definitions.length, 'definitions:', definitions.map(d => d.name))
   return definitions
 }
 

@@ -1,0 +1,3 @@
+[33m0e59ff5[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31mheroku/main[m[33m, [m[1;31mheroku/HEAD[m[33m)[m Fix definitions.js to use config path instead of hardcoded path
+[33m376fd55[m Fix import to use correct class name Rhino3dmLoader
+[33md974f67[m Try default import for 3DMLoader
