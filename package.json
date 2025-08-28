@@ -38,10 +38,7 @@
   "engines": {
     "node": "18.x"
   },
-  "main": "./src/bin/www",
-  "bin": {
-    "compute-rhino3d-appserver": "./src/bin/www"
-  },
+  "main": "app.js",
   "scripts": {
     "start": "node app.js",
     "dev": "NODE_ENV=development node app.js",
@@ -68,6 +65,7 @@
     "morgan": "~1.9.1",
     "node-cache": "^5.1.1",
     "node-fetch": "^3.3.2",
+    "path": "^0.12.7",
     "rhino3dm": "7.15.0",
     "three": "^0.158.0",
     "throng": "4.0.0"
@@ -78,8 +76,8 @@
     "@playwright/test": "^1.55.0",
     "cheerio": "^1.1.2",
     "eslint": "8.7.0",
-    "fast-glob": "^3.3.3",
+    "fast-glob": "^3.3.2",
     "fs-extra": "^11.3.1",
-    "p-limit": "^7.1.1"
+    "p-limit": "^4.0.0"
   }
 }

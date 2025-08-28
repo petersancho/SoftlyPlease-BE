@@ -1,0 +1,5 @@
+[33m9f4573e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31mheroku/main[m[33m, [m[1;31mheroku/HEAD[m[33m)[m Fix package.json paths for proper module resolution
+[33m501fc3a[m Add spikyThing example with McNeel files
+[33m69197ef[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Add complete mcneel/compute.rhino3d.appserver repository and diagnostic script - includes Three.js fixes, API improvements, and comprehensive documentation setup
+[33ma164f04[m Fix OrbitControls loading with multiple CDN sources and fallback implementation
+[33m88dfe4f[m Fix Three.js CDN URLs to use correct semantic versions and CDN formats
