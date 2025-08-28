@@ -49,5 +49,13 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
 });
 
-// Export for Heroku (don't start server manually)
+// Export for testing/require, but start server if run directly
 module.exports = app;
+
+// Start server if this file is run directly (not required as module)
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`[softly] listening on ${PORT}`);
+  });
+}
