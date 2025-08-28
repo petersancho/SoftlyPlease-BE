@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const compute = require('compute-rhino3d')
+const { solve: computeSolve } = require('../services/compute')
 const {performance} = require('perf_hooks')
 
 const NodeCache = require('node-cache')
@@ -21,11 +21,7 @@ if(process.env.MEMCACHIER_SERVERS !== undefined) {
   })
 }
 
-function computeParams (req, res, next){
-  compute.url = process.env.RHINO_COMPUTE_URL
-  compute.apiKey = process.env.RHINO_COMPUTE_KEY
-  next()
-}
+// Compute parameters are now handled in the compute service
 
 /**
  * Collect request parameters
@@ -104,7 +100,7 @@ function checkCache (req, res, next){
  * compute for solving with Grasshopper.
  */
 
-function commonSolve (req, res, next){
+async function commonSolve (req, res, next){
   const timePostStart = performance.now()
 
   // set general headers
@@ -112,88 +108,50 @@ function commonSolve (req, res, next){
   res.setHeader('Cache-Control', 'public, max-age=31536000')
   res.setHeader('Content-Type', 'application/json')
 
-  if(res.locals.cacheResult !== null) {
-    //send
-    //console.log(res.locals.cacheResult)
-    const timespanPost = Math.round(performance.now() - timePostStart)
-    res.setHeader('Server-Timing', `cacheHit;dur=${timespanPost}`)
-    res.send(res.locals.cacheResult)
-    return
-  } else {
-    //solve
-    //console.log('solving')
-    // set parameters
-    let trees = []
-    if(res.locals.params.inputs !== undefined) { //TODO: handle no inputs
-      for (let [key, value] of Object.entries(res.locals.params.inputs)) {
-        let param = new compute.Grasshopper.DataTree(key)
-        param.append([0], Array.isArray(value) ? value : [value])
-        trees.push(param)
-      }
-    }
-    if(res.locals.params.values !== undefined) {
-      for (let index=0; index<res.locals.params.values.length; index++) {
-        let param = new compute.Grasshopper.DataTree('')
-        param.data = res.locals.params.values[index]
-        trees.push(param)
-      }
-    }
+  try {
+    if(res.locals.cacheResult !== null) {
+      //send cached result
+      const timespanPost = Math.round(performance.now() - timePostStart)
+      res.setHeader('Server-Timing', `cacheHit;dur=${timespanPost}`)
+      res.send(res.locals.cacheResult)
+      return
+    } else {
+      //solve using the new compute service
+      const definitionName = res.locals.params.definition.name || res.locals.params.definition
+      const inputs = res.locals.params.inputs || {}
 
-    let fullUrl = req.protocol + '://' + req.get('host')
-    let definitionPath = `${fullUrl}/definition/${definition.id}`
-    const timePreComputeServerCall = performance.now()
-    let computeServerTiming = null
-
-    // call compute server
-    compute.Grasshopper.evaluateDefinition(definitionPath, trees, false).then( (response) => {
-        
-      // Throw error if response not ok
-      if(!response.ok) {
-        throw new Error(response.statusText)
-      } else {
-        computeServerTiming = response.headers
-        return response.text()
+      // Add debug logging in development
+      if(process.env.NODE_ENV !== 'production') {
+        console.log('Solving definition:', definitionName, 'with inputs:', inputs)
       }
 
-    }).then( (result) => {
-      // Note: IIS does not send these headers which was causing an issue with the appserver response
-      /*const timeComputeServerCallComplete = performance.now()
+      const result = await computeSolve(definitionName, inputs)
 
-      let computeTimings = computeServerTiming.get('server-timing')
-      let sum = 0
-      computeTimings.split(',').forEach(element => {
-        let t = element.split('=')[1].trim()
-        sum += Number(t)
-      })
-      const timespanCompute = timeComputeServerCallComplete - timePreComputeServerCall
-      const timespanComputeNetwork = Math.round(timespanCompute - sum)
-      const timespanSetup = Math.round(timePreComputeServerCall - timePostStart)
-      const timing = `setup;dur=${timespanSetup}, ${computeTimings}, network;dur=${timespanComputeNetwork}`
-        
+      // Cache the result
+      const resultString = JSON.stringify(result)
       if(mc !== null) {
         //set memcached
-        mc.set(res.locals.cacheKey, result, {expires:0}, function(err, val){
-          console.log(err)
-          console.log(val)
+        mc.set(res.locals.cacheKey, resultString, {expires:0}, function(err, val){
+          if(err) console.log('Memcached set error:', err)
         })
       } else {
         //set node-cache
-        cache.set(res.locals.cacheKey, result)
+        cache.set(res.locals.cacheKey, resultString)
       }
 
-      res.setHeader('Server-Timing', timing)*/
-      
-      const r = JSON.parse(result)
-      delete r.pointer
-      res.send(JSON.stringify(r))
-    }).catch( (error) => { 
-      next(error)
-    })
+      const timespanPost = Math.round(performance.now() - timePostStart)
+      res.setHeader('Server-Timing', `solve;dur=${timespanPost}`)
+
+      res.send(resultString)
+    }
+  } catch (error) {
+    console.error('Solve error:', error)
+    next(error)
   }
 }
 
 // Collect middleware functions into a pipeline
-const pipeline = [computeParams, collectParams, checkCache, commonSolve]
+const pipeline = [collectParams, checkCache, commonSolve]
 
 // Handle different http methods
 router.head('/:definition',pipeline) // do we need HEAD?
