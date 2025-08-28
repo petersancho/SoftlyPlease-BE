@@ -1,6 +1,5 @@
 const createError = require('http-errors')
 const express = require('express')
-<<<<<<< HEAD
 const path = require('path')
 const compression = require('compression')
 const logger = require('morgan')
@@ -28,21 +27,19 @@ app.use(express.static(path.join(process.cwd(), 'public'), { index: 'index.html'
 
 if (!process.env.RHINO_COMPUTE_URL) {
   process.env.RHINO_COMPUTE_URL = process.env.NODE_ENV === 'production'
-    ? 'https://softlyplease.canadacentral.cloudapp.azure.com:443'
+    ? 'https://softlyplease.canadacentral.cloudapp.azure.com'
     : 'http://localhost:6500/'
 }
 
 console.log('RHINO_COMPUTE_URL: ' + process.env.RHINO_COMPUTE_URL)
 
-app.set('view engine', 'hbs');
-app.set('views', './src/views')
-
 // Routes for this app
 app.use('/examples', express.static(path.join(process.cwd(), 'examples')))
 app.use('/files', express.static(path.join(process.cwd(), 'files')))
 app.get('/favicon.ico', (req, res) => res.status(200))
-app.use('/definition', require('./routes/definition'))
+app.use('/status', require('./routes/status'))
 app.use('/solve', require('./routes/solve'))
+app.use('/definition', require('./routes/definition'))
 app.use('/view', require('./routes/template'))
 app.use('/version', require('./routes/version'))
 app.use('/', require('./routes/index'))
@@ -84,54 +81,6 @@ app.use(function(err, req, res, next) {
   }
   // send the error
   res.status(err.status || 500).send(data)
-=======
-const compression = require('compression')
-const logger = require('morgan')
-const cors = require('cors')
-const path = require('path')
-const { paths, PUBLIC_APP_ORIGIN, COMPUTE_URL } = require('./config')
-
-// create express web server app
-const app = express()
-app.set('trust proxy', true)
-
-// Force rebuild marker: updated at 2024-01-28 18:45 UTC
-
-// Core middleware
-app.disable('x-powered-by')
-app.use(express.json({ limit: '2mb' }))
-
-// API routes (must come before static files to avoid SPA fallback interference)
-// Status routes must come BEFORE solve routes to avoid /solve/status conflicts
-app.use('/status', require('./routes/status'))
-// app.use('/status/definitions', require('./routes/status-defs'))  // Temporarily disabled
-app.use('/solve', require('./routes/solve'))
-
-// --- Static mounts (serve site and assets) -------------------------------
-// Serve homepage and assets at /
-app.use(express.static(paths.public, { index: 'index.html', extensions: ['html'] }))
-
-// Serve examples and GH files from repo root
-app.use('/examples', express.static(paths.examples))
-app.use('/files', require('./middleware/static-files'))
-app.use('/files', express.static(paths.files))
-app.use('/vendor', express.static(path.join(paths.public, 'vendor')))
-app.use('/my-examples', express.static(path.join(process.cwd(), 'my-examples')))
-
-// Helpful boot log (no secrets)
-console.log('[boot]', { compute: COMPUTE_URL || '(unset)', origin: PUBLIC_APP_ORIGIN, files: paths.files })
-
-// --- SPA fallback ------------------------------------------------------
-// Catch-all handler: serve index.html for client-side routing
-app.get('*', (req, res) => {
-  res.sendFile(path.join(paths.public, 'index.html'));
-});
-
-// Error middleware (JSON)
-app.use((err, req, res, next) => {
-  console.error('[error]', err)
-  res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' })
->>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
 })
 
 module.exports = app
