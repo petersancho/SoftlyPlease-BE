@@ -1,38 +1,12 @@
 {
-<<<<<<< HEAD
-  "name": "@mcneel/compute.rhino3d.appserver",
-  "version": "0.1.12",
-=======
   "name": "softlyplease",
   "version": "1.0.1",
->>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
   "keywords": [
     "node.js",
     "expressjs",
     "compute.rhino3d",
     "rhino3d",
     "rhino3dm",
-<<<<<<< HEAD
-    "grasshopper3d"
-  ],
-  "description": "A node.js/expressjs server which communicates to a rhino3d compute geometry server to remote solve Grasshopper definitions.",
-  "homepage": "https://www.rhino3d.com/compute",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/mcneel/compute.rhino3d.appserver"
-  },
-  "bugs": {
-    "url": "https://github.com/mcneel/compute.rhino3d.appserver/issues"
-  },
-  "author": {
-    "name": "Robert McNeel & Associates"
-  },
-  "contributors": [
-    {
-      "name": "Luis E. Fraguada",
-      "email": "luis@mcneel.com",
-      "url": "https://github.com/fraguada"
-=======
     "grasshopper3d",
     "geometry",
     "calculator"
@@ -57,34 +31,18 @@
     {
       "name": "McNeel Upstream",
       "url": "https://github.com/mcneel/compute.rhino3d.appserver"
->>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
     }
   ],
   "license": "MIT",
   "preferGlobal": true,
   "engines": {
-<<<<<<< HEAD
     "node": "16.x"
-  },
-  "main": "src/bin/www",
-  "bin": {
-    "compute-rhino3d-appserver": "src/bin/www"
-  },
-  "scripts": {
-    "start": "node ./src/bin/www",
-    "start:prod": "cross-env NODE_ENV=production PORT=80 RHINO_RHINO_COMPUTE_URL=http://localhost:5000/ node src/bin/www",
-    "install-service": "powershell -ExecutionPolicy Bypass -File scripts/install-service.ps1",
-    "uninstall-service": "powershell -ExecutionPolicy Bypass -File scripts/uninstall-service.ps1",
-    "lint": "eslint src/*.js --fix && eslint src/routes/*.js --fix && eslint src/bin/www --fix",
-    "start-args": "node src/bin/www --computeUrl http://localhost:5000/"
-=======
-    "node": "18.x"
   },
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
     "dev": "NODE_ENV=development node app.js",
-    "lint": "eslint src/*.js --fix && eslint src/routes/*.js --fix && eslint src/bin/www --fix",
+    "lint": "eslint src/*.js --fix && eslint src/routes/*.js --fix",
     "sync:examples": "node scripts/sync-upstream-examples.js",
     "sync:upstream": "git fetch mcneel-appserver && git subtree pull --prefix vendor/mcneel-appserver mcneel-appserver main --squash && npm run sync:examples",
     "verify:defs": "node scripts/scan-examples-for-defs.js && node scripts/check-defs.js",
@@ -92,7 +50,6 @@
     "patch:examples": "node scripts/patch-examples.js && node scripts/patch-examples-defpaths.js",
     "gen:examples-index": "node scripts/gen-examples-index.js",
     "post-sync": "npm run sync:examples && npm run patch:examples && npm run gen:examples-index && npm run verify:defs"
->>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
   },
   "dependencies": {
     "camelcase-keys": "^6.2.2",
@@ -107,15 +64,6 @@
     "memjs": "^1.2.2",
     "morgan": "~1.9.1",
     "node-cache": "^5.1.1",
-<<<<<<< HEAD
-    "node-fetch": "2.6.7",
-    "rhino3dm": "7.15.0",
-    "throng": "4.0.0"
-  },
-  "devDependencies": {
-    "eslint": "8.7.0",
-    "cross-env": "^7.0.3"
-=======
     "node-fetch": "^3.3.2",
     "path": "^0.12.7",
     "rhino3dm": "7.15.0",
@@ -131,6 +79,5 @@
     "fast-glob": "^3.3.2",
     "fs-extra": "^11.3.1",
     "p-limit": "^4.0.0"
->>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
   }
 }
