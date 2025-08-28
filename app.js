@@ -8,6 +8,11 @@ const cors = require('cors');
 const app = express();
 app.set('trust proxy', true);
 
+// Register definitions for the app
+const { registerDefinitions } = require('./src/definitions');
+const definitions = registerDefinitions();
+app.set('definitions', definitions);
+
 // Core middleware
 app.disable('x-powered-by');
 app.use(express.json({ limit: '2mb' }));
@@ -15,7 +20,7 @@ app.use(express.json({ limit: '2mb' }));
 // API routes (must come before static files to avoid SPA fallback interference)
 // Status routes must come BEFORE solve routes to avoid /solve/status conflicts
 app.use('/status', require('./src/routes/status'));
-// app.use('/status/definitions', require('./src/routes/status-defs'))  // Temporarily disabled
+app.use('/status/definitions', require('./src/routes/status-defs'));
 app.use('/solve', require('./src/routes/solve'));
 
 // Static: public/

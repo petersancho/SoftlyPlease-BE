@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const { solve: computeSolve } = require('../services/compute')
+const { resolveDefinition } = require('../services/definition-resolver')
 const {performance} = require('perf_hooks')
 
 const NodeCache = require('node-cache')
@@ -48,13 +49,23 @@ function collectParams (req, res, next){
   if (definitionName===undefined)
     definitionName = res.locals.params.pointer
 
-  // For now, skip definition lookup to avoid crashes
-  // definition = req.app.get('definitions').find(o => o.name === definitionName)
-  // if(!definition)
-  //   throw new Error('Definition not found on server.')
+  // Resolve definition using the definition resolver service
+  const resolved = resolveDefinition(definitionName)
+  if (!resolved) {
+    throw new Error('Definition not found on server.')
+  }
 
-  //replace definition data with object that includes definition hash
-  res.locals.params.definition = definitionName || 'unknown'
+  // Build absolute URL for the definition from request headers
+  const protocol = req.protocol
+  const host = req.get('host')
+  const definitionUrl = `${protocol}://${host}/files/${encodeURIComponent(resolved.rel)}`
+
+  // Set the resolved definition data
+  res.locals.params.definition = {
+    name: resolved.rel,
+    path: resolved.abs,
+    url: definitionUrl
+  }
 
   next()
 
@@ -118,22 +129,17 @@ async function commonSolve (req, res, next){
       res.send(res.locals.cacheResult)
       return
     } else {
-      // For now, return a placeholder response to avoid compute service crashes
-      const definitionName = res.locals.params.definition
+      // Call the compute service with the proper definition URL
+      const definition = res.locals.params.definition
       const inputs = res.locals.params.inputs || {}
 
       // Add debug logging in development
       if(process.env.NODE_ENV !== 'production') {
-        console.log('Solving definition:', definitionName, 'with inputs:', inputs)
+        console.log('Solving definition:', definition.name, 'with inputs:', inputs, 'URL:', definition.url)
       }
 
-      // Return placeholder response instead of calling compute service
-      const result = {
-        message: 'Solve endpoint ready - compute service temporarily disabled to prevent crashes',
-        definition: definitionName,
-        inputs: inputs,
-        timestamp: new Date().toISOString()
-      }
+      // Call compute service with definition name and URL
+      const result = await computeSolve(definition.name, inputs, definition.url)
 
       // Cache the result
       const resultString = JSON.stringify(result)

@@ -1,28 +1,24 @@
 const compute = require('compute-rhino3d');
 
-// Build absolute URLs for Rhino Compute using the current app's origin
-const ORIGIN = process.env.PUBLIC_APP_ORIGIN || 'https://softlyplease-appserver-5d5d5bc6198a.herokuapp.com';
-
 /**
  * Solve a Grasshopper definition
  * @param {string} definition - Definition name (with or without .gh extension)
  * @param {object} inputs - Input parameters
- * @param {string} defUrl - Optional pre-built definition URL (for hash-based routing)
+ * @param {string} defUrl - Required definition URL (must be provided by caller)
  * @returns {Promise<object>} - Solve result
  */
 async function solve(definition, inputs = {}, defUrl) {
   try {
-    // Ensure definition has .gh extension
-    const defName = definition.endsWith('.gh') || definition.endsWith('.ghx')
-      ? definition
-      : `${definition}.gh`;
+    if (!defUrl) {
+      throw new Error('Definition URL is required');
+    }
 
     // Set compute URL from environment
     compute.url = process.env.RHINO_COMPUTE_URL;
     compute.apiKey = process.env.RHINO_COMPUTE_KEY;
 
-    // Build absolute URL for Rhino Compute (hotfix)
-    const absoluteDefUrl = defUrl || new URL(`/files/${encodeURIComponent(defName)}`, ORIGIN).toString();
+    // Use the provided definition URL (request-sourced)
+    const absoluteDefUrl = defUrl;
 
     // Debug logging
     if(process.env.NODE_ENV !== 'production') {
