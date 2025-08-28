@@ -38,7 +38,7 @@
     "compute-rhino3d-appserver": "SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/bin/www"
   },
   "scripts": {
-    "start": "node SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/bin/www",
+    "start": "node ./SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/bin/www",
     "start:prod": "cross-env NODE_ENV=production PORT=80 RHINO_COMPUTE_URL=http://localhost:6500/ node SoftlyPlease-BE-main/compute.rhino3d.appserver-main/src/bin/www",
     "install-service": "powershell -ExecutionPolicy Bypass -File scripts/install-service.ps1",
     "uninstall-service": "powershell -ExecutionPolicy Bypass -File scripts/uninstall-service.ps1",
