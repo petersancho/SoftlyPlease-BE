@@ -3,12 +3,13 @@
 <head>
   <meta charset="utf-8">
   <title>SoftlyPlease — Monochrome Points</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
   <meta name="color-scheme" content="light">
   <meta name="description" content="SoftlyPlease — raw, black & white, Times New Roman. Frontpage enhanced with a deterministic monochrome pointillism portrait.">
   <style>
     /* Raw, black-and-white, Times New Roman aesthetic */
-    html,body{height:100%;margin:0;background:#fff;color:#000;font:16px "Times New Roman", Times, serif;line-height:1.4}
+    html,body{height:100%;margin:0;background:#fff;color:#000;font:16px "Times New Roman", Times, serif;line-height:1.4;
+        overflow-x:hidden;touch-action:manipulation;-webkit-overflow-scrolling:touch}
     /* Canvas occupies the full viewport; links sit above it */
     #art{position:fixed;inset:0;z-index:0;display:block;width:100vw;height:100vh;background:#fff}
     /* Content layer with your raw hyperlinks */
@@ -17,13 +18,40 @@
     #content p{margin:8px 0}
     #links a{color:#000;text-decoration:underline}
     #links a:hover{background:#000;color:#fff}
-    /* Minimal tuning UI (hidden by default; show with ?ui=1) */
-    #ui{position:fixed;left:12px;bottom:12px;padding:8px 10px;border:1px solid #000;background:#fff;
-        display:none;gap:12px;align-items:center;border-radius:8px}
-    #ui label{display:flex;align-items:center;gap:6px;white-space:nowrap}
-    #ui input[type="range"]{width:120px}
-    #ui input[type="text"]{width:160px}
-    #ui button{padding:6px 10px;border-radius:6px;border:1px solid #000;background:#000;color:#fff;cursor:pointer}
+    /* Mobile-responsive tuning UI (hidden by default; show with ?ui=1) */
+    #ui{position:fixed;left:8px;bottom:8px;right:8px;padding:12px;border:1px solid #000;background:#fff;
+        display:none;border-radius:12px;max-width:100%;box-sizing:border-box;
+        z-index:10;backdrop-filter:blur(4px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+    #ui label{display:flex;flex-direction:column;gap:4px;text-align:left;font-size:14px;font-weight:500}
+    #ui .control-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    #ui input[type="range"]{width:100%;max-width:150px;height:8px;border-radius:4px;
+        -webkit-appearance:none;appearance:none;background:#e0e0e0;outline:none}
+    #ui input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+        width:20px;height:20px;border-radius:50%;background:#000;cursor:pointer;touch-action:none}
+    #ui input[type="range"]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;
+        background:#000;border:none;cursor:pointer}
+    #ui input[type="text"]{width:100%;max-width:180px;padding:8px 10px;border:1px solid #ccc;
+        border-radius:6px;font-size:14px}
+    #ui button{padding:10px 16px;border-radius:8px;border:1px solid #000;background:#000;
+        color:#fff;font-size:14px;font-weight:500;cursor:pointer;touch-action:none;
+        min-height:44px;width:100%;max-width:120px}
+    #ui .seed-section{display:flex;flex-direction:column;gap:6px;width:100%}
+
+    /* Mobile-specific adjustments */
+    @media (max-width: 768px) {
+        #ui{left:4px;bottom:4px;right:4px;padding:8px;border-radius:8px}
+        #ui .control-row{flex-direction:column;gap:12px}
+        #ui label{font-size:12px}
+        #ui input[type="range"]{max-width:100%}
+        #ui input[type="text"]{max-width:100%;padding:6px 8px}
+        #ui button{min-height:40px;padding:8px 12px;font-size:13px;max-width:100%}
+    }
+
+    /* Hide UI on very small screens unless specifically requested */
+    @media (max-width: 480px) {
+        #ui{display:none !important}
+        #ui.show{display:flex !important}
+    }
     #banner{position:fixed;right:12px;bottom:12px;background:#eee;border:1px solid #000;padding:8px 10px;border-radius:6px}
     noscript{position:relative;z-index:1;display:block;margin:12px 16px;padding:8px 10px;border:1px solid #000;background:#fff}
   </style>
@@ -40,12 +68,22 @@
     </div>
   </div>
 
-  <!-- Hidden controls; visit with ?ui=1 to reveal during tuning/export -->
+  <!-- Mobile-responsive controls; visit with ?ui=1 to reveal during tuning/export -->
   <div id="ui" aria-hidden="true" title="Hidden by default. Add ?ui=1 to the URL to show this.">
-    <label>Step <input id="step" type="range" min="3" max="16" value="6"></label>
-    <label>Dot size <input id="dot" type="range" min="1" max="6" value="3.2" step="0.1"></label>
-    <label>Seed <input id="seed" type="text" placeholder="SOFTLYPLEASE-001"></label>
-    <button id="download">Download 4K PNG</button>
+    <div class="control-row">
+      <label>Step Size
+        <input id="step" type="range" min="3" max="16" value="6">
+      </label>
+      <label>Dot Size
+        <input id="dot" type="range" min="1" max="6" value="3.2" step="0.1">
+      </label>
+    </div>
+    <div class="seed-section">
+      <label>Seed (for deterministic art)
+        <input id="seed" type="text" placeholder="SOFTLYPLEASE-001">
+      </label>
+      <button id="download" type="button">Download 4K PNG</button>
+    </div>
   </div>
 
   <noscript>This page enhances with a black-and-white pointillism canvas when JavaScript is enabled.</noscript>
@@ -83,7 +121,31 @@
   const dotEl  = document.getElementById('dot');
   const seedEl = document.getElementById('seed');
   const dlBtn  = document.getElementById('download');
-  if (showUI) { ui.style.display = 'flex'; ui.setAttribute('aria-hidden','false'); }
+
+  // Mobile-friendly UI handling
+  if (showUI) {
+    ui.style.display = 'flex';
+    ui.setAttribute('aria-hidden','false');
+    // Add .show class for mobile override
+    ui.classList.add('show');
+  }
+
+  // Touch-friendly slider handling
+  function handleTouchStart(e) {
+    e.preventDefault(); // Prevent scrolling while adjusting
+  }
+
+  function handleTouchEnd(e) {
+    e.preventDefault();
+  }
+
+  // Add touch event listeners for mobile
+  if ('ontouchstart' in window) {
+    stepEl.addEventListener('touchstart', handleTouchStart, { passive: false });
+    stepEl.addEventListener('touchend', handleTouchEnd, { passive: false });
+    dotEl.addEventListener('touchstart', handleTouchStart, { passive: false });
+    dotEl.addEventListener('touchend', handleTouchEnd, { passive: false });
+  }
 
   // ——— Generate programmatic portrait ———
   const img = { naturalWidth: 512, naturalHeight: 512, complete: true };
@@ -185,7 +247,31 @@
   stepEl && stepEl.addEventListener('input', e => { stepCSS = +e.target.value; render(); });
   dotEl  && dotEl.addEventListener('input',  e => { dotMaxCSS = +e.target.value; render(); });
   seedEl && seedEl.addEventListener('change', e => { seedStr = e.target.value.trim() || 'SOFTLYPLEASE-001'; rng = makeRng(seedStr); render(); });
-  dlBtn  && dlBtn.addEventListener('click', download4k);
+
+  // Mobile-friendly download button
+  dlBtn && dlBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    download4k();
+  }, { passive: false });
+
+  dlBtn && dlBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    download4k();
+  });
+
+  // Add mobile-specific feedback
+  if ('ontouchstart' in window) {
+    // Add haptic feedback simulation for mobile
+    const originalRender = render;
+    render = function() {
+      originalRender();
+      // Slight visual feedback for mobile interactions
+      if (showUI) {
+        ui.style.transform = 'scale(0.98)';
+        setTimeout(() => { ui.style.transform = 'scale(1)'; }, 100);
+      }
+    };
+  }
   window.addEventListener('resize', () => { fit(); render(); });
 
   // ——— Layout & offscreen prep ———
