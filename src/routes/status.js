@@ -4,6 +4,7 @@ const router = express.Router();
 const { COMPUTE_URL } = require('../config');
 
 router.get('/', async (req, res) => {
+  console.log('[status] Request received, COMPUTE_URL:', COMPUTE_URL);
   let compute = 'down';
   try {
     if (COMPUTE_URL) {
@@ -13,7 +14,10 @@ router.get('/', async (req, res) => {
       clearTimeout(t);
       if (r.ok) compute = 'up';
     }
-  } catch (_) {}
+  } catch (error) {
+    console.log('[status] Compute check error:', error.message);
+  }
+  console.log('[status] Responding with:', { ok: true, compute, time: new Date().toISOString() });
   res.json({ ok: true, compute, time: new Date().toISOString() });
 });
 
