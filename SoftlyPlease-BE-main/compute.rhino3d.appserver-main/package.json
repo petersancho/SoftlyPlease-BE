@@ -31,7 +31,7 @@
   "license": "MIT",
   "preferGlobal": true,
   "engines": {
-    "node": "16.x"
+    "node": "18.x"
   },
   "main": "./bin/www",
   "bin": {
@@ -39,8 +39,14 @@
   },
   "scripts": {
     "start": "node ./src/bin/www",
+    "postinstall": "node scripts/copy-three.js",
     "lint": "eslint src/*.js --fix && eslint src/routes/*.js --fix && eslint src/bin/www --fix",
-    "start-args": "node ./src/bin/www --computeUrl http://localhost:6500/"
+    "start-args": "node ./src/bin/www --computeUrl http://localhost:6500/",
+    "copy-three": "node scripts/copy-three.js",
+    "patch-examples": "node scripts/patch-examples.js",
+    "sync-examples": "node scripts/sync-upstream-examples.js",
+    "gen-examples-index": "node scripts/gen-examples-index.js",
+    "setup-vendor": "node scripts/setup-vendor.js"
   },
   "dependencies": {
     "camelcase-keys": "^6.2.2",
@@ -60,6 +66,9 @@
     "throng": "4.0.0"
   },
   "devDependencies": {
-    "eslint": "8.7.0"
+    "eslint": "8.7.0",
+    "fast-glob": "^3.3.2",
+    "fs-extra": "^11.2.0",
+    "three": "0.158.0"
   }
 }

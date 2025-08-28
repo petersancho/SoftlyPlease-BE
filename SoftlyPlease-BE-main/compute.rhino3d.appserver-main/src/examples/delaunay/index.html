@@ -91,29 +91,10 @@
 
     <div id="canvas"></div>
   </div>
-  <!-- Import maps polyfill -->
-  <!-- Remove this when import maps will be widely supported -->
-  <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
-  <script type="importmap">
-          {
-            "imports": {
-              "three": "https://unpkg.com/three@0.156.1/build/three.module.js",
-              "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.156.1/examples/jsm/controls/OrbitControls.js",
-              "three/examples/jsm/loaders/3DMLoader": "https://unpkg.com/three@0.156.1/examples/jsm/loaders/3DMLoader.js",
-              "rhino3dm":"https://unpkg.com/rhino3dm@8.0.0-beta/rhino3dm.module.js"
-            }
-          }
-      </script>
-  <script type="module">
-    import * as THREE from 'three'
-    import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-    import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader'
-    import rhino3dm from 'rhino3dm'
+  <!-- Load standardized library loader -->
+  <script src="/loader.js"></script>
 
-    // set up loader for converting the results to threejs
-    const loader = new Rhino3dmLoader()
-    loader.setLibraryPath('https://unpkg.com/rhino3dm@8.0.0-beta/')
-
+  <script>
     // initialise 'data' object that will be used by compute()
     const data = {
       definition: 'delaunay.gh',
@@ -126,17 +107,21 @@
     let doc
     let scene, camera, renderer, controls
 
-    const rhino = await rhino3dm()
-    console.log('Loaded rhino3dm.')
+    // Wait for libraries to load, then initialize
+    async function initializeApp() {
+      try {
+        const rhino = await window.rhino3dm();
+        console.log('Loaded rhino3dm.');
 
-    init()
-    compute()
+        // Now run the original init and compute functions
+        init();
+        compute();
 
-    const downloadButton = document.getElementById("downloadButton")
-    downloadButton.onclick = download
+        const downloadButton = document.getElementById("downloadButton")
+        downloadButton.onclick = download
 
-    const mouse = new THREE.Vector3()
-    window.addEventListener('click', onClick, false);
+        const mouse = new THREE.Vector3()
+        window.addEventListener('click', onClick, false);
 
     /////////////////////////////////////////////////////////////////////////////
     //                            HELPER  FUNCTIONS                            //
@@ -426,6 +411,15 @@
         document.getElementById('loader').style.display = 'block'
       else
         document.getElementById('loader').style.display = 'none'
+    }
+
+    // Initialize when libraries are ready
+    if (!window.THREE) {
+      window.addEventListener('three-bridge-ready', () => {
+        initializeApp();
+      }, { once: true });
+    } else {
+      initializeApp();
     }
   </script>
 </body>

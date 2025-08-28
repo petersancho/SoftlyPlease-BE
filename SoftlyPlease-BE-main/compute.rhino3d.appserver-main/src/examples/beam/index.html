@@ -53,48 +53,36 @@
                 <div><a href="beam_mod.gh" download="beam_mod.gh.html">Save source code</a></div>
             </div>
         </div>
-        <!-- Import maps polyfill -->
-        <!-- Remove this when import maps will be widely supported -->
-        <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+        <!-- Load standardized library loader -->
+        <script src="/loader.js"></script>
 
-        <script type="importmap">
-            {
-              "imports": {
-                "three": "https://unpkg.com/three@0.156.1/build/three.module.js",
-                "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.156.1/examples/jsm/controls/OrbitControls.js",
-                "three/examples/jsm/loaders/3DMLoader": "https://unpkg.com/three@0.156.1/examples/jsm/loaders/3DMLoader.js",
-                "rhino3dm":"https://unpkg.com/rhino3dm@8.0.0-beta2/rhino3dm.module.js"
-              }
+        <script>
+        // Wait for libraries to load, then initialize
+        async function initializeApp() {
+          try {
+            const rhino = await window.rhino3dm();
+            console.log('rhino3dm initialized successfully');
+
+            // set up loader for converting the results to threejs
+            const loader = new Rhino3dmLoader()
+            loader.setLibraryPath('https://cdn.jsdelivr.net/npm/rhino3dm@8.17.0/')
+
+            // initialise 'data' object that will be used by compute()
+            const data = {
+              definition: 'beam_mod.gh',
+              inputs: getInputs()
             }
-        </script>
 
-        <script type="module">
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader'
-import rhino3dm from 'rhino3dm'
+            // globals
+            let doc
 
-// set up loader for converting the results to threejs
-const loader = new Rhino3dmLoader()
-loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta2/' )
+            console.log('Loaded rhino3dm.');
 
-// initialise 'data' object that will be used by compute()
-const data = {
-  definition: 'beam_mod.gh',
-  inputs: getInputs()
-}
+            init();
+            compute();
 
-// globals
-let doc
-
-const rhino = await rhino3dm()
-console.log('Loaded rhino3dm.')
-
-init()
-compute()
-
-const downloadButton = document.getElementById("downloadButton")
-downloadButton.onclick = download
+            const downloadButton = document.getElementById("downloadButton")
+            downloadButton.onclick = download;
 
   /////////////////////////////////////////////////////////////////////////////
  //                            HELPER  FUNCTIONS                            //
@@ -392,6 +380,15 @@ function showSpinner(enable) {
   else
     document.getElementById('loader').style.display = 'none'
 }
+
+        // Initialize when libraries are ready
+        if (!window.THREE) {
+          window.addEventListener('three-bridge-ready', () => {
+            initializeApp();
+          }, { once: true });
+        } else {
+          initializeApp();
+        }
         </script>
     </body>
 </html>

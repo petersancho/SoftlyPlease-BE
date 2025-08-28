@@ -1,0 +1,5 @@
+[33m69197ef[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Add complete mcneel/compute.rhino3d.appserver repository and diagnostic script - includes Three.js fixes, API improvements, and comprehensive documentation setup
+[33ma164f04[m[33m ([m[1;31mheroku/main[m[33m, [m[1;31mheroku/HEAD[m[33m)[m Fix OrbitControls loading with multiple CDN sources and fallback implementation
+[33m88dfe4f[m Fix Three.js CDN URLs to use correct semantic versions and CDN formats
+[33m0b36d45[m Add comprehensive API improvements: validation, compatibility layer, health endpoint, and centralized API client
+[33m75f12af[m Fix spikyThing API call to use correct solve endpoint (/solve/)
