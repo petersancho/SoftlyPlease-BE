@@ -17,7 +17,11 @@ async function solveHandler(req, res, next) {
       return res.status(404).json({ error: `Definition not found in /files: ${definition}` });
     }
 
-    const result = await computeService.solve(resolved.rel, inputs || {});
+    // Use the definition hash to construct proper URL for Rhino Compute
+    const PUBLIC_BASE = (process.env.PUBLIC_APP_ORIGIN || 'https://www.softlyplease.com').replace(/\/+$/,'');
+    const defUrl = `${PUBLIC_BASE}/definition/${resolved.id}`;
+
+    const result = await computeService.solve(resolved.rel, inputs || {}, defUrl);
     res.json(result);
   } catch (err) {
     next(err);

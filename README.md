@@ -1,32 +1,85 @@
-![GitHub package.json version](https://img.shields.io/github/package-json/v/mcneel/compute.rhino3d.appserver/main?label=version&style=flat-square)
-![node-current (scoped)](https://img.shields.io/badge/dynamic/json?label=node&query=engines.node&url=https%3A%2F%2Fraw.githubusercontent.com%2Fmcneel%2Fcompute.rhino3d.appserver%2Fmain%2Fpackage.json&style=flat-square&color=dark-green)
+# SoftlyPlease - Geometry Calculator & Rhino Compute AppServer
 
-# Rhino Compute AppServer
-A node.js server acting as a bridge between client apps and private compute.rhino3d servers.
-
-This app is intended to host one or more custom grasshopper definitions and serve as the API that client applications can call to have definitions solved with modified input parameters.
+A web-based geometry calculator and Rhino Compute appserver for solving Grasshopper definitions with a clean, modern interface.
 
 ## Features
-- **Easy to get started**: fork/clone this repo and run it locally for testing or push to a service like Heroku for a production web server
-- **Easy to customize**: fork this repo, place your custom grasshopper definitions in the files directory and you now have a custom AppServer for your definitions.
-- **Caching**: Assuming definitions produce the same results when the same set of inputs are provided, the appserver caches all results in memory for faster response times.
-- **Timings**: Server-timing headers are returned to the client to help diagnose bottlenecks in the definition solving process.
+
+- **Clean Web Interface**: Times New Roman styling with black/white theme
+- **Grasshopper Integration**: Solve definitions using Rhino Compute
+- **Three.js Visualization**: Modern 3D rendering with ESM modules
+- **Definition Management**: Secure validation and caching
+- **API Endpoints**: RESTful solve and status endpoints
+- **Production Ready**: Heroku deployment with monitoring
 
 ## Getting Started
-1. Fork this repo
-2. Follow the [installation guide](docs/installation.md) to test and debug on your computer
-3. Follow the [Heroku hosting guide](docs/heroku.md) to push your customized AppServer to Heroku for a production web server
 
-## How and What Video
-- A workshop on using the appserver can be found at https://vimeo.com/442079095 - also [slides](https://docs.google.com/presentation/d/1nCbd87iA_D2ZCwoSirOYK3har6XUJHDUEIkt635btUU)
-- AECTECH 2020 workshop: https://youtu.be/At4BaIuEE3c - [slides](https://docs.google.com/presentation/d/1uY6DcYpBNrgxk8sbHHv1gy3IZWRmO7QF1rUT1XOl3s0/edit?usp=drivesdk)
+1. **Prerequisites**: Node.js 18.x, Git
+2. **Clone**: `git clone https://github.com/petersancho/SoftlyPlease-BE.git`
+3. **Install**: `npm install`
+4. **Configure**:
+   ```bash
+   export COMPUTE_URL=http://your-compute-server:6001/
+   export RHINO_COMPUTE_KEY=your-key-if-needed
+   export PUBLIC_APP_ORIGIN=https://your-domain.com
+   ```
+5. **Sync Examples**: `npm run sync:examples`
+6. **Patch for ESM**: `npm run patch:examples`
+7. **Start**: `npm start`
+
+## Usage
+
+### Web Interface
+- **Homepage**: `https://your-domain.com/` - Exact title: "geometry calculator, a rhino compute appserver."
+- **Examples**: `https://your-domain.com/examples/` - Browse and run Grasshopper examples
+- **My Examples**: `https://your-domain.com/my-examples/` - Placeholder for custom examples
+
+### API Endpoints
+- **Solve**: `POST /solve/` with `{definition: "Name.gh", inputs: {...}}`
+- **Status**: `GET /status` - Compute health check
+- **Definitions**: `GET /status/definitions` - List available definitions
 
 ## Examples
-When we have our testing server up and running, you can visit to see various samples:
 
-https://compute-rhino3d-appserver.herokuapp.com/examples/
+Visit the live examples at: https://www.softlyplease.com/examples/
 
-----
-## Other Information
-- [API Endpoints](docs/endpoints.md) the server supports
-- [Client Code](docs/clientcode.md) example for calling the AppServer
+The examples use Three.js with modern ESM modules for 3D visualization and interact with Rhino Compute for geometry solving.
+
+## Deployment
+
+### Heroku
+```bash
+heroku create your-app-name
+heroku config:set COMPUTE_URL=http://your-compute:6001/
+heroku config:set PUBLIC_APP_ORIGIN=https://your-app.herokuapp.com
+git push heroku main
+```
+
+### Local Development
+```bash
+npm run dev  # Development mode
+npm run sync:upstream  # Sync latest examples
+npm run verify:defs   # Check definition references
+```
+
+## Architecture
+
+- **Frontend**: HTML/CSS/JavaScript with Times New Roman styling
+- **Backend**: Node.js/Express with definition validation
+- **Compute**: Rhino Compute integration with retry logic
+- **Caching**: Memcached support for performance
+- **Security**: Path traversal prevention and input validation
+
+## Upstream & Credits
+
+This project builds upon the excellent work from:
+- **McNeel Rhino Compute AppServer**: https://github.com/mcneel/compute.rhino3d.appserver
+- **Rhino3D Compute**: https://www.rhino3d.com/compute
+- **Three.js**: Modern 3D visualization library
+
+## License
+
+MIT License - see LICENSE file for details.
+
+---
+
+Built with ❤️ for the computational design community.

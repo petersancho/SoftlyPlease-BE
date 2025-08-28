@@ -1,31 +1,36 @@
 {
-  "name": "@mcneel/compute.rhino3d.appserver",
-  "version": "0.1.12",
+  "name": "softlyplease",
+  "version": "1.0.0",
   "keywords": [
     "node.js",
     "expressjs",
     "compute.rhino3d",
     "rhino3d",
     "rhino3dm",
-    "grasshopper3d"
+    "grasshopper3d",
+    "geometry",
+    "calculator"
   ],
-  "description": "A node.js/expressjs server which communicates to a rhino3d compute geometry server to remote solve Grasshopper definitions.",
-  "homepage": "https://www.rhino3d.com/compute",
+  "description": "Geometry calculator and Rhino Compute appserver - A web-based interface for solving Grasshopper definitions using Rhino Compute.",
+  "homepage": "https://www.softlyplease.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mcneel/compute.rhino3d.appserver"
+    "url": "https://github.com/petersancho/SoftlyPlease-BE"
   },
   "bugs": {
-    "url": "https://github.com/mcneel/compute.rhino3d.appserver/issues"
+    "url": "https://github.com/petersancho/SoftlyPlease-BE/issues"
   },
   "author": {
-    "name": "Robert McNeel & Associates"
+    "name": "Peter Sancho"
   },
   "contributors": [
     {
-      "name": "Luis E. Fraguada",
-      "email": "luis@mcneel.com",
-      "url": "https://github.com/fraguada"
+      "name": "Peter Sancho",
+      "url": "https://github.com/petersancho"
+    },
+    {
+      "name": "McNeel Upstream",
+      "url": "https://github.com/mcneel/compute.rhino3d.appserver"
     }
   ],
   "license": "MIT",
@@ -38,15 +43,16 @@
     "compute-rhino3d-appserver": "./src/bin/www"
   },
   "scripts": {
-    "start": "node ./src/bin/www",
+    "start": "node app.js",
+    "dev": "NODE_ENV=development node app.js",
     "lint": "eslint src/*.js --fix && eslint src/routes/*.js --fix && eslint src/bin/www --fix",
-    "start-args": "node ./src/bin/www --computeUrl http://localhost:6001/",
     "sync:examples": "node scripts/sync-upstream-examples.js",
     "sync:upstream": "git fetch mcneel-appserver && git subtree pull --prefix vendor/mcneel-appserver mcneel-appserver main --squash && npm run sync:examples",
     "verify:defs": "node scripts/scan-examples-for-defs.js && node scripts/check-defs.js",
     "smoke:solve": "node scripts/smoke-solve.js",
-    "patch:paths": "node scripts/patch-examples-defpaths.js",
-    "post-sync": "npm run sync:examples && node scripts/patch-examples.js && npm run patch:paths && npm run verify:defs"
+    "patch:examples": "node scripts/patch-examples.js && node scripts/patch-examples-defpaths.js",
+    "gen:examples-index": "node scripts/gen-examples-index.js",
+    "post-sync": "npm run sync:examples && npm run patch:examples && npm run gen:examples-index && npm run verify:defs"
   },
   "dependencies": {
     "camelcase-keys": "^6.2.2",
@@ -58,11 +64,10 @@
     "hbs": "^4.2.0",
     "http-errors": "~1.6.3",
     "md5-file": "5.0.0",
-    "memcached": "^2.2.2",
     "memjs": "^1.2.2",
     "morgan": "~1.9.1",
     "node-cache": "^5.1.1",
-    "node-fetch": "2.6.7",
+    "node-fetch": "^3.3.2",
     "rhino3dm": "7.15.0",
     "three": "^0.158.0",
     "throng": "4.0.0"

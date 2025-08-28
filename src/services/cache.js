@@ -1,8 +1,8 @@
-const memcached = require('memcached')
+const memjs = require('memjs')
 
 // Create a memcached client using environment variable for servers
 const servers = process.env.MEMCACHED_SERVERS || '127.0.0.1:11211'
-const client = new memcached(servers, {
+const client = memjs.Client.create(servers, {
   retries: 3,
   retry_delay: 1000,
   timeout: 5000,
