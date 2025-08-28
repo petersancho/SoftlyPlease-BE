@@ -16,7 +16,7 @@
 const express = require('express')
 const router = express.Router()
 const compute = require('compute-rhino3d')
-const md5File = require('md5-file')
+// Removed md5-file dependency - using filename as ID instead
 const getParams = require('../definitions.js').getParams
 const config = require('../../../../config/config.js')
 
@@ -79,11 +79,12 @@ router.get('/definition_description', function(req, res, next){
   let fullPath = req.query['path']
   let definition = req.app.get('definitions').find(o => o.name === fullPath)
   if(definition === undefined){
-    const hash = md5File.sync(fullPath)
+    // Use filename as ID instead of MD5 hash
+    const id = fullPath.split('/').pop().replace('.gh', '').replace('.ghx', '')
     let definitions = req.app.get('definitions')
     definition = {
       name: fullPath,
-      id:hash,
+      id: id,
       path: fullPath
     }
     definitions.push(definition)
