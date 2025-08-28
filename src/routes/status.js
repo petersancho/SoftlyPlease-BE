@@ -20,30 +20,32 @@ router.get('/', async (req, res) => {
         port: url.port || (url.protocol === 'https:' ? 443 : 80),
         path: '/health',
         method: 'GET',
-        timeout: 5000,
+        timeout: 3000, // Reduced timeout
         headers: computeKey ? { 'Authorization': `Bearer ${computeKey}` } : {}
       };
 
-      const req = https.request(options, (response) => {
-        computeStatus = response.statusCode === 200 ? 'up' : 'down';
-        computeMessage = `Compute server responded with status ${response.statusCode}`;
+      await new Promise((resolve) => {
+        const req = https.request(options, (response) => {
+          computeStatus = response.statusCode === 200 ? 'up' : 'down';
+          computeMessage = `Compute server responded with status ${response.statusCode}`;
+          resolve();
+        });
+
+        req.on('error', (err) => {
+          computeStatus = 'down';
+          computeMessage = `Cannot connect to compute server: ${err.code || err.message}`;
+          resolve();
+        });
+
+        req.on('timeout', () => {
+          computeStatus = 'down';
+          computeMessage = 'Compute server connection timeout';
+          req.destroy();
+          resolve();
+        });
+
+        req.end();
       });
-
-      req.on('error', (err) => {
-        computeStatus = 'down';
-        computeMessage = `Cannot connect to compute server: ${err.message}`;
-      });
-
-      req.on('timeout', () => {
-        computeStatus = 'down';
-        computeMessage = 'Compute server connection timeout';
-        req.destroy();
-      });
-
-      req.end();
-
-      // Wait a bit for the response
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
     } catch (error) {
       computeStatus = 'error';
