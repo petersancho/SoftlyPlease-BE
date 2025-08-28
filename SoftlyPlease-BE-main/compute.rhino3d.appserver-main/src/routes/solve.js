@@ -9,6 +9,8 @@ const cache = new NodeCache()
 const memjs = require('memjs')
 let mc = null
 
+const config = require('../../../config/config')
+
 let definition = null
 
 // In case you have a local memached server
@@ -22,8 +24,11 @@ if(process.env.MEMCACHIER_SERVERS !== undefined) {
 }
 
 function computeParams (req, res, next){
-  compute.url = process.env.RHINO_COMPUTE_URL
-  compute.apiKey = process.env.RHINO_COMPUTE_KEY
+  compute.url = config.rhino.url;
+  if (!compute.url.endsWith('/')) {
+    compute.url += '/';
+  }
+  compute.apiKey = config.rhino.apiKey;
   next()
 }
 
@@ -106,6 +111,14 @@ function checkCache (req, res, next){
 
 function commonSolve (req, res, next){
   const timePostStart = performance.now()
+
+  compute.url = config.rhino.url;
+  if (!compute.url.endsWith('/')) {
+    compute.url += '/';
+  }
+  compute.apiKey = config.rhino.apiKey;
+
+  let definition = req.body.definition;
 
   // set general headers
   // what is the proper max-age, 31536000 = 1 year, 86400 = 1 day
