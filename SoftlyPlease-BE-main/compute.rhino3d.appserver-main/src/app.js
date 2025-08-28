@@ -49,9 +49,20 @@ app.use('/view', require('./routes/template'))
 app.use('/version', require('./routes/version'))
 app.use('/mcneel-examples', require('./routes/mcneel-examples'))
 
+// Add health endpoint for basic service health check
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    service: 'Rhino Compute AppServer',
+    timestamp: new Date().toISOString(),
+    version: require('../package.json').version,
+    environment: process.env.NODE_ENV || 'development'
+  })
+})
+
 // Add status endpoint to test compute server connectivity
 app.get('/status', async (req, res) => {
-  const config = require('./config/config')
+  const config = require('../config/config')
   const compute = require('compute-rhino3d')
 
   try {

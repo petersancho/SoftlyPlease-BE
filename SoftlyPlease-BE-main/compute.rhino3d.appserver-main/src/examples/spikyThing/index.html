@@ -237,7 +237,7 @@
         let scene, camera, renderer, controls;
         let rhino = null;
         let currentMesh = null;
-        
+
         // Configuration
         const config = {
             definition: 'BranchNodeRnd.gh',
@@ -247,6 +247,23 @@
                 Length: 5
             }
         };
+
+        // Centralized API client
+        async function solve(definition, inputs) {
+            const response = await fetch('/solve/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ definition, inputs })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Solve failed: ${response.status} ${response.statusText}`);
+            }
+
+            return response.json();
+        }
         
         // Initialize the application
         async function init() {
@@ -404,24 +421,9 @@
                 };
                 
                 console.log('Computing with inputs:', inputs);
-                
-                // Make request to compute server
-                const response = await fetch('/solve/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        definition: config.definition,
-                        inputs: inputs
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const result = await response.json();
+
+                // Use centralized API client
+                const result = await solve(config.definition, inputs);
                 console.log('Compute result:', result);
                 
                 // Process the result

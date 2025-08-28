@@ -9,7 +9,7 @@ const cache = new NodeCache()
 const memjs = require('memjs')
 let mc = null
 
-const config = require('../config/config')
+const config = require('../../config/config')
 
 let definition = null
 
@@ -241,12 +241,70 @@ function commonSolve (req, res, next){
   }
 }
 
+// Input validation middleware
+function validateSolveRequest(req, res, next) {
+  const { definition, inputs } = req.body || {};
+
+  // Check Content-Type
+  const contentType = req.headers['content-type'];
+  if (!contentType || !contentType.includes('application/json')) {
+    return res.status(400).json({
+      error: 'Invalid Content-Type',
+      expected: 'Content-Type: application/json',
+      received: contentType || 'none'
+    });
+  }
+
+  // Validate definition
+  if (!definition || typeof definition !== 'string') {
+    return res.status(400).json({
+      error: 'Missing or invalid definition',
+      expected: { definition: 'BranchNodeRnd.gh', inputs: { Count: 10, Radius: 5, Length: 3 } },
+      received: req.body
+    });
+  }
+
+  // Ensure definition has .gh or .ghx extension
+  if (!definition.endsWith('.gh') && !definition.endsWith('.ghx')) {
+    req.body.definition = definition + '.gh';
+  }
+
+  // Validate inputs
+  if (!inputs || typeof inputs !== 'object') {
+    return res.status(400).json({
+      error: 'Missing or invalid inputs',
+      expected: { definition: 'BranchNodeRnd.gh', inputs: { Count: 10, Radius: 5, Length: 3 } },
+      received: req.body
+    });
+  }
+
+  next();
+}
+
+// Compatibility middleware for old API format
+function compatMiddleware(req, res, next) {
+  const def = req.params.definition;
+
+  // Adapt old format to new format
+  const definition = def.endsWith('.gh') ? def : `${def}.gh`;
+  req.body = {
+    definition: definition,
+    inputs: req.body?.inputs || {}
+  };
+
+  next();
+}
+
 // Collect middleware functions into a pipeline
 const pipeline = [computeParams, collectParams, checkCache, commonSolve]
+const validatedPipeline = [validateSolveRequest, ...pipeline]
 
 // Handle different http methods
-router.head('/:definition',pipeline) // do we need HEAD?
+router.head('/:definition', pipeline) // do we need HEAD?
 router.get('/:definition', pipeline)
-router.post('/', pipeline)
+router.post('/', validatedPipeline)
+
+// Compatibility route for old API format: /solve/:definition
+router.post('/:definition', compatMiddleware, validatedPipeline)
 
 module.exports = router
