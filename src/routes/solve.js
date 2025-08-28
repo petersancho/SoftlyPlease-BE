@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 router.use(express.json({ limit: '2mb' }));
 
-const compute = require('../services/compute'); // must export solve(definition, inputs)
+const { solveWithCompute } = require('../lib/computeClient');
 
 function normalizeDefinition(d) {
   if (!d) return null;
@@ -16,7 +16,8 @@ async function solveHandler(req, res, next) {
     const inputs = (req.body && req.body.inputs) || {};
     if (!def) return res.status(400).json({ error: 'Missing "definition"' });
 
-    const result = await compute.solve(def, inputs);
+    // Use the new compute client
+    const result = await solveWithCompute(def, inputs);
     return res.json(result);
   } catch (err) {
     const status =
@@ -24,9 +25,14 @@ async function solveHandler(req, res, next) {
       err.statusCode ||
       (err.response && err.response.status) ||
       500;
+
+    // Forward 4xx errors from Compute as-is
     if (status >= 400 && status < 500) {
       return res.status(status).json({ error: err.message || 'Bad Request' });
     }
+
+    // Log 5xx errors but don't expose internal details
+    console.error('[solve] Compute error:', err);
     return next(err);
   }
 }

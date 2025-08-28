@@ -1,53 +1,26 @@
 'use strict';
 const express = require('express');
 const router = express.Router();
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const { computeStatus } = require('../lib/computeClient');
 
 router.get('/', async (req, res) => {
-  const base = process.env.COMPUTE_URL;
-  if (!base) {
-    return res.status(503).json({
-      ok: false,
-      compute: 'unknown',
-      reason: 'COMPUTE_URL not set',
-      time: new Date().toISOString(),
-    });
-  }
-
-  let versionUrl;
   try {
-    versionUrl = new URL('./version', base).toString();
-  } catch (e) {
-    return res.status(503).json({
-      ok: false,
-      compute: 'unknown',
-      reason: 'Invalid COMPUTE_URL',
-      time: new Date().toISOString(),
-    });
-  }
-
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), 3000);
-
-  try {
-    const r = await fetch(versionUrl, { signal: controller.signal });
-    let info = null;
-    try { info = await r.json(); } catch {}
+    const status = await computeStatus();
     return res.json({
       ok: true,
-      compute: r.ok ? 'up' : 'down',
-      version: info,
+      compute: status.up ? 'up' : 'down',
+      code: status.code,
+      error: status.error,
       time: new Date().toISOString(),
     });
-  } catch (e) {
+  } catch (error) {
+    // Status endpoint should never fail - always return JSON
     return res.json({
       ok: true,
       compute: 'down',
-      error: e.name || String(e),
+      error: error.message,
       time: new Date().toISOString(),
     });
-  } finally {
-    clearTimeout(t);
   }
 });
 
