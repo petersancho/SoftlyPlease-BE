@@ -16,8 +16,12 @@ for (const el of [count_slider, radius_slider, length_slider]) {
 // Rhino init and first compute
 let doc
 const rhino = await rhino3dm()
-init()
-compute()
+
+// Wait for THREE.js to be ready before initializing
+window.addEventListener('three-bridge-ready', () => {
+  init()
+  compute()
+})
 
 async function compute () {
   const data = { definition, inputs: {
