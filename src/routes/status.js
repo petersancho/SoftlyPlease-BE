@@ -1,65 +1,48 @@
 'use strict';
 const express = require('express');
-const router = express.Router();
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const https = require('https');
+const http = require('http');
 const { COMPUTE_URL, RHINO_COMPUTE_KEY } = require('../config');
+const router = express.Router();
 
-router.get('/', async (req, res) => {
-  const computeUrl = COMPUTE_URL || process.env.RHINO_COMPUTE_URL;
-  const computeKey = RHINO_COMPUTE_KEY || process.env.RHINO_COMPUTE_KEY;
+async function probe(url, path){
+  const u = new URL(url);
+  const lib = u.protocol === 'https:' ? https : http;
+  const opts = {
+    hostname: u.hostname,
+    port: u.port || (u.protocol === 'https:' ? 443 : 80),
+    path,
+    method: 'GET',
+    timeout: 4000,
+    headers: RHINO_COMPUTE_KEY ? { 'Authorization': `Bearer ${RHINO_COMPUTE_KEY}` } : {}
+  };
+  return new Promise(resolve=>{
+    const rq = lib.request(opts, rs=>{
+      resolve({ code: rs.statusCode || 0 });
+    });
+    rq.on('error', e => resolve({ error: e.message }));
+    rq.on('timeout', () => { rq.destroy(); resolve({ error: 'timeout' }); });
+    rq.end();
+  });
+}
 
-  let computeStatus = 'unknown';
-  let computeMessage = 'Compute URL not configured';
-
-  if (computeUrl) {
-    // Probe /health first, then fallback to root/version
-    const probes = ['health', 'version', ''];
-    for (const p of probes) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
-        const headers = {}
-        if (computeKey) headers['Authorization'] = `Bearer ${computeKey}`;
-        const url = `${computeUrl.replace(/\/$/, '')}/${p}`;
-        const resp = await fetch(url, { method: 'GET', signal: controller.signal, headers });
-        clearTimeout(timeoutId);
-        if (resp.status >= 200 && resp.status < 400) {
-          computeStatus = 'up';
-          computeMessage = `Compute responded ${resp.status} to /${p}`;
-          break;
-        }
-        if (resp.status === 404 && p === 'health') {
-          // try next probe
-          continue;
-        }
-        // non-2xx/3xx -> consider down but record message
-        computeStatus = 'down';
-        computeMessage = `Compute probe ${p} returned ${resp.status}`;
-        break;
-      } catch (err) {
-        if (err.name === 'AbortError') {
-          computeStatus = 'down';
-          computeMessage = 'Compute connection timeout';
-        } else {
-          computeStatus = 'error';
-          computeMessage = `Compute unreachable: ${err.message}`;
-        }
-        // continue trying other probes only when timeout/404; otherwise break
-        if (computeStatus !== 'down') break;
+router.get('/', async (req,res) => {
+  let status = 'down', message = 'Compute URL not configured';
+  if (COMPUTE_URL) {
+    // prefer /health, then fallback to /
+    let r = await probe(COMPUTE_URL, '/health');
+    if (r.error || (r.code && r.code !== 200)) {
+      const fallback = await probe(COMPUTE_URL, '/');
+      if (!fallback.error && fallback.code >= 200 && fallback.code < 400) {
+        status = 'up'; message = `root ${fallback.code}`;
+      } else {
+        status = 'down'; message = fallback.error ? fallback.error : `health ${r.code}`;
       }
+    } else {
+      status = 'up'; message = 'health 200';
     }
   }
-
-  return res.json({
-    ok: true,
-    serverTime: new Date().toISOString(),
-    compute: {
-      url: computeUrl || null,
-      status: computeStatus,
-      message: computeMessage,
-      hasKey: !!computeKey
-    }
-  });
+  res.json({ ok: true, serverTime: new Date().toISOString(), compute: { url: COMPUTE_URL || null, status, message, hasKey: !!RHINO_COMPUTE_KEY } });
 });
 
 module.exports = router;

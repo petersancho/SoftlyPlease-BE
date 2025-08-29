@@ -1,97 +1,55 @@
-const memjs = require('memjs')
+"use strict";
+const NodeCache = require('node-cache');
+let memjs;
+try { memjs = require('memjs'); } catch (e) { memjs = null; }
+const TTL = parseInt(process.env.CACHE_TTL || '600', 10);
 
-// Create a memcached client using environment variables for servers and optional auth
-// Support both a generic MEMCACHED_SERVERS and MemCachier add-on env vars
-const servers = process.env.MEMCACHED_SERVERS || process.env.MEMCACHIER_SERVERS || '127.0.0.1:11211'
-const mcUsername = process.env.MEMCACHIER_USERNAME || process.env.MEMCACHED_USERNAME || null
-const mcPassword = process.env.MEMCACHIER_PASSWORD || process.env.MEMCACHED_PASSWORD || null
+const servers = process.env.MEMCACHIER_SERVERS || process.env.MEMCACHED_SERVERS || process.env.MEMCACHED_URL || null;
+const user = process.env.MEMCACHIER_USERNAME || process.env.MEMCACHED_USERNAME || null;
+const pass = process.env.MEMCACHIER_PASSWORD || process.env.MEMCACHED_PASSWORD || null;
 
-const clientOptions = {
-  retries: 3,
-  retry_delay: 1000,
-  timeout: 5000,
-  failures: 5,
-  maxExpiration: 2592000 // 30 days max
+let client = null;
+if (memjs && servers) {
+  const opts = { failover: true, keepAlive: true, timeout: 1500, retries: 2 };
+  if (user && pass) { opts.username = user; opts.password = pass; }
+  if (process.env.MEMCACHIER_SERVERS && process.env.MEMCACHIER_USE_TLS !== 'false') opts.tls = {};
+  try { client = memjs.Client.create(servers, opts); console.log('[cache] memcached on', servers); }
+  catch (e) { console.warn('[cache] memcached disabled:', e.message); client = null; }
 }
 
-let client
-if (mcUsername && mcPassword) {
-  // memjs supports username/password for SASL-enabled servers
-  client = memjs.Client.create(servers, Object.assign({}, clientOptions, { username: mcUsername, password: mcPassword }))
-} else {
-  client = memjs.Client.create(servers, clientOptions)
-}
+const local = new NodeCache({ stdTTL: TTL, useClones: false });
 
-/**
- * Get cached value by key
- * @param {string} key - Cache key
- * @returns {Promise<any>} - Cached value or null
- */
 function get(key) {
-  return new Promise((resolve, reject) => {
-    client.get(key, (err, data) => {
-      if (err) {
-        console.error('Memcached get error:', err)
-        resolve(null) // Return null on error to allow fallback
-      } else {
-        resolve(data)
-      }
-    })
-  })
+  return new Promise((resolve) => {
+    if (client) {
+      client.get(key, (err, data) => {
+        if (err) { console.error('[cache] memcached get error:', err); return resolve(null); }
+        if (!data) return resolve(null);
+        return resolve(data.toString());
+      });
+    } else {
+      const v = local.get(key);
+      return resolve(v === undefined ? null : v);
+    }
+  });
 }
 
-/**
- * Set cached value with TTL
- * @param {string} key - Cache key
- * @param {any} value - Value to cache
- * @param {number} ttl - Time to live in seconds (default: 600)
- * @returns {Promise<boolean>} - Success status
- */
-function set(key, value, ttl = 600) {
-  return new Promise((resolve, reject) => {
-    client.set(key, value, ttl, (err) => {
-      if (err) {
-        console.error('Memcached set error:', err)
-        resolve(false)
-      } else {
-        resolve(true)
-      }
-    })
-  })
+function set(key, val, ttl = TTL) {
+  const str = typeof val === 'string' ? val : JSON.stringify(val);
+  return new Promise((resolve) => {
+    if (client) {
+      client.set(key, str, { expires: ttl }, () => resolve(true));
+    } else {
+      local.set(key, str, ttl);
+      resolve(true);
+    }
+  });
 }
 
-/**
- * Delete cached value
- * @param {string} key - Cache key
- * @returns {Promise<boolean>} - Success status
- */
-function del(key) {
-  return new Promise((resolve, reject) => {
-    client.del(key, (err) => {
-      if (err) {
-        console.error('Memcached delete error:', err)
-        resolve(false)
-      } else {
-        resolve(true)
-      }
-    })
-  })
+function generateKey(def, inputs) {
+  const sorted = {};
+  Object.keys(inputs || {}).sort().forEach(k => sorted[k] = inputs[k]);
+  return 'solve_' + Buffer.from(JSON.stringify({ def, inputs: sorted })).toString('base64url');
 }
 
-/**
- * Generate cache key from definition and inputs
- * @param {string} definition - Grasshopper definition name
- * @param {object} inputs - Input parameters
- * @returns {string} - Cache key
- */
-function generateKey(definition, inputs) {
-  const sortedInputs = JSON.stringify(inputs, Object.keys(inputs).sort())
-  return `solve_${definition}_${Buffer.from(sortedInputs).toString('base64')}`
-}
-
-module.exports = {
-  get,
-  set,
-  del,
-  generateKey
-}
+module.exports = { get, set, generateKey };
