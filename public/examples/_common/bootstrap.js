@@ -1,7 +1,8 @@
 // ESM bootstrap for three.js and Rhino3dmLoader
-import * as THREE_NS from 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/controls/OrbitControls.js';
-import { Rhino3dmLoader } from 'https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/loaders/3DMLoader.js';
+// Use local Three.js files to avoid CDN module resolution issues
+import * as THREE_NS from '/vendor/three/three.module.js';
+import { OrbitControls } from '/vendor/three/OrbitControls.js';
+import { Rhino3dmLoader } from '/vendor/three/3DMLoader.js';
 
 const THREE = {};
 for (const k in THREE_NS) THREE[k] = THREE_NS[k];
