@@ -1,20 +1,90 @@
-<<<<<<< HEAD
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader'
-import rhino3dm from 'rhino3dm'
-
-/* eslint no-undef: "off", no-unused-vars: "off" */
-
-const loader = new Rhino3dmLoader()
-loader.setLibraryPath( 'https://unpkg.com/rhino3dm@8.0.0-beta3/' )
-=======
 import rhino3dm from 'https://cdn.jsdelivr.net/npm/rhino3dm@8.17.0/rhino3dm.module.js'
-
-/* eslint no-undef: "off", no-unused-vars: "off" */
+/* global THREE */
 
 const loader = window.__rhino3dmLoader
->>>>>>> c41033c05d4751a82a5fe6faa753e5cfe35f0d1d
+const definition = 'BranchNodeRnd.gh'
+
+const count_slider = document.getElementById('count')
+const radius_slider = document.getElementById('radius')
+const length_slider = document.getElementById('length')
+for (const el of [count_slider, radius_slider, length_slider]) {
+  el.addEventListener('mouseup', onChange, false)
+  el.addEventListener('touchend', onChange, false)
+}
+
+let doc
+const rhino = await rhino3dm()
+init()
+compute()
+
+async function compute () {
+  const data = { definition, inputs: {
+    Count: count_slider.valueAsNumber,
+    Radius: radius_slider.valueAsNumber,
+    Length: length_slider.valueAsNumber
+  } }
+  try {
+    const res = await fetch('/solve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    if (!res.ok) throw new Error(await res.text())
+    const json = await res.json()
+    collect(json)
+  } catch (e) { console.error(e) }
+}
+
+function collect (responseJson) {
+  const values = responseJson.values
+  if (doc) doc.delete()
+  doc = new rhino.File3dm()
+  for (let i = 0; i < values.length; i++) {
+    for (const path in values[i].InnerTree) {
+      for (const item of values[i].InnerTree[path]) {
+        const data = JSON.parse(item.data)
+        if (item.type === 'System.String') {
+          try { doc.objects().add(rhino.DracoCompression.decompressBase64String(data), null) } catch {}
+        } else if (typeof data === 'object') {
+          const obj = rhino.CommonObject.decode(data)
+          if (obj) doc.objects().add(obj, null)
+        }
+      }
+    }
+  }
+  if (doc.objects().count < 1) { console.error('No objects'); show(false); return }
+  const buffer = new Uint8Array(doc.toByteArray()).buffer
+  loader.parse(buffer, (object) => {
+    object.traverse(child => { if (child.material) child.material = new THREE.MeshBasicMaterial({ vertexColors: true }) })
+    scene.traverse(child => { if (!child.isLight) scene.remove(child) })
+    scene.add(object)
+    show(false)
+  }, (err) => console.error(err))
+}
+
+function show (on) { document.getElementById('loader').style.display = on ? 'block' : 'none' }
+function onChange () { show(true); compute() }
+
+// THREE boilerplate
+let scene, camera, renderer, controls
+function init () {
+  THREE.Object3D.DefaultUp = new THREE.Vector3(0, 0, 1)
+  scene = new THREE.Scene()
+  scene.background = new THREE.Color(1, 1, 1)
+  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000)
+  renderer = new THREE.WebGLRenderer({ antialias: true })
+  renderer.setPixelRatio(devicePixelRatio)
+  renderer.setSize(window.innerWidth, window.innerHeight)
+  document.body.appendChild(renderer.domElement)
+  controls = new THREE.OrbitControls(camera, renderer.domElement)
+  camera.position.z = 50
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight
+    camera.updateProjectionMatrix()
+    renderer.setSize(window.innerWidth, window.innerHeight)
+  })
+  ;(function animate () { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera) })()
+}
 
 const definition = 'BranchNodeRnd.gh'
 
