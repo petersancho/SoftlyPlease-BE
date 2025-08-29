@@ -1,14 +1,26 @@
 const memjs = require('memjs')
 
-// Create a memcached client using environment variable for servers
-const servers = process.env.MEMCACHED_SERVERS || '127.0.0.1:11211'
-const client = memjs.Client.create(servers, {
+// Create a memcached client using environment variables for servers and optional auth
+// Support both a generic MEMCACHED_SERVERS and MemCachier add-on env vars
+const servers = process.env.MEMCACHED_SERVERS || process.env.MEMCACHIER_SERVERS || '127.0.0.1:11211'
+const mcUsername = process.env.MEMCACHIER_USERNAME || process.env.MEMCACHED_USERNAME || null
+const mcPassword = process.env.MEMCACHIER_PASSWORD || process.env.MEMCACHED_PASSWORD || null
+
+const clientOptions = {
   retries: 3,
   retry_delay: 1000,
   timeout: 5000,
   failures: 5,
   maxExpiration: 2592000 // 30 days max
-})
+}
+
+let client
+if (mcUsername && mcPassword) {
+  // memjs supports username/password for SASL-enabled servers
+  client = memjs.Client.create(servers, Object.assign({}, clientOptions, { username: mcUsername, password: mcPassword }))
+} else {
+  client = memjs.Client.create(servers, clientOptions)
+}
 
 /**
  * Get cached value by key
