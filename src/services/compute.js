@@ -1,4 +1,16 @@
 const compute = require('compute-rhino3d');
+const { PUBLIC_APP_ORIGIN, COMPUTE_URL, RHINO_COMPUTE_KEY } = require('../config');
+
+function fileUrl(name) {
+  // ensure definition name ends with .gh/.ghx
+  const defName = /\.(gh|ghx)$/i.test(name) ? name : `${name}.gh`;
+  // build absolute URL from public origin
+  try {
+    return new URL(`/files/${encodeURIComponent(defName)}`, PUBLIC_APP_ORIGIN).toString();
+  } catch (e) {
+    return `/files/${encodeURIComponent(defName)}`;
+  }
+}
 
 /**
  * Solve a Grasshopper definition
@@ -13,12 +25,12 @@ async function solve(definition, inputs = {}, defUrl) {
       throw new Error('Definition URL is required');
     }
 
-    // Set compute URL from environment
-    compute.url = process.env.RHINO_COMPUTE_URL;
-    compute.apiKey = process.env.RHINO_COMPUTE_KEY;
+    // Set compute URL and API key from config
+    compute.url = COMPUTE_URL || process.env.RHINO_COMPUTE_URL;
+    compute.apiKey = RHINO_COMPUTE_KEY || process.env.RHINO_COMPUTE_KEY;
 
-    // Use the provided definition URL (request-sourced)
-    const absoluteDefUrl = defUrl;
+    // Use the provided definition URL (request-sourced) or build one
+    const absoluteDefUrl = defUrl || fileUrl(definition);
 
     // Debug logging
     if(process.env.NODE_ENV !== 'production') {
@@ -38,12 +50,15 @@ async function solve(definition, inputs = {}, defUrl) {
     // Solve the definition with absolute URL
     const response = await compute.Grasshopper.evaluateDefinition(absoluteDefUrl, trees, false);
 
+    const body = await response.text().catch(() => '');
     if (!response.ok) {
-      throw new Error(response.statusText);
+      const err = new Error(`Compute error ${response.status}: ${response.statusText}`);
+      err.status = response.status;
+      err.body = body;
+      throw err;
     }
 
-    const result = await response.text();
-    return JSON.parse(result);
+    return JSON.parse(body);
 
   } catch (error) {
     console.error('Compute solve error:', error);

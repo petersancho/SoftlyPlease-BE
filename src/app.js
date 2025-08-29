@@ -20,18 +20,13 @@ app.use(compression())
 // Serve static files from public/ at root
 app.use(express.static(path.join(process.cwd(), 'public'), { index: 'index.html', extensions: ['html'] }))
 
-// Define URL for our compute server
-// - For local debugging on the same computer, rhino.compute.exe is
-//   typically running at http://localhost:5000/ (compute.geometry.exe) or http://localhost:6500/ (rhino.compute.exe)
-// - For production environment, use RHINO_COMPUTE_URL environment variable
+// Load normalized config and announce boot info
+const { COMPUTE_URL, PUBLIC_APP_ORIGIN } = require('./config')
 
-if (!process.env.RHINO_COMPUTE_URL) {
-  process.env.RHINO_COMPUTE_URL = process.env.NODE_ENV === 'production'
-    ? 'https://softlyplease.canadacentral.cloudapp.azure.com'
-    : 'http://localhost:6500/'
-}
+// Backward-compat: keep RHINO_COMPUTE_URL env if present but prefer COMPUTE_URL
+if (!process.env.RHINO_COMPUTE_URL && COMPUTE_URL) process.env.RHINO_COMPUTE_URL = COMPUTE_URL
 
-console.log('RHINO_COMPUTE_URL: ' + process.env.RHINO_COMPUTE_URL)
+console.log('[boot]', { compute: process.env.RHINO_COMPUTE_URL || '(unset)', origin: PUBLIC_APP_ORIGIN })
 
 // Routes for this app
 app.use('/examples', express.static(path.join(process.cwd(), 'examples')))

@@ -14,7 +14,7 @@ function withTrailingSlash(u) {
   return /\/$/.test(u) ? u : u + '/';
 }
 
-const PUBLIC_APP_ORIGIN = pickEnv(['PUBLIC_APP_ORIGIN'], 'https://www.softlyplease.com');
+const PUBLIC_APP_ORIGIN = withTrailingSlash(pickEnv(['PUBLIC_APP_ORIGIN'], 'https://www.softlyplease.com/'));
 const COMPUTE_URL = withTrailingSlash(pickEnv(['COMPUTE_URL', 'RHINO_COMPUTE_URL']));
 const RHINO_COMPUTE_KEY = pickEnv(['RHINO_COMPUTE_KEY']);
 
