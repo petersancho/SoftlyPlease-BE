@@ -1,18 +1,20 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader'
+import rhino3dm from 'rhino3dm'
 
 const canvas = document.getElementById('view')
 const statusEl = document.getElementById('status')
 const solveBtn = document.getElementById('solveBtn')
 
 let scene, camera, renderer, controls
-let doc3dm
 const rhinoLoader = new Rhino3dmLoader()
 rhinoLoader.setLibraryPath('https://cdn.jsdelivr.net/npm/rhino3dm@8.17.0/')
+let rhino
+
+initRhino()
 
 init()
-
 solveBtn.addEventListener('click', onSolve)
 
 function init(){
@@ -100,22 +102,39 @@ function renderResult(result){
 
   const values = result && result.values ? result.values : []
   if (values.length === 0) return
-  // Expect RH_OUT:mesh
+  // Expect RH_OUT:mesh (first output)
   const tree = values[0].InnerTree
   for (const path in tree){
     const branch = tree[path]
     for (const item of branch){
       try{
         const data = JSON.parse(item.data)
-        const buffer = base64ToArrayBuffer(data.encoded || data)
-        rhinoLoader.parse(buffer, object=>{
-          object.traverse(child=>{
-            if (child.isMesh){
-              child.material = new THREE.MeshStandardMaterial({ color: 0x8888ff, metalness:0.05, roughness:0.8 })
-            }
+        // Support both encoded 3dm strings and RhinoJSON
+        if (data.encoded){
+          const buffer = base64ToArrayBuffer(data.encoded)
+          rhinoLoader.parse(buffer, object=>{
+            object.traverse(child=>{
+              if (child.isMesh){
+                child.material = new THREE.MeshStandardMaterial({ color: 0x8888ff, metalness:0.05, roughness:0.8 })
+              }
+            })
+            scene.add(object)
           })
-          scene.add(object)
-        })
+        } else if (typeof data === 'object') {
+          if (!rhino) return
+          const rhinoObj = rhino.CommonObject.decode(data)
+          if (rhinoObj){
+            const buffer = new Uint8Array(rhinoObj.toByteArray()).buffer
+            rhinoLoader.parse(buffer, object=>{
+              object.traverse(child=>{
+                if (child.isMesh){
+                  child.material = new THREE.MeshStandardMaterial({ color: 0x8888ff, metalness:0.05, roughness:0.8 })
+                }
+              })
+              scene.add(object)
+            })
+          }
+        }
       } catch(e){ /* ignore non-geometry items */ }
     }
   }
@@ -129,5 +148,24 @@ function base64ToArrayBuffer(base64) {
     bytes[i] = binary_string.charCodeAt(i)
   }
   return bytes.buffer
+}
+
+async function initRhino(){
+  rhino = await rhino3dm()
+}
+
+// Dynamic solving: debounce sliders/checkboxes
+const inputs = ['links','minr','maxr','thickness','square','strutsize','segment','cubecorners','smooth']
+const debounced = debounce(onSolve, 350)
+for (const id of inputs){
+  const el = document.getElementById(id)
+  if (!el) continue
+  const evt = (el.type === 'checkbox') ? 'change' : 'input'
+  el.addEventListener(evt, debounced)
+}
+
+function debounce(fn, delay){
+  let t
+  return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(null,args), delay) }
 }
 

@@ -26,4 +26,16 @@
     <canvas id="view" style="width:100%;height:60vh;background:#fff"></canvas>
   </section>
 </main>
+<!-- Import maps polyfill for wide browser support -->
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+    "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.158.0/examples/jsm/controls/OrbitControls.js",
+    "three/examples/jsm/loaders/3DMLoader": "https://unpkg.com/three@0.158.0/examples/jsm/loaders/3DMLoader.js",
+    "rhino3dm": "https://unpkg.com/rhino3dm@8.17.0/rhino3dm.module.js"
+  }
+}
+</script>
 <script type="module" src="./script.js"></script>
