@@ -90,6 +90,8 @@ async function onSolve(){
     // Be liberal in what we send: include common aliases to match GH input names
     inputs['Thickness'] = inputs.thickness
     inputs['RH_IN:thickness'] = inputs.thickness
+    inputs['Strutsize'] = inputs.strutsize
+    inputs['RH_IN:strutsize'] = inputs.strutsize
     const payload = { definition: 'topological-optimization.gh', inputs }
 
     const res = await fetch('/solve', {
