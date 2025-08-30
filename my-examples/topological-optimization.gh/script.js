@@ -62,11 +62,11 @@ function getInputs(){
     links: Math.round(Number(document.getElementById('links').value)),
     minr: Number(document.getElementById('minr').value),
     maxr: Number(document.getElementById('maxr').value),
-    thickness: Number(document.getElementById('thickness').value),
+    thickness: Math.round(Number(document.getElementById('thickness').value)),
     square: Math.round(Number(document.getElementById('square').value)),
     strutsize: Number(document.getElementById('strutsize').value),
     segment: Math.round(Number(document.getElementById('segment').value)),
-    cubecorners: document.getElementById('cubecorners').checked,
+    cubecorners: Number(document.getElementById('cubecorners').checked),
     smooth: Number(document.getElementById('smooth').value)
   }
 }
@@ -81,6 +81,7 @@ async function onSolve(){
   currentSolve.controller = controller
 
   try{
+    const t0 = performance.now()
     statusEl.textContent = 'Solving...'
     const ins = getInputs()
     // Ensure booleans/numbers are typed as expected by GH
@@ -97,7 +98,8 @@ async function onSolve(){
     if (!res.ok) throw new Error(txt || ('HTTP '+res.status))
     const json = JSON.parse(txt)
     renderResult(json)
-    statusEl.textContent = 'Done'
+    const dt = Math.round(performance.now() - t0)
+    statusEl.textContent = `Done (${dt} ms)`
   } catch(err){
     if (err.name === 'AbortError') return
     console.error(err)
