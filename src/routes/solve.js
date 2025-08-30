@@ -9,6 +9,7 @@ const cache = new NodeCache({ stdTTL: DEFAULT_TTL, checkperiod: Math.max(1, Math
 
 const memjs = require('memjs')
 let mc = null
+const inflight = new Map()
 
 let definition = null
 
@@ -25,9 +26,44 @@ if(process.env.MEMCACHIER_SERVERS !== undefined) {
   })
 }
 
-function stableInputs(inputs){
+function sanitizeDefName(name){
+  return String(name || '').toUpperCase().replace(/[^A-Z0-9]+/g, '_')
+}
+
+function getPerDefEnv(prefix, defName){
+  const key = `${prefix}_${sanitizeDefName(defName)}`
+  return process.env[key]
+}
+
+function parseExcludeList(defName){
+  const v = getPerDefEnv('CACHE_EXCLUDE', defName) || process.env.CACHE_EXCLUDE || ''
+  return v.split(',').map(s=>s.trim()).filter(Boolean)
+}
+
+function parseRounding(defName){
+  let map = {}
+  const raw = getPerDefEnv('CACHE_ROUND', defName) || process.env.CACHE_ROUND || ''
+  if (raw){
+    try { map = JSON.parse(raw) } catch {}
+  }
+  const defDecimals = Number(process.env.CACHE_ROUND_DEFAULT_DECIMALS || '3')
+  return { map, defDecimals }
+}
+
+function stableInputs(inputs, defName){
+  const excluded = new Set(parseExcludeList(defName))
+  const { map: roundMap, defDecimals } = parseRounding(defName)
   const out = {}
-  Object.keys(inputs || {}).sort().forEach(k => { out[k] = inputs[k] })
+  Object.keys(inputs || {}).sort().forEach(k => {
+    if (excluded.has(k)) return
+    let v = inputs[k]
+    if (typeof v === 'number' && isFinite(v)){
+      const decimals = typeof roundMap[k] === 'number' ? roundMap[k] : defDecimals
+      const factor = Math.pow(10, Math.max(0, decimals))
+      v = Math.round(v * factor) / factor
+    }
+    out[k] = v
+  })
   return out
 }
 
@@ -78,7 +114,7 @@ function checkCache (req, res, next){
   const key = {}
   key.definition = { 'name': res.locals.params.definition.name, 'id': res.locals.params.definition.id }
   const rawInputs = res.locals.params.values!==undefined ? res.locals.params.values : res.locals.params.inputs
-  key.inputs = stableInputs(rawInputs)
+  key.inputs = stableInputs(rawInputs, res.locals.params.definition.name)
   res.locals.cacheKey = JSON.stringify(key)
   res.locals.cacheResult = null
 
@@ -139,19 +175,43 @@ async function commonSolve (req, res, next){
         console.log('Solving definition:', definitionName, 'with inputs:', inputs)
       }
 
-      const result = await computeSolve(definitionName, inputs, defUrl)
+      // inflight coalescing
+      const existing = inflight.get(res.locals.cacheKey)
+      if (existing){
+        const result = await existing
+        const resultString = JSON.stringify(result)
+        const timespanPost = Math.round(performance.now() - timePostStart)
+        res.setHeader('Server-Timing', `solveInflight;dur=${timespanPost}`)
+        return res.send(resultString)
+      }
+
+      const promise = (async ()=>{
+        const r = await computeSolve(definitionName, inputs, defUrl)
+        return r
+      })()
+      inflight.set(res.locals.cacheKey, promise)
+
+      let result
+      try {
+        result = await promise
+      } finally {
+        inflight.delete(res.locals.cacheKey)
+      }
 
       // Cache the result
       const resultString = JSON.stringify(result)
       if(mc !== null) {
         // set memcached with TTL
-        const ttl = Number(process.env.MEMCACHE_TTL_SECS || process.env.CACHE_TTL_SECS || '60')
+        const defTTL = getPerDefEnv('MEMCACHE_TTL_SECS', definitionName) || getPerDefEnv('CACHE_TTL_SECS', definitionName)
+        const ttl = Number(defTTL || process.env.MEMCACHE_TTL_SECS || process.env.CACHE_TTL_SECS || DEFAULT_TTL)
         mc.set(res.locals.cacheKey, resultString, {expires: ttl}, function(err){
           if(err) console.log('Memcached set error:', err)
         })
       } else {
-        // set node-cache (uses stdTTL)
-        cache.set(res.locals.cacheKey, resultString)
+        // set node-cache (uses per-set TTL)
+        const defTTL = getPerDefEnv('CACHE_TTL_SECS', definitionName)
+        const ttl = Number(defTTL || DEFAULT_TTL)
+        cache.set(res.locals.cacheKey, resultString, ttl)
       }
 
       const timespanPost = Math.round(performance.now() - timePostStart)
