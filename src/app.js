@@ -38,6 +38,10 @@ console.log('RHINO_COMPUTE_URL: ' + process.env.RHINO_COMPUTE_URL)
 app.set('view engine', 'hbs');
 app.set('views', './src/views')
 
+// Register definitions (files/*)
+const { registerDefinitions } = require('./definitions')
+app.set('definitions', registerDefinitions())
+
 // Routes for this app
 app.use('/examples', express.static(path.join(process.cwd(), 'examples')))
 app.use('/my-examples', express.static(path.join(process.cwd(), 'my-examples')))
