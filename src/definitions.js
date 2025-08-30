@@ -19,20 +19,24 @@ function getFilesSync(dir) {
 }
 
 function registerDefinitions() {
-  let files = getFilesSync(path.join(__dirname, 'files/'))
-  let definitions = []
-  files.forEach( file => {
-    if(file.includes('.gh') || file.includes('.ghx')) {
-      const fullPath = path.join(__dirname, 'files/' + file)
+  const roots = [
+    path.join(process.cwd(), 'files'),
+    path.join(__dirname, 'files')
+  ]
+  const seen = new Set()
+  const definitions = []
+  for (const dir of roots){
+    if (!fs.existsSync(dir)) continue
+    const files = getFilesSync(dir)
+    files.forEach(file => {
+      if (!(/\.(gh|ghx)$/i.test(file))) return
+      if (seen.has(file)) return
+      const fullPath = path.join(dir, file)
       const hash = md5File.sync(fullPath)
-      
-      definitions.push({
-        name: file,
-        id:hash,
-        path: fullPath
-      })
-    }
-  })
+      definitions.push({ name:file, id:hash, path:fullPath })
+      seen.add(file)
+    })
+  }
   return definitions
 }
 
