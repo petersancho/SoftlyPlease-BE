@@ -5,7 +5,7 @@
   <title>SoftlyPlease</title>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
   <meta name="color-scheme" content="light">
-  <meta name="description" content="SoftlyPlease — raw, black & white, Times New Roman. Monochrome pointillism art with deterministic generation and 4K export.">
+  <meta name="description" content="SoftlyPlease — Create deterministic monochrome pointillism art with algorithmic portrait generation. Features real-time parameter control, seeded randomization for reproducible results, and 4K export. Raw black & white aesthetic with Times New Roman typography.">
   <link rel="stylesheet" href="/styles/softly.css">
   <style>
     /* Raw, black-and-white, Times New Roman aesthetic */
@@ -17,6 +17,8 @@
     #content{position:relative;z-index:1;max-width:720px;margin:40px auto;padding:0 16px}
     #content h1{font-size:28px;margin:0 0 12px 0;font-weight:700}
     #content p{margin:8px 0}
+    #description{margin:16px 0 24px 0;padding:16px 0;border-bottom:1px solid #ddd}
+    #description p{margin:12px 0;line-height:1.5}
     #links a{color:#000;text-decoration:underline}
     #links a:hover{background:#000;color:#fff}
     /* Mobile-responsive tuning UI (visible by default; hide with ?ui=0) */
@@ -67,6 +69,15 @@
 
   <div id="content" role="main">
     <h1>SoftlyPlease</h1>
+    
+    <div id="description">
+      <p><strong>SoftlyPlease</strong> is a monochrome pointillism art generator that creates deterministic, algorithmic portraits using black and white dots. Each artwork is generated using a seeded random number generator, ensuring that the same seed always produces identical results.</p>
+      
+      <p>The aesthetic is deliberately minimal: raw black text on white backgrounds, Times New Roman typography, and pure monochrome pointillism. The generated portraits are converted into dot patterns where brightness determines dot size—brighter areas get smaller dots, darker areas get larger ones.</p>
+      
+      <p>Features include real-time parameter adjustment (step size, dot size, and seed), 4K export capabilities, and mobile-responsive controls. All artwork is generated programmatically without external images, creating unique deterministic portraits every time.</p>
+    </div>
+    
     <div id="links" aria-label="Site links">
       <p><a href="/examples/">McNeel Examples</a> · <a href="/my-examples/">My Examples</a> · <a href="/status">Compute Status</a></p>
       <p>This is the raw frontpage. Black and white. Times New Roman. The art behind this text is algorithmic and deterministic.</p>
