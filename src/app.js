@@ -40,6 +40,7 @@ app.set('views', './src/views')
 
 // Routes for this app
 app.use('/examples', express.static(path.join(process.cwd(), 'examples')))
+app.use('/my-examples', express.static(path.join(process.cwd(), 'my-examples')))
 app.use('/files', express.static(path.join(process.cwd(), 'files')))
 app.get('/favicon.ico', (req, res) => res.status(200))
 app.use('/definition', require('./routes/definition'))
