@@ -51,3 +51,4 @@ logs/
 
 # Heroku
 .herokuapp/
+.heroku/
