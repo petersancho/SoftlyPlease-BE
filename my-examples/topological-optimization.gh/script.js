@@ -12,7 +12,7 @@ const rhinoLoader = new Rhino3dmLoader()
 rhinoLoader.setLibraryPath('https://cdn.jsdelivr.net/npm/rhino3dm@8.17.0/')
 let rhino
 let currentSolve = { controller: null, seq: 0 }
-let lastObjects = []
+let resultGroup = null
 
 initRhino()
 
@@ -102,7 +102,7 @@ async function onSolve(){
     if (seq !== currentSolve.seq) return // outdated
     if (!res.ok) throw new Error(txt || ('HTTP '+res.status))
     const json = JSON.parse(txt)
-    renderResult(json)
+    renderResult(json, seq)
     const dt = Math.round(performance.now() - t0)
     statusEl.textContent = `Done (${dt} ms)`
   } catch(err){
@@ -112,20 +112,24 @@ async function onSolve(){
   }
 }
 
-function renderResult(result){
-  // remove previously added model objects entirely
-  for (const obj of lastObjects){
-    if (!obj) continue
-    scene.remove(obj)
-    obj.traverse(child=>{
+function renderResult(result, seq){
+  // ignore stale results
+  if (seq !== currentSolve.seq) return
+
+  // remove and dispose previous group
+  if (resultGroup){
+    scene.remove(resultGroup)
+    resultGroup.traverse(child=>{
       if (child.geometry) child.geometry.dispose()
       if (child.material){
         if (Array.isArray(child.material)) child.material.forEach(m=>m.dispose())
         else child.material.dispose()
       }
     })
+    resultGroup = null
   }
-  lastObjects = []
+  resultGroup = new THREE.Group()
+  scene.add(resultGroup)
 
   const values = result && result.values ? result.values : []
   if (values.length === 0) return
@@ -139,13 +143,14 @@ function renderResult(result){
   let addedAny = false
 
   const addThreeObject = (object) => {
+    // ignore late callbacks from older solves
+    if (seq !== currentSolve.seq) return
     object.traverse(child=>{
       if (child.isMesh){
         child.material = new THREE.MeshStandardMaterial({ color: 0x6b8cff, metalness:0.1, roughness:0.85 })
       }
     })
-    scene.add(object)
-    lastObjects.push(object)
+    resultGroup.add(object)
     addedAny = true
   }
 
@@ -175,7 +180,7 @@ function renderResult(result){
     rhinoLoader.parse(buffer, addThreeObject)
   }
 
-  setTimeout(() => zoomToScene(), 150)
+  setTimeout(() => { if (seq === currentSolve.seq) zoomToScene() }, 150)
 }
 
 function base64ToArrayBuffer(base64) {
@@ -226,7 +231,7 @@ function debounce(fn, delay, opts={}){
 
 function zoomToScene(){
   const box = new THREE.Box3()
-  for (const obj of lastObjects){ box.expandByObject(obj) }
+  if (resultGroup) box.expandByObject(resultGroup)
   if (!box.isEmpty()){
     const size = box.getSize(new THREE.Vector3())
     const center = box.getCenter(new THREE.Vector3())
