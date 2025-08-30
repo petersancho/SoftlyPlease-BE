@@ -163,6 +163,9 @@ for (const id of inputs){
   el.addEventListener(evt, debounced)
 }
 
+// Auto-solve on first paint
+onSolve()
+
 function debounce(fn, delay){
   let t
   return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(null,args), delay) }
