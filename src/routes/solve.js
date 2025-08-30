@@ -4,7 +4,8 @@ const { solve: computeSolve } = require('../services/compute')
 const {performance} = require('perf_hooks')
 
 const NodeCache = require('node-cache')
-const cache = new NodeCache()
+const DEFAULT_TTL = Number(process.env.CACHE_TTL_SECS || '60')
+const cache = new NodeCache({ stdTTL: DEFAULT_TTL, checkperiod: Math.max(1, Math.floor(DEFAULT_TTL/5)) })
 
 const memjs = require('memjs')
 let mc = null
@@ -15,10 +16,19 @@ let definition = null
 // process.env.MEMCACHIER_SERVERS = '127.0.0.1:11211'
 if(process.env.MEMCACHIER_SERVERS !== undefined) {
   mc = memjs.Client.create(process.env.MEMCACHIER_SERVERS, {
-    failover: true,  // default: false
-    timeout: 1,      // default: 0.5 (seconds)
-    keepAlive: true  // default: false
+    username: process.env.MEMCACHIER_USERNAME,
+    password: process.env.MEMCACHIER_PASSWORD,
+    failover: true,
+    timeout: 1,
+    keepAlive: true,
+    tls: true
   })
+}
+
+function stableInputs(inputs){
+  const out = {}
+  Object.keys(inputs || {}).sort().forEach(k => { out[k] = inputs[k] })
+  return out
 }
 
 // Compute parameters are now handled in the compute service
@@ -67,9 +77,8 @@ function checkCache (req, res, next){
 
   const key = {}
   key.definition = { 'name': res.locals.params.definition.name, 'id': res.locals.params.definition.id }
-  key.inputs = res.locals.params.inputs
-  if (res.locals.params.values!==undefined)
-    key.inputs = res.locals.params.values
+  const rawInputs = res.locals.params.values!==undefined ? res.locals.params.values : res.locals.params.inputs
+  key.inputs = stableInputs(rawInputs)
   res.locals.cacheKey = JSON.stringify(key)
   res.locals.cacheResult = null
 
@@ -84,8 +93,8 @@ function checkCache (req, res, next){
     //console.log('using memcached')
     if(mc !== null) {
       mc.get(res.locals.cacheKey, function(err, val) {
-        if(err == null) {
-          res.locals.cacheResult = val
+        if(err == null && val) {
+          res.locals.cacheResult = val.toString()
         }
         next()
       })
@@ -135,12 +144,13 @@ async function commonSolve (req, res, next){
       // Cache the result
       const resultString = JSON.stringify(result)
       if(mc !== null) {
-        //set memcached
-        mc.set(res.locals.cacheKey, resultString, {expires:0}, function(err, val){
+        // set memcached with TTL
+        const ttl = Number(process.env.MEMCACHE_TTL_SECS || process.env.CACHE_TTL_SECS || '60')
+        mc.set(res.locals.cacheKey, resultString, {expires: ttl}, function(err){
           if(err) console.log('Memcached set error:', err)
         })
       } else {
-        //set node-cache
+        // set node-cache (uses stdTTL)
         cache.set(res.locals.cacheKey, resultString)
       }
 
