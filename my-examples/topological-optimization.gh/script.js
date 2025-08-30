@@ -85,6 +85,20 @@ async function onSolve(){
     const t0 = performance.now()
     statusEl.textContent = 'Solving...'
     const ins = getInputs()
+    // enforce param relationships expected by GH
+    if (ins.minr > ins.maxr){
+      const mid = (ins.minr + ins.maxr) / 2
+      ins.minr = mid
+      ins.maxr = mid
+      const minrEl = document.getElementById('minr')
+      const maxrEl = document.getElementById('maxr')
+      if (minrEl) minrEl.value = String(ins.minr)
+      if (maxrEl) maxrEl.value = String(ins.maxr)
+      const minrOut = document.getElementById('minrVal')
+      const maxrOut = document.getElementById('maxrVal')
+      if (minrOut) minrOut.textContent = String(ins.minr)
+      if (maxrOut) maxrOut.textContent = String(ins.maxr)
+    }
     // Ensure booleans/numbers are typed as expected by GH
     const inputs = { ...ins }
     // Use canonical input names only to avoid server-side mismatches
