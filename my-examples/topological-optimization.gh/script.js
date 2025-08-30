@@ -67,7 +67,7 @@ function getInputs(){
     strutsize: Number(document.getElementById('strutsize').value),
     segment: Number(document.getElementById('segment').value),
     cubecorners: document.getElementById('cubecorners').checked,
-    smooth: document.getElementById('smooth').checked
+    smooth: Number(document.getElementById('smooth').value)
   }
 }
 
