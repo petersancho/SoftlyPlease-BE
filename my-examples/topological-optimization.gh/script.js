@@ -78,6 +78,8 @@ async function onSolve(){
     // collect inputs, base64 for brep
     const ins = getInputs()
     const payload = { definition: 'topological-optimization.gh', inputs: { ...ins } }
+    // If your uploaded GH has the Brep already baked in, omit brep upload
+    delete payload.inputs.brep
     if (ins.brep){
       payload.inputs.brep = await fileToBase64(ins.brep)
     }
