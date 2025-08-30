@@ -85,7 +85,11 @@ async function onSolve(){
     statusEl.textContent = 'Solving...'
     const ins = getInputs()
     // Ensure booleans/numbers are typed as expected by GH
-    const payload = { definition: 'topological-optimization.gh', inputs: { ...ins } }
+    const inputs = { ...ins }
+    // Be liberal in what we send: include common aliases to match GH input names
+    inputs['Thickness'] = inputs.thickness
+    inputs['RH_IN:thickness'] = inputs.thickness
+    const payload = { definition: 'topological-optimization.gh', inputs }
 
     const res = await fetch('/solve', {
       method:'POST',
