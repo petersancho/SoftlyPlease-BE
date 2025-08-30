@@ -5,7 +5,7 @@ import rhino3dm from 'rhino3dm'
 
 const canvas = document.getElementById('view')
 const statusEl = document.getElementById('status')
-const solveBtn = document.getElementById('solveBtn')
+const solveBtn = null
 
 let scene, camera, renderer, controls
 const rhinoLoader = new Rhino3dmLoader()
@@ -15,7 +15,6 @@ let rhino
 initRhino()
 
 init()
-solveBtn.addEventListener('click', onSolve)
 
 function init(){
   scene = new THREE.Scene()
@@ -63,7 +62,7 @@ function getInputs(){
     minr: Number(document.getElementById('minr').value),
     maxr: Number(document.getElementById('maxr').value),
     thickness: Number(document.getElementById('thickness').value),
-    square: document.getElementById('square').checked,
+    square: Number(document.getElementById('square').value),
     strutsize: Number(document.getElementById('strutsize').value),
     segment: Number(document.getElementById('segment').value),
     cubecorners: document.getElementById('cubecorners').checked,
