@@ -12,6 +12,7 @@ const rhinoLoader = new Rhino3dmLoader()
 rhinoLoader.setLibraryPath('https://cdn.jsdelivr.net/npm/rhino3dm@8.17.0/')
 let rhino
 let currentSolve = { controller: null, seq: 0 }
+let lastObjects = []
 
 initRhino()
 
@@ -112,10 +113,19 @@ async function onSolve(){
 }
 
 function renderResult(result){
-  // clear scene (keep lights)
-  const toRemove = []
-  scene.traverse(obj=>{ if (obj.isMesh) toRemove.push(obj) })
-  toRemove.forEach(o=>scene.remove(o))
+  // remove previously added model objects entirely
+  for (const obj of lastObjects){
+    if (!obj) continue
+    scene.remove(obj)
+    obj.traverse(child=>{
+      if (child.geometry) child.geometry.dispose()
+      if (child.material){
+        if (Array.isArray(child.material)) child.material.forEach(m=>m.dispose())
+        else child.material.dispose()
+      }
+    })
+  }
+  lastObjects = []
 
   const values = result && result.values ? result.values : []
   if (values.length === 0) return
@@ -135,6 +145,7 @@ function renderResult(result){
       }
     })
     scene.add(object)
+    lastObjects.push(object)
     addedAny = true
   }
 
@@ -215,7 +226,7 @@ function debounce(fn, delay, opts={}){
 
 function zoomToScene(){
   const box = new THREE.Box3()
-  scene.traverse(child => { if (child.isMesh) box.expandByObject(child) })
+  for (const obj of lastObjects){ box.expandByObject(obj) }
   if (!box.isEmpty()){
     const size = box.getSize(new THREE.Vector3())
     const center = box.getCenter(new THREE.Vector3())
