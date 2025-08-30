@@ -101,42 +101,55 @@ function renderResult(result){
 
   const values = result && result.values ? result.values : []
   if (values.length === 0) return
-  // Expect RH_OUT:mesh (first output)
-  const tree = values[0].InnerTree
-  for (const path in tree){
-    const branch = tree[path]
-    for (const item of branch){
-      try{
-        const data = JSON.parse(item.data)
-        // Support both encoded 3dm strings and RhinoJSON
-        if (data.encoded){
-          const buffer = base64ToArrayBuffer(data.encoded)
-          rhinoLoader.parse(buffer, object=>{
-            object.traverse(child=>{
-              if (child.isMesh){
-                child.material = new THREE.MeshStandardMaterial({ color: 0x8888ff, metalness:0.05, roughness:0.8 })
-              }
-            })
-            scene.add(object)
-          })
-        } else if (typeof data === 'object') {
-          if (!rhino) return
-          const rhinoObj = rhino.CommonObject.decode(data)
-          if (rhinoObj){
-            const buffer = new Uint8Array(rhinoObj.toByteArray()).buffer
-            rhinoLoader.parse(buffer, object=>{
-              object.traverse(child=>{
-                if (child.isMesh){
-                  child.material = new THREE.MeshStandardMaterial({ color: 0x8888ff, metalness:0.05, roughness:0.8 })
-                }
-              })
-              scene.add(object)
-            })
+
+  // Prefer output whose ParamName mentions "mesh"; otherwise process all
+  const outputs = values.filter(v => /mesh/i.test(v.ParamName || ''))
+                  .concat(values.filter(v => !/mesh/i.test(v.ParamName || '')))
+
+  // Build a single .3dm doc for RhinoJSON items, and also handle encoded .3dm blobs
+  const doc = rhino ? new rhino.File3dm() : null
+  let addedAny = false
+
+  const addThreeObject = (object) => {
+    object.traverse(child=>{
+      if (child.isMesh){
+        child.material = new THREE.MeshStandardMaterial({ color: 0x6b8cff, metalness:0.1, roughness:0.85 })
+      }
+    })
+    scene.add(object)
+    addedAny = true
+  }
+
+  for (const out of outputs){
+    const tree = out.InnerTree || {}
+    for (const path in tree){
+      const branch = tree[path] || []
+      for (const item of branch){
+        try{
+          const data = JSON.parse(item.data)
+          if (data && typeof data === 'object' && data.encoded){
+            // Encoded .3dm string
+            const buffer = base64ToArrayBuffer(data.encoded)
+            rhinoLoader.parse(buffer, addThreeObject)
+          } else if (data && typeof data === 'object' && rhino){
+            const rhinoObj = rhino.CommonObject.decode(data)
+            if (rhinoObj && doc){
+              doc.objects().add(rhinoObj, null)
+            }
           }
-        }
-      } catch(e){ /* ignore non-geometry items */ }
+        } catch { /* ignore non-JSON items */ }
+      }
     }
   }
+
+  // If we accumulated a doc, render it once
+  if (doc && doc.objects().count > 0){
+    const buffer = new Uint8Array(doc.toByteArray()).buffer
+    rhinoLoader.parse(buffer, addThreeObject)
+  }
+
+  // Zoom to extents after a short tick to allow loader callbacks
+  setTimeout(() => zoomToScene(), 150)
 }
 
 function base64ToArrayBuffer(base64) {
@@ -169,5 +182,23 @@ onSolve()
 function debounce(fn, delay){
   let t
   return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(null,args), delay) }
+}
+
+function zoomToScene(){
+  const box = new THREE.Box3()
+  scene.traverse(child => { if (child.isMesh) box.expandByObject(child) })
+  if (!box.isEmpty()){
+    const size = box.getSize(new THREE.Vector3())
+    const center = box.getCenter(new THREE.Vector3())
+    const maxDim = Math.max(size.x, size.y, size.z)
+    const fitDist = maxDim / (2*Math.tan((Math.PI/180)*camera.fov*0.5))
+    camera.near = Math.max(0.1, fitDist/100)
+    camera.far  = fitDist*100
+    camera.updateProjectionMatrix()
+    const dir = new THREE.Vector3().subVectors(camera.position, controls.target).normalize()
+    camera.position.copy(center.clone().add(dir.multiplyScalar(fitDist*1.2)))
+    controls.target.copy(center)
+    controls.update()
+  }
 }
 
