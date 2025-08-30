@@ -101,8 +101,7 @@ async function onSolve(){
     }
     // Ensure booleans/numbers are typed as expected by GH
     const inputs = { ...ins }
-    // Use canonical input names; add case alias where GH may expect capitalized name
-    inputs['Links'] = inputs.links
+    // Use canonical input names only
     const payload = { definition: 'topological-optimization.gh', inputs }
 
     const res = await fetch('/solve', {
@@ -228,7 +227,7 @@ for (const id of inputs){
   // output label binding
   const out = document.getElementById(id+'Val')
   if (out){
-    const update = ()=>{ out.textContent = (el.type==='checkbox') ? String(el.checked) : String(el.value) }
+    const update = ()=>{ out.textContent = (el.type==='checkbox') ? String(el.checked) : String(Math.round(Number(el.value))) }
     el.addEventListener(evt, update)
     update()
   }
