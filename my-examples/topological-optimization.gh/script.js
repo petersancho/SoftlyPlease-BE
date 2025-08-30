@@ -11,6 +11,7 @@ let scene, camera, renderer, controls
 const rhinoLoader = new Rhino3dmLoader()
 rhinoLoader.setLibraryPath('https://cdn.jsdelivr.net/npm/rhino3dm@8.17.0/')
 let rhino
+let currentSolve = { controller: null, seq: 0 }
 
 initRhino()
 
@@ -58,35 +59,47 @@ async function fileToBase64(file){
 
 function getInputs(){
   return {
-    links: Number(document.getElementById('links').value),
+    links: Math.round(Number(document.getElementById('links').value)),
     minr: Number(document.getElementById('minr').value),
     maxr: Number(document.getElementById('maxr').value),
     thickness: Number(document.getElementById('thickness').value),
-    square: Number(document.getElementById('square').value),
+    square: Math.round(Number(document.getElementById('square').value)),
     strutsize: Number(document.getElementById('strutsize').value),
-    segment: Number(document.getElementById('segment').value),
+    segment: Math.round(Number(document.getElementById('segment').value)),
     cubecorners: document.getElementById('cubecorners').checked,
     smooth: Number(document.getElementById('smooth').value)
   }
 }
 
 async function onSolve(){
+  // cancel any in-flight request
+  if (currentSolve.controller) {
+    currentSolve.controller.abort()
+  }
+  const controller = new AbortController()
+  const seq = ++currentSolve.seq
+  currentSolve.controller = controller
+
   try{
     statusEl.textContent = 'Solving...'
-    // collect inputs, base64 for brep
     const ins = getInputs()
+    // Ensure booleans/numbers are typed as expected by GH
     const payload = { definition: 'topological-optimization.gh', inputs: { ...ins } }
-    if (ins.brep){
-      payload.inputs.brep = await fileToBase64(ins.brep)
-    }
-    // POST to appserver
-    const res = await fetch('/solve', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) })
+
+    const res = await fetch('/solve', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    })
     const txt = await res.text()
+    if (seq !== currentSolve.seq) return // outdated
     if (!res.ok) throw new Error(txt || ('HTTP '+res.status))
     const json = JSON.parse(txt)
     renderResult(json)
     statusEl.textContent = 'Done'
   } catch(err){
+    if (err.name === 'AbortError') return
     console.error(err)
     statusEl.textContent = 'Error: ' + (err.message||String(err))
   }
@@ -127,7 +140,6 @@ function renderResult(result){
         try{
           const data = JSON.parse(item.data)
           if (data && typeof data === 'object' && data.encoded){
-            // Encoded .3dm string
             const buffer = base64ToArrayBuffer(data.encoded)
             rhinoLoader.parse(buffer, addThreeObject)
           } else if (data && typeof data === 'object' && rhino){
@@ -141,13 +153,11 @@ function renderResult(result){
     }
   }
 
-  // If we accumulated a doc, render it once
   if (doc && doc.objects().count > 0){
     const buffer = new Uint8Array(doc.toByteArray()).buffer
     rhinoLoader.parse(buffer, addThreeObject)
   }
 
-  // Zoom to extents after a short tick to allow loader callbacks
   setTimeout(() => zoomToScene(), 150)
 }
 
@@ -167,7 +177,7 @@ async function initRhino(){
 
 // Dynamic solving: debounce sliders/checkboxes
 const inputs = ['links','minr','maxr','thickness','square','strutsize','segment','cubecorners','smooth']
-const debounced = debounce(onSolve, 350)
+const debounced = debounce(onSolve, 250, { leading:true, trailing:true })
 for (const id of inputs){
   const el = document.getElementById(id)
   if (!el) continue
@@ -178,9 +188,16 @@ for (const id of inputs){
 // Auto-solve on first paint
 onSolve()
 
-function debounce(fn, delay){
-  let t
-  return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(null,args), delay) }
+function debounce(fn, delay, opts={}){
+  let t, leadingCalled = false
+  return (...args)=>{
+    if (opts.leading && !t && !leadingCalled){
+      leadingCalled = true
+      fn.apply(null,args)
+    }
+    clearTimeout(t)
+    t=setTimeout(()=>{ leadingCalled = false; if (opts.trailing !== false) fn.apply(null,args) }, delay)
+  }
 }
 
 function zoomToScene(){
