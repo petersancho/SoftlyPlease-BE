@@ -101,7 +101,8 @@ async function onSolve(){
     }
     // Ensure booleans/numbers are typed as expected by GH
     const inputs = { ...ins }
-    // Use canonical input names only to avoid server-side mismatches
+    // Use canonical input names; add case alias where GH may expect capitalized name
+    inputs['Links'] = inputs.links
     const payload = { definition: 'topological-optimization.gh', inputs }
 
     const res = await fetch('/solve', {

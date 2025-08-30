@@ -7,8 +7,9 @@
   <section>
     <p>Adjust parameters and the mesh updates dynamically.</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:12px">
-      <label>links <input type="range" id="links" value="4" min="1" max="10" step="1" list="links-ticks"> <output id="linksVal">4</output></label>
+      <label>links <input type="range" id="links" value="4" min="0" max="10" step="1" list="links-ticks"> <output id="linksVal">4</output></label>
       <datalist id="links-ticks">
+        <option value="0"></option>
         <option value="1"></option>
         <option value="2"></option>
         <option value="3"></option>
