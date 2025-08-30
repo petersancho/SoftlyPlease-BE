@@ -166,8 +166,15 @@ function renderResult(result, seq){
             rhinoLoader.parse(buffer, addThreeObject)
           } else if (data && typeof data === 'object' && rhino){
             const rhinoObj = rhino.CommonObject.decode(data)
-            if (rhinoObj && doc){
-              doc.objects().add(rhinoObj, null)
+            if (rhinoObj){
+              // Fast path: directly convert Rhino Mesh to Three.js geometry
+              if (isRhinoMesh(rhinoObj)){
+                const mesh = rhinoMeshToThree(rhinoObj)
+                addThreeObject(mesh)
+              } else if (doc){
+                // Fallback: accumulate into a 3dm doc and parse once
+                doc.objects().add(rhinoObj, null)
+              }
             }
           }
         } catch { /* ignore non-JSON items */ }
@@ -245,5 +252,39 @@ function zoomToScene(){
     controls.target.copy(center)
     controls.update()
   }
+}
+
+function isRhinoMesh(obj){
+  return obj && typeof obj.faces === 'object' && typeof obj.vertices === 'object'
+}
+
+function rhinoMeshToThree(rMesh){
+  const geometry = new THREE.BufferGeometry()
+  const vertices = rMesh.vertices()
+  const faces = rMesh.faces()
+  const hasNormals = rMesh.normals && rMesh.normals().count > 0
+
+  const positions = []
+  const normals = []
+
+  const addTri = (a,b,c)=>{
+    positions.push(a[0],a[1],a[2], b[0],b[1],b[2], c[0],c[1],c[2])
+  }
+
+  for (let i=0; i<faces.count; i++){
+    const f = faces.get(i)
+    const a = vertices.get(f.A)
+    const b = vertices.get(f.B)
+    const c = vertices.get(f.C)
+    const d = f.IsTriangle ? null : vertices.get(f.D)
+    addTri(a,b,c)
+    if (d) addTri(a,c,d)
+  }
+
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  geometry.computeVertexNormals()
+  const material = new THREE.MeshStandardMaterial({ color: 0x6b8cff, metalness:0.1, roughness:0.85 })
+  const mesh = new THREE.Mesh(geometry, material)
+  return mesh
 }
 
