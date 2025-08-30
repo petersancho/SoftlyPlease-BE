@@ -116,16 +116,21 @@ async function commonSolve (req, res, next){
       res.send(res.locals.cacheResult)
       return
     } else {
-      //solve using the new compute service
-      const definitionName = res.locals.params.definition.name || res.locals.params.definition
+      // Solve using compute with a hashed definition URL pointer for robustness
+      const defObj = res.locals.params.definition
+      const definitionName = defObj.name || defObj
       const inputs = res.locals.params.inputs || {}
+
+      // Build absolute pointer URL that Compute will fetch directly
+      const fullUrl = req.protocol + '://' + req.get('host')
+      const defUrl = `${fullUrl}/definition/${defObj.id || defObj}`
 
       // Add debug logging in development
       if(process.env.NODE_ENV !== 'production') {
         console.log('Solving definition:', definitionName, 'with inputs:', inputs)
       }
 
-      const result = await computeSolve(definitionName, inputs)
+      const result = await computeSolve(definitionName, inputs, defUrl)
 
       // Cache the result
       const resultString = JSON.stringify(result)
