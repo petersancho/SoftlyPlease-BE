@@ -183,6 +183,13 @@ for (const id of inputs){
   if (!el) continue
   const evt = (el.type === 'checkbox') ? 'change' : 'input'
   el.addEventListener(evt, debounced)
+  // output label binding
+  const out = document.getElementById(id+'Val')
+  if (out){
+    const update = ()=>{ out.textContent = (el.type==='checkbox') ? String(el.checked) : String(el.value) }
+    el.addEventListener(evt, update)
+    update()
+  }
 }
 
 // Auto-solve on first paint
