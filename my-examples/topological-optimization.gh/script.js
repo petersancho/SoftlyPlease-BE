@@ -61,14 +61,14 @@ async function fileToBase64(file){
 function getInputs(){
   return {
     links: Math.round(Number(document.getElementById('links').value)),
-    minr: Number(document.getElementById('minr').value),
-    maxr: Number(document.getElementById('maxr').value),
+    minr: Math.round(Number(document.getElementById('minr').value)),
+    maxr: Math.round(Number(document.getElementById('maxr').value)),
     thickness: Math.round(Number(document.getElementById('thickness').value)),
     square: Math.round(Number(document.getElementById('square').value)),
-    strutsize: Number(document.getElementById('strutsize').value),
+    strutsize: Math.round(Number(document.getElementById('strutsize').value)),
     segment: Math.round(Number(document.getElementById('segment').value)),
     cubecorners: Number(document.getElementById('cubecorners').checked),
-    smooth: Number(document.getElementById('smooth').value)
+    smooth: Math.round(Number(document.getElementById('smooth').value))
   }
 }
 
@@ -144,6 +144,10 @@ function renderResult(result, seq){
   scene.add(resultGroup)
 
   const values = result && result.values ? result.values : []
+  if (!Array.isArray(values)){
+    console.warn('Unexpected result shape:', result)
+    return
+  }
   if (values.length === 0) return
 
   // Prefer output whose ParamName mentions "mesh"; otherwise process all
