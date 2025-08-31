@@ -3,6 +3,19 @@ const router = express.Router()
 const { solve: computeSolve } = require('../services/compute')
 const {performance} = require('perf_hooks')
 const crypto = require('crypto')
+let rhinoModulePromise = null
+function getRhino(){
+  if (!rhinoModulePromise){
+    try{
+      const rhino3dm = require('rhino3dm')
+      rhinoModulePromise = rhino3dm()
+    }catch(err){
+      console.error('Failed to load rhino3dm in Node:', err)
+      rhinoModulePromise = Promise.resolve(null)
+    }
+  }
+  return rhinoModulePromise
+}
 
 const NodeCache = require('node-cache')
 const DEFAULT_TTL = Number(process.env.CACHE_TTL_SECS || '60')
@@ -59,11 +72,14 @@ function stableInputs(inputs, defName){
     if (excluded.has(k)) return
     let v = inputs[k]
     // Replace large geometry payloads with hashes for cache key stability
-    if (k === 'RH_IN:brep' || k === 'RH_IN:mesh'){
+    if (k === 'RH_IN:brep' || k === 'RH_IN:mesh' || k === 'RH_IN:brep_3dm'){
       try{
         const s = typeof v === 'string' ? v : JSON.stringify(v)
         const hash = crypto.createHash('md5').update(s).digest('hex')
-        const tag = k.endsWith(':brep') ? 'brepHash' : 'meshHash'
+        let tag = 'geomHash'
+        if (k.endsWith(':brep')) tag = 'brepHash'
+        if (k.endsWith(':mesh')) tag = 'meshHash'
+        if (k.endsWith(':brep_3dm')) tag = 'brep3dmHash'
         out[tag] = hash
         return
       } catch {}
@@ -187,7 +203,76 @@ async function commonSolve (req, res, next){
       // Solve using compute with a hashed definition URL pointer for robustness
       const defObj = res.locals.params.definition
       const definitionName = defObj.name || defObj
-      const inputs = res.locals.params.inputs || {}
+      const inputs = Object.assign({}, res.locals.params.inputs || {})
+
+      // If client sent a raw .3dm base64 for the Brep, parse and encode on server
+      if (inputs['RH_IN:brep_3dm'] && !inputs['RH_IN:brep']){
+        try{
+          const rhino = await getRhino()
+          if (rhino){
+            const base64 = inputs['RH_IN:brep_3dm']
+            const bytes = Buffer.from(base64, 'base64')
+            const doc = rhino.File3dm.fromByteArray(new Uint8Array(bytes))
+            if (doc){
+              let brep = null
+              let mesh = null
+              const tryCollect = (geo)=>{
+                if (!geo) return false
+                const type = geo.objectType
+                if (!brep && type === rhino.ObjectType.Brep){
+                  try{ if (geo.isSolid && geo.isSolid()) { brep = geo; return true } }catch{}
+                  brep = geo; return true
+                }
+                if (!brep && type === rhino.ObjectType.Extrusion && geo.toBrep){
+                  const b = geo.toBrep(true); if (b){ brep = b; return true }
+                }
+                if (!brep && type === rhino.ObjectType.Surface){
+                  try{ const b = rhino.Brep.createFromSurface(geo); if (b){ brep = b; return true } }catch{}
+                }
+                if (!brep && type === rhino.ObjectType.SubD && geo.toBrep){
+                  const b = geo.toBrep(true); if (b){ brep = b; return true }
+                }
+                if (!mesh && type === rhino.ObjectType.Mesh){ mesh = geo; return true }
+                return false
+              }
+              const objects = doc.objects()
+              for (let i=0; i<objects.count; i++){
+                const obj = objects.get(i)
+                const geo = obj.geometry()
+                if (!geo) continue
+                if (tryCollect(geo)) continue
+                try{
+                  if (geo.objectType === rhino.ObjectType.InstanceReference){
+                    const idef = doc.getInstanceDefinitionGeometry(geo.parentIdefId)
+                    if (idef){
+                      for (let j=0; j<idef.count; j++){
+                        const idefObj = idef.get(j)
+                        if (idefObj && tryCollect(idefObj.geometry())) break
+                      }
+                    }
+                  }
+                }catch{}
+              }
+              if (!brep && mesh && rhino.Brep && typeof rhino.Brep.createFromMesh === 'function'){
+                try{ brep = rhino.Brep.createFromMesh(mesh, true) || rhino.Brep.createFromMesh(mesh, false) }catch{}
+              }
+              if (brep){
+                try{
+                  const encoded = rhino.CommonObject && typeof rhino.CommonObject.encode === 'function'
+                    ? rhino.CommonObject.encode(brep)
+                    : (typeof brep.encode === 'function' ? brep.encode() : null)
+                  if (encoded){
+                    inputs['RH_IN:brep'] = encoded
+                    delete inputs['RH_IN:brep_3dm']
+                  }
+                }catch(err){ console.error('Server encode Brep failed', err) }
+              }
+            }
+          }
+        }catch(err){
+          console.error('Failed to parse RH_IN:brep_3dm', err)
+        }
+      }
 
       // Build absolute pointer URL that Compute will fetch directly
       const fullUrl = req.protocol + '://' + req.get('host')

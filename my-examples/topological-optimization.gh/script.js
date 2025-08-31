@@ -93,17 +93,27 @@ if (uploadInput){
         }catch{}
       }
 
+      let uploadedBrep3dmBase64 = null
       if (brep){
-        uploadedBrepEncoded = encodeRhinoObject(brep)
+        try{
+          const doc = new rhino.File3dm()
+          doc.objects().add(brep, null)
+          const bytes = doc.toByteArray()
+          uploadedBrep3dmBase64 = arrayBufferToBase64(bytes)
+        }catch{}
       } else if (mesh){
-        // Do not send mesh to a Brep param; keep fallback to internal Brep
-        console.warn('Only Mesh found; not overriding Brep input')
-        uploadedBrepEncoded = null
+        // try to pack mesh into 3dm and let server convert if needed
+        try{
+          const doc = new rhino.File3dm()
+          doc.objects().add(mesh, null)
+          const bytes = doc.toByteArray()
+          uploadedBrep3dmBase64 = arrayBufferToBase64(bytes)
+        }catch{}
       } else {
         console.warn('No Brep or Mesh found in .3dm')
-        uploadedBrepEncoded = null
+        uploadedBrep3dmBase64 = null
       }
-      onSolve()
+      onSolve(uploadedBrep3dmBase64)
     } catch(err){
       console.error('Upload parse error', err)
     }
@@ -166,7 +176,7 @@ function getInputs(){
   }
 }
 
-async function onSolve(){
+async function onSolve(uploadedBrep3dmBase64){
   // cancel any in-flight request
   if (currentSolve.controller) {
     currentSolve.controller.abort()
@@ -211,8 +221,8 @@ async function onSolve(){
       'RH_IN:cubecorners': Number(Boolean(ins.cubecorners)),
       'RH_IN:smooth': Number(ins.smooth)
     }
-    if (uploadedBrepEncoded){
-      payloadInputs['RH_IN:brep'] = uploadedBrepEncoded
+    if (uploadedBrep3dmBase64){
+      payloadInputs['RH_IN:brep_3dm'] = uploadedBrep3dmBase64
     }
     const payload = { definition: 'topological-optimization.gh', inputs: payloadInputs }
 
@@ -342,6 +352,23 @@ function base64ToArrayBuffer(base64) {
     bytes[i] = binary_string.charCodeAt(i)
   }
   return bytes.buffer
+}
+
+function arrayBufferToBase64(bytes){
+  try{
+    const bin = Array.from(new Uint8Array(bytes)).map(b=>String.fromCharCode(b)).join('')
+    return btoa(bin)
+  }catch(e){
+    // Fallback chunked for large buffers
+    let binary = ''
+    const arr = new Uint8Array(bytes)
+    const chunk = 0x8000
+    for (let i=0; i<arr.length; i+=chunk){
+      const sub = arr.subarray(i, i+chunk)
+      binary += String.fromCharCode.apply(null, sub)
+    }
+    return btoa(binary)
+  }
 }
 
 async function initRhino(){
