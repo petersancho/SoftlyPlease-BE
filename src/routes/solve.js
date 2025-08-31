@@ -130,6 +130,17 @@ function collectParams (req, res, next){
   if(!definition)
     throw new Error('Definition not found on server.')
 
+  // Force .gh when overriding Brep to align with updated file
+  try{
+    const hasUpload = res.locals.params && res.locals.params.inputs && (res.locals.params.inputs['RH_IN:brep'] || res.locals.params.inputs['RH_IN:brep_3dm'])
+    if (hasUpload){
+      if (definition.name.endsWith('.ghx')){
+        const alt = req.app.get('definitions').find(o => o.name === definition.name.replace(/\.ghx$/i, '.gh'))
+        if (alt){ definition = alt }
+      }
+    }
+  }catch{}
+
   //replace definition data with object that includes definition hash
   res.locals.params.definition = definition
 
