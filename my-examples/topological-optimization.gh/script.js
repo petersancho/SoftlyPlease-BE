@@ -83,9 +83,9 @@ if (uploadInput){
         }catch{}
       }
       if (brep){
-        uploadedBrepEncoded = rhino.CommonObject.encode(brep)
+        uploadedBrepEncoded = encodeRhinoObject(brep)
       } else if (mesh){
-        uploadedBrepEncoded = rhino.CommonObject.encode(mesh)
+        uploadedBrepEncoded = encodeRhinoObject(mesh)
       } else {
         console.warn('No Brep or Mesh found in .3dm')
         uploadedBrepEncoded = null
@@ -418,5 +418,29 @@ function rhinoMeshToThree(rMesh){
   const material = new THREE.MeshStandardMaterial({ color: 0x6b8cff, metalness:0.1, roughness:0.85 })
   const mesh = new THREE.Mesh(geometry, material)
   return mesh
+}
+
+function encodeRhinoObject(obj){
+  try{
+    if (obj && typeof obj.encode === 'function'){
+      return obj.encode()
+    }
+  }catch{}
+  // Fallback for rhino3dm v7 API shape
+  if (rhino && rhino.CommonObject && typeof rhino.CommonObject.decode === 'function'){
+    // There is no static encode; construct via File3dm roundtrip
+    try{
+      const doc = new rhino.File3dm()
+      doc.objects().add(obj, null)
+      const bytes = doc.toByteArray()
+      const parsed = rhino.File3dm.fromByteArray(bytes)
+      const objs = parsed.objects()
+      if (objs.count > 0){
+        const geo = objs.get(0).geometry()
+        return geo && typeof geo.encode === 'function' ? geo.encode() : geo
+      }
+    }catch{}
+  }
+  return obj
 }
 
