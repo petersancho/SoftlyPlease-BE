@@ -14,6 +14,7 @@ let rhino
 let currentSolve = { controller: null, seq: 0 }
 let resultGroup = null
 let lastInputs = null
+let lastLinks = null
 
 initRhino()
 
@@ -87,6 +88,27 @@ async function onSolve(){
     statusEl.textContent = 'Solving...'
     const ins = getInputs()
     lastInputs = ins
+    // Derive the proximity window directly from links to mirror GH behavior
+    if (typeof ins.links === 'number'){
+      const l = Math.max(0, Math.min(10, ins.links))
+      // Map links monotonically: higher links -> wider window
+      // minr shrinks slightly, maxr grows more aggressively
+      let dMin = 1.5 - l * 0.12
+      let dMax = 4.0 + l * 1.25
+      dMin = Math.max(0.05, Math.min(3.0, dMin))
+      dMax = Math.max(dMin + 0.1, Math.min(25.0, dMax))
+      ins.minr = dMin
+      ins.maxr = dMax
+      const minrEl = document.getElementById('minr')
+      const maxrEl = document.getElementById('maxr')
+      const minrOut = document.getElementById('minrVal')
+      const maxrOut = document.getElementById('maxrVal')
+      if (minrEl) minrEl.value = String(dMin)
+      if (maxrEl) maxrEl.value = String(dMax)
+      if (minrOut) minrOut.textContent = String(dMin)
+      if (maxrOut) maxrOut.textContent = String(dMax)
+      lastLinks = l
+    }
     // enforce param relationships expected by GH
     if (ins.minr > ins.maxr){
       const tmp = ins.minr
