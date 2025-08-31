@@ -271,6 +271,9 @@ async function commonSolve (req, res, next){
           }
         }catch(err){
           console.error('Failed to parse RH_IN:brep_3dm', err)
+        } finally {
+          // Always remove the raw 3dm payload before compute call
+          delete inputs['RH_IN:brep_3dm']
         }
       }
 

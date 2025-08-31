@@ -37,6 +37,13 @@ async function solve(definition, inputs = {}, defUrl) {
     ]);
     const trees = [];
     for (const [key, raw] of Object.entries(inputs)) {
+      // Special-case Rhino JSON payloads (e.g., encoded Brep)
+      if (key === 'RH_IN:brep' && raw && typeof raw === 'object' && raw.type && raw.data !== undefined) {
+        const t = new compute.Grasshopper.DataTree(key);
+        t.append([0], [raw]);
+        trees.push(t);
+        continue;
+      }
       let value = raw;
       if (intKeys.has(key)) {
         if (Array.isArray(raw)) value = raw.map(v => Number.parseInt(v, 10));
