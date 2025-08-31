@@ -317,6 +317,23 @@ async function commonSolve (req, res, next){
             details: { type, dataType: typeof data, dataLen: brepLen }
           })
         }
+        // Strong validation: decode and ensure closed Brep
+        try{
+          const rhino = await getRhino()
+          if (rhino && rhino.CommonObject && typeof rhino.CommonObject.decode === 'function'){
+            const decoded = rhino.CommonObject.decode(inputs['RH_IN:brep'])
+            if (!decoded || decoded.objectType !== rhino.ObjectType.Brep){
+              return res.status(400).send({ message:'RH_IN:brep must be a Brep' })
+            }
+            try{
+              const valid = (typeof decoded.isValid === 'function') ? decoded.isValid() : true
+              const solid = (typeof decoded.isSolid === 'function') ? decoded.isSolid() : true
+              if (!valid || !solid){
+                return res.status(400).send({ message:'Brep must be valid and closed (solid)', details: { valid, solid } })
+              }
+            }catch{}
+          }
+        }catch{}
       }
 
       // Add debug logging in development
