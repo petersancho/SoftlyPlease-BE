@@ -115,6 +115,7 @@ async function onSolve(){
     inputs['RH_IN:links'] = inputs.links
     inputs['RH_IN:minR'] = inputs.minr
     inputs['RH_IN:maxR'] = inputs.maxr
+    inputs['RH_IN:thickness'] = inputs.thickness
     inputs['RH_IN:minr'] = inputs.minr
     inputs['RH_IN:maxr'] = inputs.maxr
     const payload = { definition: 'topological-optimization.gh', inputs, nocache: 1 }
