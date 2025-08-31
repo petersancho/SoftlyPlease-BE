@@ -277,6 +277,22 @@ async function commonSolve (req, res, next){
         }
       }
 
+      // If client sent a RhinoJSON-encoded Brep, normalize by decoding and re-encoding with server rhino3dm (v7)
+      if (inputs['RH_IN:brep'] && typeof inputs['RH_IN:brep'] === 'object' && inputs['RH_IN:brep'].type && inputs['RH_IN:brep'].data !== undefined){
+        try{
+          const rhino = await getRhino()
+          if (rhino && rhino.CommonObject && typeof rhino.CommonObject.decode === 'function'){
+            const decoded = rhino.CommonObject.decode(inputs['RH_IN:brep'])
+            if (decoded){
+              const reencoded = rhino.CommonObject.encode(decoded)
+              if (reencoded && reencoded.type && reencoded.data !== undefined){
+                inputs['RH_IN:brep'] = reencoded
+              }
+            }
+          }
+        }catch(err){ console.error('Server re-encode Brep failed', err) }
+      }
+
       // Build absolute pointer URL that Compute will fetch directly
       const fullUrl = req.protocol + '://' + req.get('host')
       const defUrl = `${fullUrl}/definition/${defObj.id || defObj}`
