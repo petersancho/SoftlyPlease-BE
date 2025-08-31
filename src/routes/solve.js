@@ -138,16 +138,7 @@ function collectParams (req, res, next){
   if(!definition)
     throw new Error('Definition not found on server.')
 
-  // Force .gh when overriding Brep to align with updated file
-  try{
-    const hasUpload = res.locals.params && res.locals.params.inputs && (res.locals.params.inputs['RH_IN:brep'] || res.locals.params.inputs['RH_IN:brep_3dm'])
-    if (hasUpload){
-      if (definition.name.endsWith('.ghx')){
-        const alt = req.app.get('definitions').find(o => o.name === definition.name.replace(/\.ghx$/i, '.gh'))
-        if (alt){ definition = alt }
-      }
-    }
-  }catch{}
+  // No definition switching here; selection happens in commonSolve based on normalized inputs
 
   //replace definition data with object that includes definition hash
   res.locals.params.definition = definition
@@ -224,7 +215,7 @@ async function commonSolve (req, res, next){
       // Solve using compute with a hashed definition URL pointer for robustness
       let defObj = res.locals.params.definition
       let definitionName = defObj.name || defObj
-      const inputs = Object.assign({}, res.locals.params.inputs || {})
+      let inputs = Object.assign({}, res.locals.params.inputs || {})
 
       // If client sent a raw .3dm base64 for the Brep, parse and encode on server
       if ((inputs['RH_IN:brep_3dm'] && !inputs['RH_IN:brep'] && !inputs['RH_in:Brep'])){
@@ -328,7 +319,7 @@ async function commonSolve (req, res, next){
           if (key === 'rh_in:strutsize') key = 'rh_in:strutSize'
           norm[key] = v
         }
-        Object.assign(inputs, norm)
+        inputs = norm
       }
 
       // Normalize client-provided Brep payloads
