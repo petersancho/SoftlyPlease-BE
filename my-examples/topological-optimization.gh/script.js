@@ -63,8 +63,9 @@ async function fileToBase64(file){
 function getInputs(){
   return {
     links: Math.round(Number(document.getElementById('links').value)),
-    minr: Math.round(Number(document.getElementById('minr').value)),
-    maxr: Math.round(Number(document.getElementById('maxr').value)),
+    // minr/maxr hidden in UI; keep GHX defaults or last values if present
+    minr: (document.getElementById('minr') ? Math.round(Number(document.getElementById('minr').value)) : 24),
+    maxr: (document.getElementById('maxr') ? Math.round(Number(document.getElementById('maxr').value)) : 500),
     thickness: Math.round(Number(document.getElementById('thickness').value)),
     square: Math.round(Number(document.getElementById('square').value)),
     // strutsize/segment: fallback to GHX defaults when UI controls are absent
