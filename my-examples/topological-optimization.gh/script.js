@@ -217,7 +217,8 @@ async function onSolve(){
       'RH_IN:smooth': Number(ins.smooth)
     }
     if (uploadedBrepEncoded){
-      payloadInputs['RH_IN:brep'] = uploadedBrepEncoded
+      // Match GH Param case: RH_in:Brep (as configured in your file)
+      payloadInputs['RH_in:Brep'] = uploadedBrepEncoded
     }
     const payload = { definition: 'topological-optimization.gh', inputs: payloadInputs }
 
