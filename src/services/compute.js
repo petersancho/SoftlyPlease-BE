@@ -38,9 +38,18 @@ async function solve(definition, inputs = {}, defUrl) {
     const trees = [];
     for (const [key, raw] of Object.entries(inputs)) {
       // Special-case Rhino JSON payloads (e.g., encoded Brep)
-      if (key === 'RH_IN:brep' && raw && typeof raw === 'object' && raw.type && raw.data !== undefined) {
+      if (key === 'RH_IN:brep' && raw && typeof raw === 'object') {
+        let payload = raw
+        // Normalize possible shapes: either already {type,data} or a raw CommonObject with encode()
+        if (!(payload.type && payload.data !== undefined)) {
+          try { if (typeof raw.encode === 'function') payload = raw.encode() } catch {}
+        }
+        if (!(payload.type && payload.data !== undefined)) {
+          // last resort: pass raw; compute may still accept
+          payload = raw
+        }
         const t = new compute.Grasshopper.DataTree(key);
-        t.append([0], [raw]);
+        t.append([0], [payload]);
         trees.push(t);
         continue;
       }

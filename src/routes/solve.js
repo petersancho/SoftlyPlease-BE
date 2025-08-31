@@ -334,7 +334,8 @@ async function commonSolve (req, res, next){
     }
   } catch (error) {
     console.error('Solve error:', error)
-    next(error)
+    const msg = (error && error.message) ? String(error.message) : 'Internal Server Error'
+    res.status(500).send({ message: msg })
   }
 }
 
