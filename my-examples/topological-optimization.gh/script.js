@@ -319,7 +319,7 @@ function zoomToScene(){
     const distY = (size.y * 0.5) / Math.tan(halfFovY)
     const distX = (size.x * 0.5) / Math.tan(halfFovX)
     const baseDist = Math.max(distX, distY)
-    const margin = 4.5
+    const margin = 2.25
     const finalDist = Math.max(1, baseDist * margin)
     camera.near = Math.max(0.1, finalDist/100)
     camera.far  = finalDist*100
