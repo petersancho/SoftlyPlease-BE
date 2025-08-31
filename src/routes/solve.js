@@ -293,6 +293,14 @@ async function commonSolve (req, res, next){
         }catch(err){ console.error('Server re-encode Brep failed', err) }
       }
 
+      // Normalize client-provided Brep payloads
+      if (typeof inputs['RH_IN:brep'] === 'string'){
+        inputs['RH_IN:brep'] = { type: 'Rhino.Geometry.Brep', data: inputs['RH_IN:brep'] }
+      }
+      if (inputs['RH_IN:brep'] && typeof inputs['RH_IN:brep'] === 'object' && inputs['RH_IN:brep'].data !== undefined && !inputs['RH_IN:brep'].type){
+        inputs['RH_IN:brep'].type = 'Rhino.Geometry.Brep'
+      }
+
       // Build absolute pointer URL that Compute will fetch directly
       const fullUrl = req.protocol + '://' + req.get('host')
       const defUrl = `${fullUrl}/definition/${defObj.id || defObj}`
