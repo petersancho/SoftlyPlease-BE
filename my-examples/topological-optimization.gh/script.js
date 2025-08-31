@@ -87,9 +87,9 @@ async function onSolve(){
     const ins = getInputs()
     // enforce param relationships expected by GH
     if (ins.minr > ins.maxr){
-      const mid = (ins.minr + ins.maxr) / 2
-      ins.minr = mid
-      ins.maxr = mid
+      const tmp = ins.minr
+      ins.minr = ins.maxr
+      ins.maxr = tmp
       const minrEl = document.getElementById('minr')
       const maxrEl = document.getElementById('maxr')
       if (minrEl) minrEl.value = String(ins.minr)
@@ -102,7 +102,7 @@ async function onSolve(){
     // Ensure booleans/numbers are typed as expected by GH
     const inputs = { ...ins }
     // Use canonical input names only
-    const payload = { definition: 'topological-optimization.gh', inputs }
+    const payload = { definition: 'topological-optimization.gh', inputs, nocache: 1 }
 
     const res = await fetch('/solve', {
       method:'POST',

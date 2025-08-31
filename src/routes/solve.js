@@ -117,16 +117,16 @@ function collectParams (req, res, next){
 
 function checkCache (req, res, next){
 
-  if (res.locals.skipCache) {
-    return next()
-  }
-
   const key = {}
   key.definition = { 'name': res.locals.params.definition.name, 'id': res.locals.params.definition.id }
   const rawInputs = res.locals.params.values!==undefined ? res.locals.params.values : res.locals.params.inputs
   key.inputs = stableInputs(rawInputs, res.locals.params.definition.name)
   res.locals.cacheKey = JSON.stringify(key)
   res.locals.cacheResult = null
+
+  if (res.locals.skipCache) {
+    return next()
+  }
 
   if(mc === null){
     // use node cache
