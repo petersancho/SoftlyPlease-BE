@@ -315,12 +315,14 @@ function zoomToScene(){
     const size = box.getSize(new THREE.Vector3())
     const center = box.getCenter(new THREE.Vector3())
     const maxDim = Math.max(size.x, size.y, size.z)
-    const fitDist = maxDim / (2*Math.tan((Math.PI/180)*camera.fov*0.5))
-    camera.near = Math.max(0.1, fitDist/100)
-    camera.far  = fitDist*100
+    const baseDist = maxDim / (2*Math.tan((Math.PI/180)*camera.fov*0.5))
+    const mult = 4.0
+    const finalDist = baseDist * mult
+    camera.near = Math.max(0.1, finalDist/100)
+    camera.far  = finalDist*100
     camera.updateProjectionMatrix()
     const dir = new THREE.Vector3().subVectors(camera.position, controls.target).normalize()
-    camera.position.copy(center.clone().add(dir.multiplyScalar(fitDist*2.0)))
+    camera.position.copy(center.clone().add(dir.multiplyScalar(finalDist)))
     controls.target.copy(center)
     controls.update()
   }
