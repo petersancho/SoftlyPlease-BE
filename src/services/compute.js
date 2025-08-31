@@ -24,9 +24,15 @@ async function solve(definition, inputs = {}, defUrl) {
     // Build absolute URL for Rhino Compute (hotfix)
     const absoluteDefUrl = defUrl || new URL(`/files/${encodeURIComponent(defName)}`, ORIGIN).toString();
 
-    // Prepare inputs for compute
+    // Prepare inputs for compute: normalize types per IO (ints for these keys)
+    const intKeys = new Set(['links','minr','maxr','thickness','square','strutsize','segment','cubecorners','smooth']);
     const trees = [];
-    for (const [key, value] of Object.entries(inputs)) {
+    for (const [key, raw] of Object.entries(inputs)) {
+      let value = raw;
+      if (intKeys.has(key)) {
+        if (Array.isArray(raw)) value = raw.map(v => Number.parseInt(v, 10));
+        else value = Number.parseInt(raw, 10);
+      }
       const param = new compute.Grasshopper.DataTree(key);
       param.append([0], Array.isArray(value) ? value : [value]);
       trees.push(param);
