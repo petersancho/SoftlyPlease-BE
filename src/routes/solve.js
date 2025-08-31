@@ -222,8 +222,8 @@ async function commonSolve (req, res, next){
       return
     } else {
       // Solve using compute with a hashed definition URL pointer for robustness
-      const defObj = res.locals.params.definition
-      const definitionName = defObj.name || defObj
+      let defObj = res.locals.params.definition
+      let definitionName = defObj.name || defObj
       const inputs = Object.assign({}, res.locals.params.inputs || {})
 
       // If client sent a raw .3dm base64 for the Brep, parse and encode on server
@@ -317,26 +317,42 @@ async function commonSolve (req, res, next){
         }
       }
 
+      // Key normalization: map RH_IN:/RH_in: to rh_in:, thickness->nodeSize, strutsize->strutSize
+      {
+        const norm = {}
+        for (const [k,v] of Object.entries(inputs)){
+          let key = k
+          if (/^RH_IN:/.test(key)) key = key.replace(/^RH_IN:/,'rh_in:')
+          if (/^RH_in:/.test(key)) key = key.replace(/^RH_in:/,'rh_in:')
+          if (key === 'rh_in:thickness') key = 'rh_in:nodeSize'
+          if (key === 'rh_in:strutsize') key = 'rh_in:strutSize'
+          norm[key] = v
+        }
+        Object.assign(inputs, norm)
+      }
+
       // Normalize client-provided Brep payloads
-      if (typeof inputs['RH_IN:brep'] === 'string'){
-        inputs['RH_IN:brep'] = { type: 'Rhino.Geometry.Brep', data: inputs['RH_IN:brep'] }
+      if (typeof inputs['rh_in:brep'] === 'string'){
+        inputs['rh_in:brep'] = { type: 'Rhino.Geometry.Brep', data: inputs['rh_in:brep'] }
       }
-      if (inputs['RH_IN:brep'] && typeof inputs['RH_IN:brep'] === 'object' && inputs['RH_IN:brep'].data !== undefined && !inputs['RH_IN:brep'].type){
-        inputs['RH_IN:brep'].type = 'Rhino.Geometry.Brep'
-      }
-      if (typeof inputs['RH_in:Brep'] === 'string'){
-        inputs['RH_in:Brep'] = { type: 'Rhino.Geometry.Brep', data: inputs['RH_in:Brep'] }
-      }
-      if (inputs['RH_in:Brep'] && typeof inputs['RH_in:Brep'] === 'object' && inputs['RH_in:Brep'].data !== undefined && !inputs['RH_in:Brep'].type){
-        inputs['RH_in:Brep'].type = 'Rhino.Geometry.Brep'
+      if (inputs['rh_in:brep'] && typeof inputs['rh_in:brep'] === 'object' && inputs['rh_in:brep'].data !== undefined && !inputs['rh_in:brep'].type){
+        inputs['rh_in:brep'].type = 'Rhino.Geometry.Brep'
       }
 
       // Build absolute pointer URL that Compute will fetch directly
+      // Prefer .ghx if upload present (adapter-ready); else keep current
+      try{
+        const hasUpload = !!inputs['rh_in:brep']
+        if (hasUpload && definitionName.endsWith('.gh')){
+          const alt = req.app.get('definitions').find(o => o.name === definitionName.replace(/\.gh$/i, '.ghx'))
+          if (alt){ defObj = alt; definitionName = alt.name }
+        }
+      }catch{}
       const fullUrl = req.protocol + '://' + req.get('host')
       const defUrl = `${fullUrl}/definition/${defObj.id || defObj}`
 
       // Validate Brep payload shape (pre-flight)
-      const brepKey = inputs['RH_IN:brep'] ? 'RH_IN:brep' : (inputs['RH_in:Brep'] ? 'RH_in:Brep' : null)
+      const brepKey = inputs['rh_in:brep'] ? 'rh_in:brep' : null
       if (brepKey){
         const b = inputs[brepKey]
         const type = b && b.type

@@ -206,19 +206,18 @@ async function onSolve(){
     const minRVal = Math.max(0, Number(ins.minr))
     const maxRVal = Math.max(minRVal + 0.001, Number(ins.maxr))
     const payloadInputs = {
-      'RH_IN:links': linksVal,
-      'RH_IN:minR': minRVal,
-      'RH_IN:maxR': maxRVal,
-      'RH_IN:thickness': Number(ins.thickness),
-      'RH_IN:square': Math.round(Number(ins.square)),
-      'RH_IN:strutsize': Number(ins.strutsize),
-      'RH_IN:segment': Number(ins.segment),
-      'RH_IN:cubecorners': Number(Boolean(ins.cubecorners)),
-      'RH_IN:smooth': Number(ins.smooth)
+      'rh_in:links': linksVal,
+      'rh_in:minR': minRVal,
+      'rh_in:maxR': maxRVal,
+      'rh_in:nodeSize': Number(ins.thickness),
+      'rh_in:square': Math.round(Number(ins.square)),
+      'rh_in:strutSize': Number(ins.strutsize),
+      'rh_in:segment': Number(ins.segment),
+      'rh_in:cubecorners': Number(Boolean(ins.cubecorners)),
+      'rh_in:smooth': Number(ins.smooth)
     }
     if (uploadedBrepEncoded){
-      // Match GH Param case: RH_in:Brep (as configured in your file)
-      payloadInputs['RH_in:Brep'] = uploadedBrepEncoded
+      payloadInputs['rh_in:brep'] = uploadedBrepEncoded
     }
     const payload = { definition: 'topological-optimization.gh', inputs: payloadInputs }
 

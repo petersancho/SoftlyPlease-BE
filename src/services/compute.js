@@ -28,17 +28,19 @@ async function solve(definition, inputs = {}, defUrl) {
     // Integers for these keys
     const intKeys = new Set([
       'links','square','cubecorners','smooth',
-      'RH_IN:links','RH_IN:square','RH_IN:cubecorners','RH_IN:smooth'
+      'RH_IN:links','RH_IN:square','RH_IN:cubecorners','RH_IN:smooth',
+      'rh_in:links','rh_in:square','rh_in:cubecorners','rh_in:smooth'
     ]);
     // Doubles for these keys
     const doubleKeys = new Set([
-      'minr','maxr','thickness','strutsize','strutSize','segment',
-      'RH_IN:minR','RH_IN:maxR','RH_IN:thickness','RH_IN:strutsize','RH_IN:strutSize','RH_IN:segment'
+      'minr','maxr','thickness','strutsize','strutSize','segment','nodeSize',
+      'RH_IN:minR','RH_IN:maxR','RH_IN:thickness','RH_IN:strutsize','RH_IN:strutSize','RH_IN:segment',
+      'rh_in:minR','rh_in:maxR','rh_in:segment','rh_in:nodeSize','rh_in:strutSize'
     ]);
     const trees = [];
     for (const [key, raw] of Object.entries(inputs)) {
       // Special-case Rhino JSON payloads (e.g., encoded Brep)
-      if ((key === 'RH_IN:brep' || key === 'RH_in:Brep') && raw && typeof raw === 'object') {
+      if ((key === 'RH_IN:brep' || key === 'RH_in:Brep' || key === 'rh_in:brep') && raw && typeof raw === 'object') {
         let payload = raw
         // Normalize possible shapes: either already {type,data} or a raw CommonObject with encode()
         if (!(payload.type && payload.data !== undefined)) {
