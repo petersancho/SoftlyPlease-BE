@@ -90,6 +90,12 @@ function collectParams (req, res, next){
     break
   }
 
+  // allow clients to bypass cache for testing or freshness
+  const p = res.locals.params
+  const nocacheTop = p && (p.nocache === 1 || p.nocache === '1' || p.nocache === true || p.nocache === 'true')
+  const nocacheInput = p && p.inputs && (p.inputs.nocache === 1 || p.inputs.nocache === '1' || p.inputs.nocache === true || p.inputs.nocache === 'true')
+  res.locals.skipCache = !!(nocacheTop || nocacheInput)
+
   let definitionName = res.locals.params.definition
   if (definitionName===undefined)
     definitionName = res.locals.params.pointer
@@ -110,6 +116,10 @@ function collectParams (req, res, next){
  */
 
 function checkCache (req, res, next){
+
+  if (res.locals.skipCache) {
+    return next()
+  }
 
   const key = {}
   key.definition = { 'name': res.locals.params.definition.name, 'id': res.locals.params.definition.id }
@@ -198,20 +208,22 @@ async function commonSolve (req, res, next){
         inflight.delete(res.locals.cacheKey)
       }
 
-      // Cache the result
+      // Cache the result (unless bypassed)
       const resultString = JSON.stringify(result)
-      if(mc !== null) {
-        // set memcached with TTL
-        const defTTL = getPerDefEnv('MEMCACHE_TTL_SECS', definitionName) || getPerDefEnv('CACHE_TTL_SECS', definitionName)
-        const ttl = Number(defTTL || process.env.MEMCACHE_TTL_SECS || process.env.CACHE_TTL_SECS || DEFAULT_TTL)
-        mc.set(res.locals.cacheKey, resultString, {expires: ttl}, function(err){
-          if(err) console.log('Memcached set error:', err)
-        })
-      } else {
-        // set node-cache (uses per-set TTL)
-        const defTTL = getPerDefEnv('CACHE_TTL_SECS', definitionName)
-        const ttl = Number(defTTL || DEFAULT_TTL)
-        cache.set(res.locals.cacheKey, resultString, ttl)
+      if (!res.locals.skipCache) {
+        if(mc !== null) {
+          // set memcached with TTL
+          const defTTL = getPerDefEnv('MEMCACHE_TTL_SECS', definitionName) || getPerDefEnv('CACHE_TTL_SECS', definitionName)
+          const ttl = Number(defTTL || process.env.MEMCACHE_TTL_SECS || process.env.CACHE_TTL_SECS || DEFAULT_TTL)
+          mc.set(res.locals.cacheKey, resultString, {expires: ttl}, function(err){
+            if(err) console.log('Memcached set error:', err)
+          })
+        } else {
+          // set node-cache (uses per-set TTL)
+          const defTTL = getPerDefEnv('CACHE_TTL_SECS', definitionName)
+          const ttl = Number(defTTL || DEFAULT_TTL)
+          cache.set(res.locals.cacheKey, resultString, ttl)
+        }
       }
 
       const timespanPost = Math.round(performance.now() - timePostStart)
