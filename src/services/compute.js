@@ -24,10 +24,16 @@ async function solve(definition, inputs = {}, defUrl) {
     // Build absolute URL for Rhino Compute (hotfix)
     const absoluteDefUrl = defUrl || `${ORIGIN}/files/${encodeURIComponent(defName)}`;
 
-    // Prepare inputs for compute: normalize types per IO (ints for these keys)
+    // Prepare inputs for compute: normalize types per IO
+    // Integers for these keys
     const intKeys = new Set([
-      'links','thickness','square','segment','cubecorners','smooth',
-      'RH_IN:links','RH_IN:thickness','RH_IN:square','RH_IN:segment','RH_IN:cubecorners','RH_IN:smooth'
+      'links','square','segment','cubecorners','smooth',
+      'RH_IN:links','RH_IN:square','RH_IN:segment','RH_IN:cubecorners','RH_IN:smooth'
+    ]);
+    // Doubles for these keys
+    const doubleKeys = new Set([
+      'minr','maxr','thickness','strutsize','strutSize',
+      'RH_IN:minR','RH_IN:maxR','RH_IN:thickness','RH_IN:strutsize','RH_IN:strutSize'
     ]);
     const trees = [];
     for (const [key, raw] of Object.entries(inputs)) {
@@ -35,6 +41,9 @@ async function solve(definition, inputs = {}, defUrl) {
       if (intKeys.has(key)) {
         if (Array.isArray(raw)) value = raw.map(v => Number.parseInt(v, 10));
         else value = Number.parseInt(raw, 10);
+      } else if (doubleKeys.has(key)) {
+        if (Array.isArray(raw)) value = raw.map(v => Number.parseFloat(v));
+        else value = Number.parseFloat(raw);
       }
       const param = new compute.Grasshopper.DataTree(key);
       param.append([0], Array.isArray(value) ? value : [value]);

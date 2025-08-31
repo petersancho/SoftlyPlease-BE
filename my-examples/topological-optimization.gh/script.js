@@ -262,7 +262,7 @@ for (const id of inputs){
   // output label binding
   const out = document.getElementById(id+'Val')
   if (out){
-    const update = ()=>{ out.textContent = (el.type==='checkbox') ? String(el.checked) : String(Math.round(Number(el.value))) }
+    const update = ()=>{ out.textContent = (el.type==='checkbox') ? String(el.checked) : String(el.value) }
     el.addEventListener(evt, update)
     update()
   }
