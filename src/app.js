@@ -15,7 +15,7 @@ app.enable('trust proxy')
 if(process.env.NODE_ENV !== 'production')
   app.use(logger('dev'))
 
-app.use(express.json({limit: '10mb'}))
+app.use(express.json({limit: '50mb'}))
 app.use(express.urlencoded({ extended: false }))
 app.use(cors())
 app.use(compression())
