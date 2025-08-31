@@ -67,9 +67,9 @@ function getInputs(){
     maxr: Math.round(Number(document.getElementById('maxr').value)),
     thickness: Math.round(Number(document.getElementById('thickness').value)),
     square: Math.round(Number(document.getElementById('square').value)),
-    // strutsize/segment controls removed from UI
-    strutsize: undefined,
-    segment: undefined,
+    // strutsize/segment: fallback to GHX defaults when UI controls are absent
+    strutsize: (document.getElementById('strutsize') ? Number(document.getElementById('strutsize').value) : 1.0),
+    segment: (document.getElementById('segment') ? Number(document.getElementById('segment').value) : 0.0),
     cubecorners: Number(document.getElementById('cubecorners').checked),
     smooth: Number(document.getElementById('smooth').value)
   }
@@ -115,6 +115,8 @@ async function onSolve(){
       'RH_IN:maxR': maxRVal,
       'RH_IN:thickness': Number(ins.thickness),
       'RH_IN:square': Math.round(Number(ins.square)),
+      'RH_IN:strutsize': Number(ins.strutsize),
+      'RH_IN:segment': Number(ins.segment),
       'RH_IN:cubecorners': Number(Boolean(ins.cubecorners)),
       'RH_IN:smooth': Number(ins.smooth)
     }
