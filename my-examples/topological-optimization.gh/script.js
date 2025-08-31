@@ -82,10 +82,23 @@ if (uploadInput){
           }
         }catch{}
       }
+      // If only a mesh was found, try to convert it to a Brep for the GH input
+      if (!brep && mesh){
+        try{
+          if (rhino.Brep && typeof rhino.Brep.createFromMesh === 'function'){
+            let b = rhino.Brep.createFromMesh(mesh, true)
+            if (!b) b = rhino.Brep.createFromMesh(mesh, false)
+            if (b) brep = b
+          }
+        }catch{}
+      }
+
       if (brep){
         uploadedBrepEncoded = encodeRhinoObject(brep)
       } else if (mesh){
-        uploadedBrepEncoded = encodeRhinoObject(mesh)
+        // Do not send mesh to a Brep param; keep fallback to internal Brep
+        console.warn('Only Mesh found; not overriding Brep input')
+        uploadedBrepEncoded = null
       } else {
         console.warn('No Brep or Mesh found in .3dm')
         uploadedBrepEncoded = null
