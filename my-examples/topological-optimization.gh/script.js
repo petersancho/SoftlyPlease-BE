@@ -104,20 +104,22 @@ async function onSolve(){
       if (minrOut) minrOut.textContent = String(ins.minr)
       if (maxrOut) maxrOut.textContent = String(ins.maxr)
     }
-    // Ensure booleans/numbers are typed as expected by GH
-    const inputs = { ...ins }
-    // Use canonical input names only
-    // Enforce bounds only; do not derive. The GH graph defines behavior.
-    inputs.links = Math.max(0, Math.min(10, Number(ins.links)))
-    inputs.minr = Math.max(0, Number(ins.minr))
-    inputs.maxr = Math.max(inputs.minr, Number(ins.maxr))
-    // Also include explicit RH_IN:* names to match GH Param Names exactly
-    inputs['RH_IN:links'] = inputs.links
-    inputs['RH_IN:minR'] = inputs.minr
-    inputs['RH_IN:maxR'] = inputs.maxr
-    inputs['RH_IN:minr'] = inputs.minr
-    inputs['RH_IN:maxr'] = inputs.maxr
-    const payload = { definition: 'topological-optimization.gh', inputs, nocache: 1 }
+    // Build strict RH_IN payload only, matching GH Param Names exactly
+    const linksVal = Math.max(0, Math.min(10, Number(ins.links)))
+    const minRVal = Math.max(0, Number(ins.minr))
+    const maxRVal = Math.max(minRVal + 0.001, Number(ins.maxr))
+    const payloadInputs = {
+      'RH_IN:links': linksVal,
+      'RH_IN:minR': minRVal,
+      'RH_IN:maxR': maxRVal,
+      'RH_IN:thickness': Number(ins.thickness),
+      'RH_IN:square': Math.round(Number(ins.square)),
+      'RH_IN:strutsize': Number(ins.strutsize),
+      'RH_IN:segment': Math.round(Number(ins.segment)),
+      'RH_IN:cubecorners': Number(Boolean(ins.cubecorners)),
+      'RH_IN:smooth': Number(ins.smooth)
+    }
+    const payload = { definition: 'topological-optimization.gh', inputs: payloadInputs, nocache: 1 }
 
     const res = await fetch('/solve', {
       method:'POST',
