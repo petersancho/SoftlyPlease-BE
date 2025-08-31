@@ -12,8 +12,8 @@ const ORIGIN = process.env.PUBLIC_APP_ORIGIN || 'https://www.softlyplease.com';
  */
 async function solve(definition, inputs = {}, defUrl) {
   try {
-    // Ensure definition has .gh extension
-    const defName = definition.endsWith('.gh') || definition.endsWith('.ghx')
+    // Keep explicit extension when provided; default to .gh
+    const defName = (definition.endsWith('.gh') || definition.endsWith('.ghx'))
       ? definition
       : `${definition}.gh`;
 
