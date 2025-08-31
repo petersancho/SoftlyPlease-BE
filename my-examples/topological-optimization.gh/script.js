@@ -93,27 +93,22 @@ if (uploadInput){
         }catch{}
       }
 
-      let uploadedBrep3dmBase64 = null
       if (brep){
-        try{
-          const doc = new rhino.File3dm()
-          doc.objects().add(brep, null)
-          const bytes = doc.toByteArray()
-          uploadedBrep3dmBase64 = arrayBufferToBase64(bytes)
-        }catch{}
+        uploadedBrepEncoded = encodeRhinoObject(brep)
       } else if (mesh){
-        // try to pack mesh into 3dm and let server convert if needed
+        // if only mesh, try mesh->brep conversion; else skip override
         try{
-          const doc = new rhino.File3dm()
-          doc.objects().add(mesh, null)
-          const bytes = doc.toByteArray()
-          uploadedBrep3dmBase64 = arrayBufferToBase64(bytes)
+          if (rhino.Brep && typeof rhino.Brep.createFromMesh === 'function'){
+            let b = rhino.Brep.createFromMesh(mesh, true)
+            if (!b) b = rhino.Brep.createFromMesh(mesh, false)
+            if (b) uploadedBrepEncoded = encodeRhinoObject(b)
+          }
         }catch{}
       } else {
         console.warn('No Brep or Mesh found in .3dm')
-        uploadedBrep3dmBase64 = null
+        uploadedBrepEncoded = null
       }
-      onSolve(uploadedBrep3dmBase64)
+      onSolve()
     } catch(err){
       console.error('Upload parse error', err)
     }
@@ -176,7 +171,7 @@ function getInputs(){
   }
 }
 
-async function onSolve(uploadedBrep3dmBase64){
+async function onSolve(){
   // cancel any in-flight request
   if (currentSolve.controller) {
     currentSolve.controller.abort()
@@ -221,8 +216,8 @@ async function onSolve(uploadedBrep3dmBase64){
       'RH_IN:cubecorners': Number(Boolean(ins.cubecorners)),
       'RH_IN:smooth': Number(ins.smooth)
     }
-    if (uploadedBrep3dmBase64){
-      payloadInputs['RH_IN:brep_3dm'] = uploadedBrep3dmBase64
+    if (uploadedBrepEncoded){
+      payloadInputs['RH_IN:brep'] = uploadedBrepEncoded
     }
     const payload = { definition: 'topological-optimization.gh', inputs: payloadInputs }
 
