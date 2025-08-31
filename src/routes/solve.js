@@ -308,19 +308,7 @@ async function commonSolve (req, res, next){
         }
       }
 
-      // Key normalization: map RH_IN:/RH_in: to rh_in:, thickness->nodeSize, strutsize->strutSize
-      {
-        const norm = {}
-        for (const [k,v] of Object.entries(inputs)){
-          let key = k
-          if (/^RH_IN:/.test(key)) key = key.replace(/^RH_IN:/,'rh_in:')
-          if (/^RH_in:/.test(key)) key = key.replace(/^RH_in:/,'rh_in:')
-          if (key === 'rh_in:thickness') key = 'rh_in:nodeSize'
-          if (key === 'rh_in:strutsize') key = 'rh_in:strutSize'
-          norm[key] = v
-        }
-        inputs = norm
-      }
+      // Revert to legacy key handling; no normalization
 
       // Normalize client-provided Brep payloads
       if (typeof inputs['rh_in:brep'] === 'string'){

@@ -22,98 +22,7 @@ rhinoReady = initRhino()
 
 init()
 
-// Handle 3dm upload: read file, parse first closed Brep or first Mesh
-const uploadInput = document.getElementById('upload3dm')
-if (uploadInput){
-  uploadInput.addEventListener('change', async (e)=>{
-    try{
-      // Ensure rhino3dm is loaded
-      if (rhinoReady) await rhinoReady
-      const file = uploadInput.files && uploadInput.files[0]
-      if (!file) return
-      const buf = await file.arrayBuffer()
-      // parse 3dm
-      const bytes = new Uint8Array(buf)
-      const doc = rhino.File3dm.fromByteArray(bytes)
-      if (!doc){
-        console.warn('Failed to parse .3dm')
-        return
-      }
-      let brep = null
-      let mesh = null
-      // Helper to explode block instances and pick nested geometry
-      const tryCollectFromGeometry = (geo)=>{
-        if (!geo) return false
-        const type = geo.objectType
-        if (!brep && type === rhino.ObjectType.Brep){
-          try{ if (geo.isSolid && geo.isSolid()) { brep = geo; return true } }catch{}
-          brep = geo; return true
-        }
-        if (!brep && type === rhino.ObjectType.Extrusion && geo.toBrep){
-          const b = geo.toBrep(true); if (b){ brep = b; return true }
-        }
-        if (!brep && type === rhino.ObjectType.Surface){
-          try{
-            const b = rhino.Brep.createFromSurface(geo); if (b){ brep = b; return true }
-          }catch{}
-        }
-        if (!brep && type === rhino.ObjectType.SubD && geo.toBrep){
-          const b = geo.toBrep(true); if (b){ brep = b; return true }
-        }
-        if (!mesh && type === rhino.ObjectType.Mesh){ mesh = geo; return true }
-        return false
-      }
-      const objects = doc.objects()
-      for (let i=0; i<objects.count; i++){
-        const obj = objects.get(i)
-        const geo = obj.geometry()
-        if (!geo) continue
-        if (tryCollectFromGeometry(geo)) continue
-        // For instance references, iterate definition geometry
-        try{
-          if (geo.objectType === rhino.ObjectType.InstanceReference){
-            const idef = doc.getInstanceDefinitionGeometry(geo.parentIdefId)
-            if (idef){
-              for (let j=0; j<idef.count; j++){
-                const idefObj = idef.get(j)
-                if (idefObj && tryCollectFromGeometry(idefObj.geometry())) break
-              }
-            }
-          }
-        }catch{}
-      }
-      // If only a mesh was found, try to convert it to a Brep for the GH input
-      if (!brep && mesh){
-        try{
-          if (rhino.Brep && typeof rhino.Brep.createFromMesh === 'function'){
-            let b = rhino.Brep.createFromMesh(mesh, true)
-            if (!b) b = rhino.Brep.createFromMesh(mesh, false)
-            if (b) brep = b
-          }
-        }catch{}
-      }
-
-      if (brep){
-        uploadedBrepEncoded = encodeRhinoObject(brep)
-      } else if (mesh){
-        // if only mesh, try mesh->brep conversion; else skip override
-        try{
-          if (rhino.Brep && typeof rhino.Brep.createFromMesh === 'function'){
-            let b = rhino.Brep.createFromMesh(mesh, true)
-            if (!b) b = rhino.Brep.createFromMesh(mesh, false)
-            if (b) uploadedBrepEncoded = encodeRhinoObject(b)
-          }
-        }catch{}
-      } else {
-        console.warn('No Brep or Mesh found in .3dm')
-        uploadedBrepEncoded = null
-      }
-      onSolve()
-    } catch(err){
-      console.error('Upload parse error', err)
-    }
-  })
-}
+// Upload support removed per request
 
 function init(){
   scene = new THREE.Scene()
@@ -206,21 +115,17 @@ async function onSolve(){
     const minRVal = Math.max(0, Number(ins.minr))
     const maxRVal = Math.max(minRVal + 0.001, Number(ins.maxr))
     const payloadInputs = {
-      'rh_in:links': linksVal,
-      'rh_in:minR': minRVal,
-      'rh_in:maxR': maxRVal,
-      'rh_in:nodeSize': Number(ins.thickness),
-      'rh_in:square': Math.round(Number(ins.square)),
-      'rh_in:strutSize': Number(ins.strutsize),
-      'rh_in:segment': Number(ins.segment),
-      'rh_in:cubecorners': Number(Boolean(ins.cubecorners)),
-      'rh_in:smooth': Number(ins.smooth)
+      'RH_IN:links': linksVal,
+      'RH_IN:minR': minRVal,
+      'RH_IN:maxR': maxRVal,
+      'RH_IN:thickness': Number(ins.thickness),
+      'RH_IN:square': Math.round(Number(ins.square)),
+      'RH_IN:strutsize': Number(ins.strutsize),
+      'RH_IN:segment': Number(ins.segment),
+      'RH_IN:cubecorners': Number(Boolean(ins.cubecorners)),
+      'RH_IN:smooth': Number(ins.smooth)
     }
-    if (uploadedBrepEncoded){
-      payloadInputs['rh_in:brep'] = uploadedBrepEncoded
-    }
-    const defName = uploadedBrepEncoded ? 'topological-optimization.ghx' : 'topological-optimization.gh'
-    const payload = { definition: defName, inputs: payloadInputs }
+    const payload = { definition: 'topological-optimization.gh', inputs: payloadInputs }
 
     const res = await fetch('/solve', {
       method:'POST',
