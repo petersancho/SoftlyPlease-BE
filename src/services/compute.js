@@ -27,13 +27,13 @@ async function solve(definition, inputs = {}, defUrl) {
     // Prepare inputs for compute: normalize types per IO
     // Integers for these keys
     const intKeys = new Set([
-      'links','square','segment','cubecorners','smooth',
-      'RH_IN:links','RH_IN:square','RH_IN:segment','RH_IN:cubecorners','RH_IN:smooth'
+      'links','square','cubecorners','smooth',
+      'RH_IN:links','RH_IN:square','RH_IN:cubecorners','RH_IN:smooth'
     ]);
     // Doubles for these keys
     const doubleKeys = new Set([
-      'minr','maxr','strutsize','strutSize',
-      'RH_IN:minR','RH_IN:maxR','RH_IN:strutsize','RH_IN:strutSize'
+      'minr','maxr','thickness','strutsize','strutSize','segment',
+      'RH_IN:minR','RH_IN:maxR','RH_IN:thickness','RH_IN:strutsize','RH_IN:strutSize','RH_IN:segment'
     ]);
     const trees = [];
     for (const [key, raw] of Object.entries(inputs)) {
