@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <Archive name="Root">
   <!--Grasshopper archive-->
   <!--Grasshopper and GH_IO.dll are copyrighted by Robert McNeel & Associates-->
@@ -8839,8 +8839,7 @@
                     <item name="Name" type_name="gh_string" type_code="10">Integer</item>
                     <item name="NickName" type_name="gh_string" type_code="10">Integer</item>
                     <item name="Optional" type_name="gh_bool" type_code="1">false</item>
-                    <item name="Source" index="0" type_name="gh_guid" type_code="9">f213479d-2114-4c62-9f14-96d1768be262</item>
-                    <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
+                    <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
                   </items>
                   <chunks count="1">
                     <chunk name="Attributes">
@@ -8899,8 +8898,7 @@
                     <item name="Name" type_name="gh_string" type_code="10">Integer</item>
                     <item name="NickName" type_name="gh_string" type_code="10">Integer</item>
                     <item name="Optional" type_name="gh_bool" type_code="1">false</item>
-                    <item name="Source" index="0" type_name="gh_guid" type_code="9">3b23504c-2138-4f14-9c98-deb0115f159d</item>
-                    <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
+                    <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
                   </items>
                   <chunks count="1">
                     <chunk name="Attributes">
@@ -8959,8 +8957,7 @@
                     <item name="Name" type_name="gh_string" type_code="10">Integer</item>
                     <item name="NickName" type_name="gh_string" type_code="10">Integer</item>
                     <item name="Optional" type_name="gh_bool" type_code="1">false</item>
-                    <item name="Source" index="0" type_name="gh_guid" type_code="9">2ec09de1-a794-47ae-8ef9-2d2033c4be80</item>
-                    <item name="SourceCount" type_name="gh_int32" type_code="3">1</item>
+                    <item name="SourceCount" type_name="gh_int32" type_code="3">0</item>
                   </items>
                   <chunks count="1">
                     <chunk name="Attributes">
