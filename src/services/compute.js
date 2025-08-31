@@ -40,13 +40,12 @@ async function solve(definition, inputs = {}, defUrl) {
 
     // Solve the definition with absolute URL
     const response = await compute.Grasshopper.evaluateDefinition(absoluteDefUrl, trees, false);
-
+    const text = await response.text();
     if (!response.ok) {
-      throw new Error(response.statusText);
+      console.error('Compute error', { status: response.status, statusText: response.statusText, url: absoluteDefUrl, body: text });
+      throw new Error(`${response.status} ${response.statusText}: ${text}`);
     }
-
-    const result = await response.text();
-    return JSON.parse(result);
+    return JSON.parse(text);
 
   } catch (error) {
     console.error('Compute solve error:', error);
