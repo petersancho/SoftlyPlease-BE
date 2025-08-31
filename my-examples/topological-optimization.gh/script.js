@@ -130,6 +130,12 @@ async function onSolve(){
     inputs.links = Math.max(0, Math.min(10, Number(ins.links)))
     inputs.minr = Math.max(0, Number(ins.minr))
     inputs.maxr = Math.max(inputs.minr, Number(ins.maxr))
+    // Also include explicit RH_IN:* names to match GH Param Names exactly
+    inputs['RH_IN:links'] = inputs.links
+    inputs['RH_IN:minR'] = inputs.minr
+    inputs['RH_IN:maxR'] = inputs.maxr
+    inputs['RH_IN:minr'] = inputs.minr
+    inputs['RH_IN:maxr'] = inputs.maxr
     const payload = { definition: 'topological-optimization.gh', inputs, nocache: 1 }
 
     const res = await fetch('/solve', {
