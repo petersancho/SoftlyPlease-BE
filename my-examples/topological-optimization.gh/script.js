@@ -219,7 +219,8 @@ async function onSolve(){
     if (uploadedBrepEncoded){
       payloadInputs['RH_IN:brep'] = uploadedBrepEncoded
     }
-    const payload = { definition: 'topological-optimization.gh', inputs: payloadInputs }
+    const defName = uploadedBrepEncoded ? 'topological-optimization.ghx' : 'topological-optimization.gh'
+    const payload = { definition: defName, inputs: payloadInputs }
 
     const res = await fetch('/solve', {
       method:'POST',
