@@ -50,13 +50,15 @@ if (uploadInput){
           brep = geo; return true
         }
         if (!brep && type === rhino.ObjectType.Extrusion && geo.toBrep){
-          const b = geo.toBrep(); if (b){ brep = b; return true }
+          const b = geo.toBrep(true); if (b){ brep = b; return true }
         }
-        if (!brep && type === rhino.ObjectType.Surface && geo.toBrep){
-          const b = geo.toBrep(); if (b){ brep = b; return true }
+        if (!brep && type === rhino.ObjectType.Surface){
+          try{
+            const b = rhino.Brep.createFromSurface(geo); if (b){ brep = b; return true }
+          }catch{}
         }
         if (!brep && type === rhino.ObjectType.SubD && geo.toBrep){
-          const b = geo.toBrep(); if (b){ brep = b; return true }
+          const b = geo.toBrep(true); if (b){ brep = b; return true }
         }
         if (!mesh && type === rhino.ObjectType.Mesh){ mesh = geo; return true }
         return false
