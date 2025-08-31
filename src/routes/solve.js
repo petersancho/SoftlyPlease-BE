@@ -297,6 +297,20 @@ async function commonSolve (req, res, next){
       const fullUrl = req.protocol + '://' + req.get('host')
       const defUrl = `${fullUrl}/definition/${defObj.id || defObj}`
 
+      // Validate Brep payload shape (pre-flight)
+      if (inputs['RH_IN:brep']){
+        const b = inputs['RH_IN:brep']
+        const type = b && b.type
+        const data = b && b.data
+        if (!(type && /Brep/i.test(String(type)) && typeof data === 'string' && data.length > 0)){
+          const brepLen = (typeof data === 'string') ? data.length : -1
+          return res.status(400).send({
+            message: 'Invalid RH_IN:brep payload',
+            details: { type, dataType: typeof data, dataLen: brepLen }
+          })
+        }
+      }
+
       // Add debug logging in development
       if(process.env.NODE_ENV !== 'production') {
         console.log('Solving definition:', definitionName, 'with inputs:', inputs)
@@ -351,7 +365,21 @@ async function commonSolve (req, res, next){
   } catch (error) {
     console.error('Solve error:', error)
     const msg = (error && error.message) ? String(error.message) : 'Internal Server Error'
-    res.status(500).send({ message: msg })
+    try{
+      const defObj = res.locals && res.locals.params && res.locals.params.definition
+      const definitionName = defObj && (defObj.name || defObj)
+      const inputs = (res.locals && res.locals.params && res.locals.params.inputs) || {}
+      const brep = inputs['RH_IN:brep']
+      const info = {
+        definition: definitionName,
+        inputKeys: Object.keys(inputs||{}),
+        brepType: brep && brep.type,
+        brepDataLen: brep && typeof brep.data === 'string' ? brep.data.length : undefined
+      }
+      return res.status(500).send({ message: msg, info })
+    }catch{
+      return res.status(500).send({ message: msg })
+    }
   }
 }
 
