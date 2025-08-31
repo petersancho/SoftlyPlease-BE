@@ -29,8 +29,8 @@ function init(){
   renderer.setPixelRatio(window.devicePixelRatio)
   renderer.setSize(canvas.clientWidth, canvas.clientHeight, false)
   controls = new OrbitControls(camera, renderer.domElement)
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 1.0))
-  const dl = new THREE.DirectionalLight(0xffffff, 0.8)
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 0.9))
+  const dl = new THREE.DirectionalLight(0xffffff, 1.0)
   dl.position.set(5,5,10)
   scene.add(dl)
   window.addEventListener('resize', ()=>{
@@ -178,9 +178,8 @@ function renderResult(result, seq){
     if (seq !== currentSolve.seq) return
     object.traverse(child=>{
       if (child.isMesh){
-        const hue = (lastInputs && lastInputs.links) ? (0.65 - Math.min(10, Math.max(1, lastInputs.links)) * 0.04) : 0.58
-        const color = new THREE.Color().setHSL(hue, 0.55, 0.55)
-        child.material = new THREE.MeshStandardMaterial({ color, metalness:0.05, roughness:0.95, flatShading:true, wireframe:true })
+        const color = new THREE.Color(0x6b8cff)
+        child.material = new THREE.MeshStandardMaterial({ color, metalness:0.05, roughness:0.85 })
         // emphasize topology with edges overlay
         try{
           const edgesGeom = new THREE.EdgesGeometry(child.geometry)
