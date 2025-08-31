@@ -102,7 +102,7 @@ async function onSolve(){
     // Ensure booleans/numbers are typed as expected by GH
     const inputs = { ...ins }
     // Use canonical input names only
-    const payload = { definition: 'topological-optimization.gh', inputs, nocache: 1 }
+    const payload = { definition: 'topological-optimization.ghx', inputs, nocache: 1 }
 
     const res = await fetch('/solve', {
       method:'POST',
