@@ -65,7 +65,7 @@ function getInputs(){
     links: Math.round(Number(document.getElementById('links').value)),
     minr: Math.round(Number(document.getElementById('minr').value)),
     maxr: Math.round(Number(document.getElementById('maxr').value)),
-    thickness: Number(document.getElementById('thickness').value),
+    thickness: Math.round(Number(document.getElementById('thickness').value)),
     square: Math.round(Number(document.getElementById('square').value)),
     strutsize: Number(document.getElementById('strutsize').value),
     segment: Math.round(Number(document.getElementById('segment').value)),
@@ -115,7 +115,6 @@ async function onSolve(){
     inputs['RH_IN:links'] = inputs.links
     inputs['RH_IN:minR'] = inputs.minr
     inputs['RH_IN:maxR'] = inputs.maxr
-    inputs['RH_IN:thickness'] = inputs.thickness
     inputs['RH_IN:minr'] = inputs.minr
     inputs['RH_IN:maxr'] = inputs.maxr
     const payload = { definition: 'topological-optimization.gh', inputs, nocache: 1 }

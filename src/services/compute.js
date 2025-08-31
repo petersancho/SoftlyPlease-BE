@@ -32,8 +32,8 @@ async function solve(definition, inputs = {}, defUrl) {
     ]);
     // Doubles for these keys
     const doubleKeys = new Set([
-      'minr','maxr','thickness','strutsize','strutSize',
-      'RH_IN:minR','RH_IN:maxR','RH_IN:thickness','RH_IN:strutsize','RH_IN:strutSize'
+      'minr','maxr','strutsize','strutSize',
+      'RH_IN:minR','RH_IN:maxR','RH_IN:strutsize','RH_IN:strutSize'
     ]);
     const trees = [];
     for (const [key, raw] of Object.entries(inputs)) {
