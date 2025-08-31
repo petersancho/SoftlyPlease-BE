@@ -65,12 +65,12 @@ function getInputs(){
     links: Math.round(Number(document.getElementById('links').value)),
     minr: Math.round(Number(document.getElementById('minr').value)),
     maxr: Math.round(Number(document.getElementById('maxr').value)),
-    thickness: Math.round(Number(document.getElementById('thickness').value)),
+    thickness: Number(document.getElementById('thickness').value),
     square: Math.round(Number(document.getElementById('square').value)),
-    strutsize: Math.round(Number(document.getElementById('strutsize').value)),
+    strutsize: Number(document.getElementById('strutsize').value),
     segment: Math.round(Number(document.getElementById('segment').value)),
     cubecorners: Number(document.getElementById('cubecorners').checked),
-    smooth: Math.round(Number(document.getElementById('smooth').value))
+    smooth: Number(document.getElementById('smooth').value)
   }
 }
 
