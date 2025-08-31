@@ -120,7 +120,7 @@ async function onSolve(){
       'RH_IN:cubecorners': Number(Boolean(ins.cubecorners)),
       'RH_IN:smooth': Number(ins.smooth)
     }
-    const payload = { definition: 'topological-optimization.gh', inputs: payloadInputs, nocache: 1 }
+    const payload = { definition: 'topological-optimization.gh', inputs: payloadInputs }
 
     const res = await fetch('/solve', {
       method:'POST',
