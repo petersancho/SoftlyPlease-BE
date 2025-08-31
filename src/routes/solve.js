@@ -131,12 +131,14 @@ function checkCache (req, res, next){
   if(mc === null){
     // use node cache
     //console.log('using node-cache')
+    res.setHeader('X-Cache-Backend', 'node-cache')
     const result = cache.get(res.locals.cacheKey)
     res.locals.cacheResult = result !== undefined ? result : null
     next()
   } else {
     // use memcached
     //console.log('using memcached')
+    res.setHeader('X-Cache-Backend', 'memcachier')
     if(mc !== null) {
       mc.get(res.locals.cacheKey, function(err, val) {
         if(err == null && val) {
