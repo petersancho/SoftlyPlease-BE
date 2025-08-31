@@ -11,13 +11,14 @@ let scene, camera, renderer, controls
 const rhinoLoader = new Rhino3dmLoader()
 rhinoLoader.setLibraryPath('https://cdn.jsdelivr.net/npm/rhino3dm@8.17.0/')
 let rhino
+let rhinoReady
 let currentSolve = { controller: null, seq: 0 }
 let resultGroup = null
 let lastInputs = null
 let lastLinks = null
 let uploadedBrepEncoded = null
 
-initRhino()
+rhinoReady = initRhino()
 
 init()
 
@@ -26,6 +27,8 @@ const uploadInput = document.getElementById('upload3dm')
 if (uploadInput){
   uploadInput.addEventListener('change', async (e)=>{
     try{
+      // Ensure rhino3dm is loaded
+      if (rhinoReady) await rhinoReady
       const file = uploadInput.files && uploadInput.files[0]
       if (!file) return
       const buf = await file.arrayBuffer()
@@ -38,18 +41,44 @@ if (uploadInput){
       }
       let brep = null
       let mesh = null
+      // Helper to explode block instances and pick nested geometry
+      const tryCollectFromGeometry = (geo)=>{
+        if (!geo) return false
+        const type = geo.objectType
+        if (!brep && type === rhino.ObjectType.Brep){
+          try{ if (geo.isSolid && geo.isSolid()) { brep = geo; return true } }catch{}
+          brep = geo; return true
+        }
+        if (!brep && type === rhino.ObjectType.Extrusion && geo.toBrep){
+          const b = geo.toBrep(); if (b){ brep = b; return true }
+        }
+        if (!brep && type === rhino.ObjectType.Surface && geo.toBrep){
+          const b = geo.toBrep(); if (b){ brep = b; return true }
+        }
+        if (!brep && type === rhino.ObjectType.SubD && geo.toBrep){
+          const b = geo.toBrep(); if (b){ brep = b; return true }
+        }
+        if (!mesh && type === rhino.ObjectType.Mesh){ mesh = geo; return true }
+        return false
+      }
       const objects = doc.objects()
       for (let i=0; i<objects.count; i++){
         const obj = objects.get(i)
         const geo = obj.geometry()
         if (!geo) continue
-        if (!brep && geo.objectType === rhino.ObjectType.Brep){
-          // pick first closed brep if possible
-          try{ if (geo.isSolid && geo.isSolid()) { brep = geo; break } }catch{}
-          brep = geo
-        } else if (!mesh && geo.objectType === rhino.ObjectType.Mesh){
-          mesh = geo
-        }
+        if (tryCollectFromGeometry(geo)) continue
+        // For instance references, iterate definition geometry
+        try{
+          if (geo.objectType === rhino.ObjectType.InstanceReference){
+            const idef = doc.getInstanceDefinitionGeometry(geo.parentIdefId)
+            if (idef){
+              for (let j=0; j<idef.count; j++){
+                const idefObj = idef.get(j)
+                if (idefObj && tryCollectFromGeometry(idefObj.geometry())) break
+              }
+            }
+          }
+        }catch{}
       }
       if (brep){
         uploadedBrepEncoded = rhino.CommonObject.encode(brep)
