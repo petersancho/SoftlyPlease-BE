@@ -38,7 +38,7 @@ async function solve(definition, inputs = {}, defUrl) {
     const trees = [];
     for (const [key, raw] of Object.entries(inputs)) {
       // Special-case Rhino JSON payloads (e.g., encoded Brep)
-      if (key === 'RH_IN:brep' && raw && typeof raw === 'object') {
+      if ((key === 'RH_IN:brep' || key === 'RH_in:Brep') && raw && typeof raw === 'object') {
         let payload = raw
         // Normalize possible shapes: either already {type,data} or a raw CommonObject with encode()
         if (!(payload.type && payload.data !== undefined)) {

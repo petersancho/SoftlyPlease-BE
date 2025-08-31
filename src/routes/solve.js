@@ -72,7 +72,7 @@ function stableInputs(inputs, defName){
     if (excluded.has(k)) return
     let v = inputs[k]
     // Replace large geometry payloads with hashes for cache key stability
-    if (k === 'RH_IN:brep' || k === 'RH_IN:mesh' || k === 'RH_IN:brep_3dm'){
+    if (k === 'RH_IN:brep' || k === 'RH_in:Brep' || k === 'RH_IN:mesh' || k === 'RH_IN:brep_3dm'){
       try{
         const s = typeof v === 'string' ? v : JSON.stringify(v)
         const hash = crypto.createHash('md5').update(s).digest('hex')
@@ -217,7 +217,7 @@ async function commonSolve (req, res, next){
       const inputs = Object.assign({}, res.locals.params.inputs || {})
 
       // If client sent a raw .3dm base64 for the Brep, parse and encode on server
-      if (inputs['RH_IN:brep_3dm'] && !inputs['RH_IN:brep']){
+      if ((inputs['RH_IN:brep_3dm'] && !inputs['RH_IN:brep'] && !inputs['RH_in:Brep'])){
         try{
           const rhino = await getRhino()
           if (rhino){
@@ -289,19 +289,22 @@ async function commonSolve (req, res, next){
       }
 
       // If client sent a RhinoJSON-encoded Brep, normalize by decoding and re-encoding with server rhino3dm (v7)
-      if (inputs['RH_IN:brep'] && typeof inputs['RH_IN:brep'] === 'object' && inputs['RH_IN:brep'].type && inputs['RH_IN:brep'].data !== undefined){
+      if ((inputs['RH_IN:brep'] || inputs['RH_in:Brep'])){
+        const keyName = inputs['RH_IN:brep'] ? 'RH_IN:brep' : 'RH_in:Brep'
+        if (typeof inputs[keyName] === 'object' && inputs[keyName].type && inputs[keyName].data !== undefined){
         try{
           const rhino = await getRhino()
           if (rhino && rhino.CommonObject && typeof rhino.CommonObject.decode === 'function'){
-            const decoded = rhino.CommonObject.decode(inputs['RH_IN:brep'])
+            const decoded = rhino.CommonObject.decode(inputs[keyName])
             if (decoded){
               const reencoded = rhino.CommonObject.encode(decoded)
               if (reencoded && reencoded.type && reencoded.data !== undefined){
-                inputs['RH_IN:brep'] = reencoded
+                inputs[keyName] = reencoded
               }
             }
           }
         }catch(err){ console.error('Server re-encode Brep failed', err) }
+        }
       }
 
       // Normalize client-provided Brep payloads
@@ -311,14 +314,21 @@ async function commonSolve (req, res, next){
       if (inputs['RH_IN:brep'] && typeof inputs['RH_IN:brep'] === 'object' && inputs['RH_IN:brep'].data !== undefined && !inputs['RH_IN:brep'].type){
         inputs['RH_IN:brep'].type = 'Rhino.Geometry.Brep'
       }
+      if (typeof inputs['RH_in:Brep'] === 'string'){
+        inputs['RH_in:Brep'] = { type: 'Rhino.Geometry.Brep', data: inputs['RH_in:Brep'] }
+      }
+      if (inputs['RH_in:Brep'] && typeof inputs['RH_in:Brep'] === 'object' && inputs['RH_in:Brep'].data !== undefined && !inputs['RH_in:Brep'].type){
+        inputs['RH_in:Brep'].type = 'Rhino.Geometry.Brep'
+      }
 
       // Build absolute pointer URL that Compute will fetch directly
       const fullUrl = req.protocol + '://' + req.get('host')
       const defUrl = `${fullUrl}/definition/${defObj.id || defObj}`
 
       // Validate Brep payload shape (pre-flight)
-      if (inputs['RH_IN:brep']){
-        const b = inputs['RH_IN:brep']
+      const brepKey = inputs['RH_IN:brep'] ? 'RH_IN:brep' : (inputs['RH_in:Brep'] ? 'RH_in:Brep' : null)
+      if (brepKey){
+        const b = inputs[brepKey]
         const type = b && b.type
         const data = b && b.data
         if (!(type && /Brep/i.test(String(type)) && typeof data === 'string' && data.length > 0)){
@@ -332,7 +342,7 @@ async function commonSolve (req, res, next){
         try{
           const rhino = await getRhino()
           if (rhino && rhino.CommonObject && typeof rhino.CommonObject.decode === 'function'){
-            const decoded = rhino.CommonObject.decode(inputs['RH_IN:brep'])
+            const decoded = rhino.CommonObject.decode(b)
             if (!decoded || decoded.objectType !== rhino.ObjectType.Brep){
               return res.status(400).send({ message:'RH_IN:brep must be a Brep' })
             }
