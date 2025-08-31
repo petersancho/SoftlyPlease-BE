@@ -22,7 +22,7 @@ async function solve(definition, inputs = {}, defUrl) {
     compute.apiKey = process.env.RHINO_COMPUTE_KEY;
 
     // Build absolute URL for Rhino Compute (hotfix)
-    const absoluteDefUrl = defUrl || new URL(`/files/${encodeURIComponent(defName)}`, ORIGIN).toString();
+    const absoluteDefUrl = defUrl || `${ORIGIN}/files/${encodeURIComponent(defName)}`;
 
     // Prepare inputs for compute: normalize types per IO (ints for these keys)
     const intKeys = new Set(['links','minr','maxr','thickness','square','strutsize','segment','cubecorners','smooth']);
