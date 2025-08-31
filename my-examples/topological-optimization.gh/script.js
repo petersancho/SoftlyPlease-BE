@@ -15,10 +15,56 @@ let currentSolve = { controller: null, seq: 0 }
 let resultGroup = null
 let lastInputs = null
 let lastLinks = null
+let uploadedBrepEncoded = null
 
 initRhino()
 
 init()
+
+// Handle 3dm upload: read file, parse first closed Brep or first Mesh
+const uploadInput = document.getElementById('upload3dm')
+if (uploadInput){
+  uploadInput.addEventListener('change', async (e)=>{
+    try{
+      const file = uploadInput.files && uploadInput.files[0]
+      if (!file) return
+      const buf = await file.arrayBuffer()
+      // parse 3dm
+      const bytes = new Uint8Array(buf)
+      const doc = rhino.File3dm.fromByteArray(bytes)
+      if (!doc){
+        console.warn('Failed to parse .3dm')
+        return
+      }
+      let brep = null
+      let mesh = null
+      const objects = doc.objects()
+      for (let i=0; i<objects.count; i++){
+        const obj = objects.get(i)
+        const geo = obj.geometry()
+        if (!geo) continue
+        if (!brep && geo.objectType === rhino.ObjectType.Brep){
+          // pick first closed brep if possible
+          try{ if (geo.isSolid && geo.isSolid()) { brep = geo; break } }catch{}
+          brep = geo
+        } else if (!mesh && geo.objectType === rhino.ObjectType.Mesh){
+          mesh = geo
+        }
+      }
+      if (brep){
+        uploadedBrepEncoded = rhino.CommonObject.encode(brep)
+      } else if (mesh){
+        uploadedBrepEncoded = rhino.CommonObject.encode(mesh)
+      } else {
+        console.warn('No Brep or Mesh found in .3dm')
+        uploadedBrepEncoded = null
+      }
+      onSolve()
+    } catch(err){
+      console.error('Upload parse error', err)
+    }
+  })
+}
 
 function init(){
   scene = new THREE.Scene()
@@ -120,6 +166,9 @@ async function onSolve(){
       'RH_IN:segment': Number(ins.segment),
       'RH_IN:cubecorners': Number(Boolean(ins.cubecorners)),
       'RH_IN:smooth': Number(ins.smooth)
+    }
+    if (uploadedBrepEncoded){
+      payloadInputs['RH_IN:brep'] = uploadedBrepEncoded
     }
     const payload = { definition: 'topological-optimization.gh', inputs: payloadInputs }
 

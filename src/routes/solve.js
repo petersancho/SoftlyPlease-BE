@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const { solve: computeSolve } = require('../services/compute')
 const {performance} = require('perf_hooks')
+const crypto = require('crypto')
 
 const NodeCache = require('node-cache')
 const DEFAULT_TTL = Number(process.env.CACHE_TTL_SECS || '60')
@@ -57,6 +58,16 @@ function stableInputs(inputs, defName){
   Object.keys(inputs || {}).sort().forEach(k => {
     if (excluded.has(k)) return
     let v = inputs[k]
+    // Replace large geometry payloads with hashes for cache key stability
+    if (k === 'RH_IN:brep' || k === 'RH_IN:mesh'){
+      try{
+        const s = typeof v === 'string' ? v : JSON.stringify(v)
+        const hash = crypto.createHash('md5').update(s).digest('hex')
+        const tag = k.endsWith(':brep') ? 'brepHash' : 'meshHash'
+        out[tag] = hash
+        return
+      } catch {}
+    }
     if (typeof v === 'number' && isFinite(v)){
       const decimals = typeof roundMap[k] === 'number' ? roundMap[k] : defDecimals
       const factor = Math.pow(10, Math.max(0, decimals))
