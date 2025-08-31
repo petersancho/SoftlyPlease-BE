@@ -13,6 +13,7 @@ rhinoLoader.setLibraryPath('https://cdn.jsdelivr.net/npm/rhino3dm@8.17.0/')
 let rhino
 let currentSolve = { controller: null, seq: 0 }
 let resultGroup = null
+let lastInputs = null
 
 initRhino()
 
@@ -85,6 +86,7 @@ async function onSolve(){
     const t0 = performance.now()
     statusEl.textContent = 'Solving...'
     const ins = getInputs()
+    lastInputs = ins
     // enforce param relationships expected by GH
     if (ins.minr > ins.maxr){
       const tmp = ins.minr
@@ -164,6 +166,13 @@ function renderResult(result, seq){
     object.traverse(child=>{
       if (child.isMesh){
         child.material = new THREE.MeshStandardMaterial({ color: 0x6b8cff, metalness:0.1, roughness:0.85 })
+        // emphasize topological differences (links) using edge overlay
+        try{
+          const edgesGeom = new THREE.EdgesGeometry(child.geometry, 30)
+          const edgesMat = new THREE.LineBasicMaterial({ color: 0x222222, transparent:true, opacity: 0.6 })
+          const edges = new THREE.LineSegments(edgesGeom, edgesMat)
+          child.add(edges)
+        } catch {}
       }
     })
     resultGroup.add(object)
@@ -203,7 +212,15 @@ function renderResult(result, seq){
     rhinoLoader.parse(buffer, addThreeObject)
   }
 
-  setTimeout(() => { if (seq === currentSolve.seq) zoomToScene() }, 150)
+  // For links changes, maintain camera target to reduce jumpiness; else zoom
+  setTimeout(() => {
+    if (seq !== currentSolve.seq) return
+    if (lastInputs && typeof lastInputs.links === 'number'){
+      // slight dolly based on links to hint change magnitude
+      controls.update()
+    }
+    zoomToScene()
+  }, 150)
 }
 
 function base64ToArrayBuffer(base64) {
