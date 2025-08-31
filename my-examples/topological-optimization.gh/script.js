@@ -104,10 +104,17 @@ async function onSolve(){
     // Ensure booleans/numbers are typed as expected by GH
     const inputs = { ...ins }
     // Use canonical input names only
-    // nudge links/minr/maxr to encourage recomputation in upstream graph
+    // Enforce bounds and widen/narrow proximity window with links
     inputs.links = Math.max(0, Math.min(10, Number(ins.links)))
-    inputs.minr = Math.max(0, Number(ins.minr))
-    inputs.maxr = Math.max(inputs.minr, Number(ins.maxr))
+    const baseMinR = Math.max(0, Number(ins.minr))
+    const baseMaxR = Math.max(baseMinR, Number(ins.maxr))
+    const k = inputs.links - 4
+    const widenMax = k > 0 ? k * 2 : k * 1
+    const narrowMin = k > 0 ? Math.abs(k) * 1 : Math.abs(k) * 0.5
+    const derivedMin = Math.max(0, baseMinR - narrowMin)
+    const derivedMax = Math.max(derivedMin, Math.min(100, baseMaxR + widenMax))
+    inputs.minr = derivedMin
+    inputs.maxr = derivedMax
     const payload = { definition: 'topological-optimization.gh', inputs, nocache: 1 }
 
     const res = await fetch('/solve', {
