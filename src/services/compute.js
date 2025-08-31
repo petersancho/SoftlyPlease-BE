@@ -17,8 +17,8 @@ async function solve(definition, inputs = {}, defUrl) {
       ? definition
       : `${definition}.gh`;
 
-    // Set compute URL from environment
-    compute.url = process.env.COMPUTE_URL;
+    // Set compute URL from environment (fallback to RHINO_COMPUTE_URL)
+    compute.url = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL;
     compute.apiKey = process.env.RHINO_COMPUTE_KEY;
 
     // Build absolute URL for Rhino Compute (hotfix)
