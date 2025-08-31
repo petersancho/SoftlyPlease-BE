@@ -165,11 +165,13 @@ function renderResult(result, seq){
     if (seq !== currentSolve.seq) return
     object.traverse(child=>{
       if (child.isMesh){
-        child.material = new THREE.MeshStandardMaterial({ color: 0x6b8cff, metalness:0.1, roughness:0.85 })
-        // emphasize topological differences (links) using edge overlay
+        const hue = (lastInputs && lastInputs.links) ? (0.65 - Math.min(10, Math.max(1, lastInputs.links)) * 0.04) : 0.58
+        const color = new THREE.Color().setHSL(hue, 0.55, 0.55)
+        child.material = new THREE.MeshStandardMaterial({ color, metalness:0.05, roughness:0.95, flatShading:true, wireframe:true })
+        // emphasize topology with edges overlay
         try{
-          const edgesGeom = new THREE.EdgesGeometry(child.geometry, 30)
-          const edgesMat = new THREE.LineBasicMaterial({ color: 0x222222, transparent:true, opacity: 0.6 })
+          const edgesGeom = new THREE.EdgesGeometry(child.geometry)
+          const edgesMat = new THREE.LineBasicMaterial({ color: 0x111111, transparent:true, opacity: 0.7 })
           const edges = new THREE.LineSegments(edgesGeom, edgesMat)
           child.add(edges)
         } catch {}
