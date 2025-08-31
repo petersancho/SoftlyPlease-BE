@@ -320,7 +320,7 @@ function zoomToScene(){
     camera.far  = fitDist*100
     camera.updateProjectionMatrix()
     const dir = new THREE.Vector3().subVectors(camera.position, controls.target).normalize()
-    camera.position.copy(center.clone().add(dir.multiplyScalar(fitDist*1.2)))
+    camera.position.copy(center.clone().add(dir.multiplyScalar(fitDist*2.0)))
     controls.target.copy(center)
     controls.update()
   }
