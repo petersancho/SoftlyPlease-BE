@@ -123,6 +123,14 @@ function collectParams (req, res, next){
   const nocacheInput = p && p.inputs && (p.inputs.nocache === 1 || p.inputs.nocache === '1' || p.inputs.nocache === true || p.inputs.nocache === 'true')
   res.locals.skipCache = !!(nocacheTop || nocacheInput)
 
+  // detect uploaded brep presence and force skip cache (memcached truncates large JSON > 1MB)
+  try{
+    const inputs = res.locals.params.inputs || {}
+    const hasUpload = !!(inputs['RH_IN:brep'] || inputs['RH_in:Brep'] || inputs['RH_IN:brep_3dm'])
+    res.locals.hasUploadBrep = hasUpload
+    if (hasUpload) res.locals.skipCache = true
+  }catch{ res.locals.hasUploadBrep = false }
+
   let definitionName = res.locals.params.definition
   if (definitionName===undefined)
     definitionName = res.locals.params.pointer
@@ -180,7 +188,9 @@ function checkCache (req, res, next){
     if(mc !== null) {
       mc.get(res.locals.cacheKey, function(err, val) {
         if(err == null && val) {
-          res.locals.cacheResult = val.toString()
+          const text = val.toString()
+          // validate JSON; if truncated/invalid, ignore cache
+          try { JSON.parse(text); res.locals.cacheResult = text } catch { res.locals.cacheResult = null }
         }
         next()
       })
