@@ -297,6 +297,21 @@ function addItemDataToGroup(rawData, group){
     if (typeof data === 'string'){
       try{ data = JSON.parse(data) }catch{ /* leave as-is */ }
     }
+    // If still a long string, try decoding as base64 .3dm
+    if (typeof data === 'string' && data.length > 500){
+      try{
+        const bytes = Uint8Array.from(atob(data), c=>c.charCodeAt(0))
+        const file = rhino.File3dm.fromByteArray(bytes)
+        if (file){
+          const objs = file.objects()
+          for (let i=0;i<objs.count;i++){
+            const ro = objs.get(i); const geo = ro.geometry(); if (!geo) continue
+            addRhinoGeometryToGroup(geo, group)
+          }
+          return
+        }
+      }catch{}
+    }
     if (data && data.encoded){
       const bytes = new Uint8Array(base64ToArrayBuffer(data.encoded))
       const file = rhino.File3dm.fromByteArray(bytes)
