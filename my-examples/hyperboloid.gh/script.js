@@ -361,14 +361,19 @@ function rhinoMeshToThree(rMesh){
 function addRhinoGeometryToGroup(geo, group){
   try{
     if (!geo) return
-    const t = geo.objectType
-    if (t === rhino.ObjectType.Brep || (geo?._typename && String(geo._typename).includes('Brep'))){
-      // Try meshing; if empty, draw wireframe edges as fallback
+    const ctor = geo?.constructor?.name
+    const isBrep = (ctor === 'Brep') || (typeof geo?.faces === 'function') || (typeof geo?.toBrep === 'function' && !geo?.toNurbsCurve)
+    const isMesh = (ctor === 'Mesh') || (geo?.vertices && geo?.faces)
+    const isCurve = (typeof geo?.toNurbsCurve === 'function')
+    const isExtrusionOrSubD = (typeof geo?.toBrep === 'function' && !isBrep && !isCurve)
+
+    if (isBrep){
       const meshes = meshArrayFromBrep(geo)
-      try{ console.log('Configurator brep meshed:', Array.isArray(meshes), 'len:', (Array.isArray(meshes)? meshes.length : (meshes?.length||0))) }catch{}
+      try{ console.log('Configurator brep meshed:', Array.isArray(meshes), 'len:', (Array.isArray(meshes)? meshes.length : 0)) }catch{}
       if (Array.isArray(meshes) && meshes.length){
         for (const m of meshes){ group.add(rhinoMeshToThree(m)) }
       } else {
+        // fallback to edge wireframe
         try{
           const edges = geo.edges ? geo.edges() : null
           if (edges && typeof edges.count === 'number'){
@@ -388,21 +393,20 @@ function addRhinoGeometryToGroup(geo, group){
       }
       return
     }
-    if (t === rhino.ObjectType.Extrusion){
+
+    if (isExtrusionOrSubD){
       try{ const b = geo.toBrep(true); if (b) return addRhinoGeometryToGroup(b, group) }catch{}
     }
-    if (t === rhino.ObjectType.SubD){
-      try{ const b = geo.toBrep(true); if (b) return addRhinoGeometryToGroup(b, group) }catch{}
-    }
-    if (t === rhino.ObjectType.Surface){
-      try{ const b = rhino.Brep.createFromSurface(geo); if (b) return addRhinoGeometryToGroup(b, group) }catch{}
-    }
-    if (t === rhino.ObjectType.Mesh || (geo?._typename && String(geo._typename).includes('Mesh'))){ group.add(rhinoMeshToThree(geo)); return }
-    if (t === rhino.ObjectType.Curve || (geo?._typename && String(geo._typename).includes('Curve'))){
+
+    if (isMesh){ group.add(rhinoMeshToThree(geo)); return }
+
+    if (isCurve){
       try{ const nurbs = geo.toNurbsCurve(); const pts=nurbs.points(); const arr=[]; for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) } const g=new THREE.BufferGeometry().setFromPoints(arr); const m=new THREE.LineBasicMaterial({ color:0x333333 }); group.add(new THREE.Line(g,m)) }catch{}
       return
     }
-    if (t === rhino.ObjectType.Point || (geo?._typename && String(geo._typename).includes('Point'))){
+
+    // Points
+    if (ctor === 'Point' || ctor === 'Point3d'){
       try{ const p=geo.location||geo; const sph=new THREE.Mesh(new THREE.SphereGeometry(0.5,12,8), new THREE.MeshStandardMaterial({ color:0x0070f3 })); sph.position.set(p.x,p.y,p.z); group.add(sph) }catch{}
       return
     }
