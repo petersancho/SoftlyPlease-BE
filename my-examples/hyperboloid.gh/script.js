@@ -156,6 +156,36 @@ function renderResult(result){
 
   // fit only active view
   fitView(scenes[0])
+
+  // Fallback: if nothing visible yet, try alternate outputs
+  const hasMesh = (()=>{ let ok=false; scenes[0].scene.traverse(o=>{ if(o.isMesh) ok=true }); return ok })()
+  if (!hasMesh){
+    try{
+      const values2 = result.values || []
+      const map = {}
+      for (const entry of values2){ map[entry.ParamName] = entry.InnerTree || {} }
+      const tryKeys = ['RH_OUT:hyperboloid','hyperboloid','RH_OUT:panels','panels','RH_OUT:positive','positive']
+      for (const key of tryKeys){
+        const tree = map[key]; if (!tree) continue
+        for (const path in tree){
+          for (const item of (tree[path]||[])){
+            try{
+              const data = JSON.parse(item.data)
+              if (data.encoded){
+                const bytes = new Uint8Array(base64ToArrayBuffer(data.encoded))
+                const d = rhino.File3dm.fromByteArray(bytes)
+                if (d){ const objs=d.objects(); for (let i=0;i<objs.count;i++){ const ro=objs.get(i); const geo=ro.geometry(); if(!geo) continue; if (geo instanceof rhino.Brep){ const ms=rhino.Mesh.createFromBrep(geo, rhino.MeshingParameters.default); if(ms){ for(let j=0;j<ms.length;j++){ scenes[0].group.add(rhinoMeshToThree(ms.get(j))) } } } else if (geo instanceof rhino.Mesh){ scenes[0].group.add(rhinoMeshToThree(geo)) } } }
+              } else {
+                const obj = rhino.CommonObject.decode(data)
+                if (obj){ if (obj instanceof rhino.Brep){ const ms=rhino.Mesh.createFromBrep(obj, rhino.MeshingParameters.default); if(ms){ for(let j=0;j<ms.length;j++){ scenes[0].group.add(rhinoMeshToThree(ms.get(j))) } } } else if (obj instanceof rhino.Mesh){ scenes[0].group.add(rhinoMeshToThree(obj)) } }
+              }
+            }catch{}
+          }
+        }
+      }
+      fitView(scenes[0])
+    }catch{}
+  }
 }
 
 function fitView(v){
