@@ -47,6 +47,7 @@ router.post('/', async (req, res) => {
     // Init compute client
     compute.url = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL
     compute.apiKey = process.env.COMPUTE_KEY || process.env.RHINO_COMPUTE_KEY
+    try{ console.log('[solve-hyperboloid] compute.url:', compute.url, ' apiKeyPresent:', !!compute.apiKey) }catch{}
 
     // Build DataTrees
     const trees = []
@@ -60,6 +61,7 @@ router.post('/', async (req, res) => {
     if (!defObj) return res.status(400).json({ error: 'Definition not found on server.' })
     const fullUrl = req.protocol + '://' + req.get('host')
     const defUrl = `${fullUrl}/definition/${defObj.id}`
+    try{ console.log('[solve-hyperboloid] defUrl:', defUrl) }catch{}
     const response = await compute.Grasshopper.evaluateDefinition(defUrl, trees, false)
     const text = await response.text()
     if (!response.ok){
