@@ -83,7 +83,7 @@ function debounce(fn, delay){
 
 function renderResult(result){
   const values = Array.isArray(result.values) ? result.values : []
-  try{ console.log('Hyperboloid ParamNames:', values.map(v=>v.ParamName)) }catch{}
+  try{ console.log('Hyperboloid ParamNames:', values.map(v=>({name:v.ParamName, count:Object.values(v.InnerTree||{}).reduce((a,b)=>a+(b?.length||0),0)}))) }catch{}
   for (const v of scenes){
     if (v.group){ v.scene.remove(v.group); disposeGroup(v.group); v.group = null }
     v.group = new THREE.Group(); v.scene.add(v.group)
@@ -335,7 +335,7 @@ function rhinoMeshToThree(rMesh){
   }
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions,3))
   geometry.computeVertexNormals()
-  const material = new THREE.MeshStandardMaterial({ color: 0x6b8cff, metalness:0.05, roughness:0.85 })
+  const material = new THREE.MeshStandardMaterial({ color: 0x6b8cff, metalness:0.05, roughness:0.85, side: THREE.DoubleSide })
   return new THREE.Mesh(geometry, material)
 }
 
