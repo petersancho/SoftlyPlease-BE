@@ -43,7 +43,12 @@ function getInputs(){
     'RH_IN:elipse_x': Number(document.getElementById('elipse_x').value),
     'RH_IN:elipse_y': Number(document.getElementById('elipse_y').value),
     'RH_IN:twist_configurator_rings': Number(document.getElementById('twist_configurator_rings').value),
-    'RH_IN:configurator_height': Number(document.getElementById('configurator_height').value)
+    'RH_IN:configurator_height': Number(document.getElementById('configurator_height').value),
+    // include other inputs to keep contract: one solve updates all viewers
+    'RH_IN:move_cone_a': (document.getElementById('move_cone_a') ? Number(document.getElementById('move_cone_a').value) : 0),
+    'RH_IN:move_cone_b': (document.getElementById('move_cone_b') ? Number(document.getElementById('move_cone_b').value) : 0),
+    'RH_IN:move_cone_c': (document.getElementById('move_cone_c') ? Number(document.getElementById('move_cone_c').value) : 0),
+    'RH_IN:array_panels': (document.getElementById('array') ? Math.round(Number(document.getElementById('array').value)) : 20)
   }
 }
 
@@ -69,6 +74,11 @@ async function onSolve(){
   if (!res.ok) throw new Error(text||('HTTP '+res.status))
   const result = JSON.parse(text)
   renderResult(result)
+}
+
+function debounce(fn, delay){
+  let t
+  return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn.apply(null,args), delay) }
 }
 
 function renderResult(result){
