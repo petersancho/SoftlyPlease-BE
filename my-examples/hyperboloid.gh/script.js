@@ -64,7 +64,7 @@ bindOutputs()
 
 async function onSolve(){
   const inputs = getInputs()
-  const payload = { definition: 'hyperboloid.gh', inputs }
+  const payload = { definition: 'Hyperboloid.gh', inputs }
   const res = await fetch('/solve', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
   const text = await res.text()
   if (!res.ok) throw new Error(text||('HTTP '+res.status))

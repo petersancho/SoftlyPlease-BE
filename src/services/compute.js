@@ -54,6 +54,10 @@ async function solve(definition, inputs = {}, defUrl) {
         continue;
       }
       let value = raw;
+      // Coerce string numerics to numbers (common from DOM sliders)
+      if (typeof value === 'string' && /^-?\d+(\.\d+)?$/.test(value)) {
+        value = value.indexOf('.') >= 0 ? Number.parseFloat(value) : Number.parseInt(value, 10)
+      }
       if (intKeys.has(key)) {
         if (Array.isArray(raw)) value = raw.map(v => Number.parseInt(v, 10));
         else value = Number.parseInt(raw, 10);
