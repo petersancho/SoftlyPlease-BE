@@ -263,6 +263,15 @@ function addRhinoGeometryToGroup(geo, group){
       for (let j=0;j<meshes.length;j++){ group.add(rhinoMeshToThree(meshes[j])) }
       return
     }
+    if (t === rhino.ObjectType.Extrusion){
+      try{ const b = geo.toBrep(true); if (b) return addRhinoGeometryToGroup(b, group) }catch{}
+    }
+    if (t === rhino.ObjectType.SubD){
+      try{ const b = geo.toBrep(true); if (b) return addRhinoGeometryToGroup(b, group) }catch{}
+    }
+    if (t === rhino.ObjectType.Surface){
+      try{ const b = rhino.Brep.createFromSurface(geo); if (b) return addRhinoGeometryToGroup(b, group) }catch{}
+    }
     if (t === rhino.ObjectType.Mesh){ group.add(rhinoMeshToThree(geo)); return }
     if (t === rhino.ObjectType.Curve){
       try{ const nurbs = geo.toNurbsCurve(); const pts=nurbs.points(); const arr=[]; for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) } const g=new THREE.BufferGeometry().setFromPoints(arr); const m=new THREE.LineBasicMaterial({ color:0x333333 }); group.add(new THREE.Line(g,m)) }catch{}
