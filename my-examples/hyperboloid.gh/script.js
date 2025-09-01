@@ -187,6 +187,47 @@ function renderResult(result){
       fitView(scenes[0])
     }catch{}
   }
+
+  // Additionally, explicitly render Configurator + hyperboloid into viewer 1 from all branches
+  try{
+    const map = {}
+    for (const entry of (result.values||[])) map[entry.ParamName] = entry.InnerTree||{}
+    const renderKeyToViewer = (viewerIdx, key)=>{
+      const tree = map[key]; if (!tree) return
+      for (const path in tree){
+        for (const item of (tree[path]||[])){
+          try{
+            const data = JSON.parse(item.data)
+            if (data && data.encoded){
+              const bytes = new Uint8Array(base64ToArrayBuffer(data.encoded))
+              const file = rhino.File3dm.fromByteArray(bytes)
+              if (file){
+                const objs = file.objects()
+                for (let i=0;i<objs.count;i++){
+                  const ro = objs.get(i); const geo = ro.geometry(); if (!geo) continue
+                  if (geo instanceof rhino.Brep){
+                    const ms = rhino.Mesh.createFromBrep(geo, rhino.MeshingParameters.default)
+                    if (ms){ for (let j=0;j<ms.length;j++){ scenes[viewerIdx].group.add(rhinoMeshToThree(ms.get(j))) } }
+                  } else if (geo instanceof rhino.Mesh){ scenes[viewerIdx].group.add(rhinoMeshToThree(geo)) }
+                }
+              }
+            } else {
+              const obj = rhino.CommonObject.decode(data)
+              if (obj){
+                if (obj instanceof rhino.Brep){
+                  const ms = rhino.Mesh.createFromBrep(obj, rhino.MeshingParameters.default)
+                  if (ms){ for (let j=0;j<ms.length;j++){ scenes[viewerIdx].group.add(rhinoMeshToThree(ms.get(j))) } }
+                } else if (obj instanceof rhino.Mesh){ scenes[viewerIdx].group.add(rhinoMeshToThree(obj)) }
+              }
+            }
+          }catch{}
+        }
+      }
+    }
+    renderKeyToViewer(0, 'RH_OUT:Configurator')
+    renderKeyToViewer(0, 'RH_OUT:hyperboloid')
+    fitView(scenes[0])
+  }catch{}
 }
 
 function fitView(v){
