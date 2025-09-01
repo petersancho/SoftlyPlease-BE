@@ -28,7 +28,7 @@ async function solve(definition, inputs = {}, defUrl) {
     // Integers for these keys
     const intKeys = new Set([
       'links','square','cubecorners','smooth',
-      'RH_IN:links','RH_IN:square','RH_IN:cubecorners','RH_IN:smooth'
+      'RH_IN:links','RH_IN:square','RH_IN:cubecorners','RH_IN:smooth','RH_IN:array_panels'
     ]);
     // Doubles for these keys
     const doubleKeys = new Set([
