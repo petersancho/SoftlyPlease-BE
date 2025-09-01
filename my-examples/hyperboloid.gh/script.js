@@ -113,8 +113,8 @@ function renderResult(result){
                     const geo = ro.geometry()
                     if (!geo) continue
                     if (geo.objectType === rhino.ObjectType.Brep){
-                      const meshes = rhino.Mesh.createFromBrep(geo, rhino.MeshingParameters.default)
-                      if (meshes){ for (let j=0;j<meshes.length;j++){ v.group.add(rhinoMeshToThree(meshes.get(j))) } }
+                      const meshes = meshArrayFromBrep(geo)
+                      for (let j=0;j<meshes.length;j++){ v.group.add(rhinoMeshToThree(meshes[j])) }
                     } else if (geo.objectType === rhino.ObjectType.Mesh){
                       v.group.add(rhinoMeshToThree(geo))
                     } else if (geo.objectType === rhino.ObjectType.Curve){
@@ -159,8 +159,8 @@ function renderResult(result){
         const geo = ro.geometry()
         if (!geo) continue
         if (geo.objectType === rhino.ObjectType.Brep){
-          const meshes = rhino.Mesh.createFromBrep(geo, rhino.MeshingParameters.default)
-          if (meshes){ for (let j=0; j<meshes.length; j++){ scenes[0].group.add(rhinoMeshToThree(meshes.get(j))) } }
+          const meshes = meshArrayFromBrep(geo)
+          for (let j=0; j<meshes.length; j++){ scenes[0].group.add(rhinoMeshToThree(meshes[j])) }
         } else if (geo.objectType === rhino.ObjectType.Mesh){
           scenes[0].group.add(rhinoMeshToThree(geo))
         } else if (geo.objectType === rhino.ObjectType.Curve){
@@ -201,10 +201,10 @@ function renderResult(result){
               if (data.encoded){
                 const bytes = new Uint8Array(base64ToArrayBuffer(data.encoded))
                 const d = rhino.File3dm.fromByteArray(bytes)
-                if (d){ const objs=d.objects(); for (let i=0;i<objs.count;i++){ const ro=objs.get(i); const geo=ro.geometry(); if(!geo) continue; if (geo.objectType === rhino.ObjectType.Brep){ const ms=rhino.Mesh.createFromBrep(geo, rhino.MeshingParameters.default); if(ms){ for(let j=0;j<ms.length;j++){ scenes[0].group.add(rhinoMeshToThree(ms.get(j))) } } } else if (geo.objectType === rhino.ObjectType.Mesh){ scenes[0].group.add(rhinoMeshToThree(geo)) } else if (geo.objectType === rhino.ObjectType.Curve){ try{ const nurbs=geo.toNurbsCurve(); const pts=nurbs.points(); const arr=[]; for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) } const g=new THREE.BufferGeometry().setFromPoints(arr); const m=new THREE.LineBasicMaterial({ color:0x333333 }); scenes[0].group.add(new THREE.Line(g,m)) }catch{} } else if (geo.objectType === rhino.ObjectType.Point){ try{ const p=geo.location||geo; const sph=new THREE.Mesh(new THREE.SphereGeometry(0.5,12,8), new THREE.MeshStandardMaterial({ color:0x0070f3 })); sph.position.set(p.x,p.y,p.z); scenes[0].group.add(sph) }catch{} } } }
+                if (d){ const objs=d.objects(); for (let i=0;i<objs.count;i++){ const ro=objs.get(i); const geo=ro.geometry(); if(!geo) continue; if (geo.objectType === rhino.ObjectType.Brep){ const ms=meshArrayFromBrep(geo); for(let j=0;j<ms.length;j++){ scenes[0].group.add(rhinoMeshToThree(ms[j])) } } else if (geo.objectType === rhino.ObjectType.Mesh){ scenes[0].group.add(rhinoMeshToThree(geo)) } else if (geo.objectType === rhino.ObjectType.Curve){ try{ const nurbs=geo.toNurbsCurve(); const pts=nurbs.points(); const arr=[]; for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) } const g=new THREE.BufferGeometry().setFromPoints(arr); const m=new THREE.LineBasicMaterial({ color:0x333333 }); scenes[0].group.add(new THREE.Line(g,m)) }catch{} } else if (geo.objectType === rhino.ObjectType.Point){ try{ const p=geo.location||geo; const sph=new THREE.Mesh(new THREE.SphereGeometry(0.5,12,8), new THREE.MeshStandardMaterial({ color:0x0070f3 })); sph.position.set(p.x,p.y,p.z); scenes[0].group.add(sph) }catch{} } } }
               } else {
                 const obj = rhino.CommonObject.decode(data)
-                if (obj){ if (obj instanceof rhino.Brep){ const ms=rhino.Mesh.createFromBrep(obj, rhino.MeshingParameters.default); if(ms){ for(let j=0;j<ms.length;j++){ scenes[0].group.add(rhinoMeshToThree(ms.get(j))) } } } else if (obj instanceof rhino.Mesh){ scenes[0].group.add(rhinoMeshToThree(obj)) } }
+                if (obj){ if (obj instanceof rhino.Brep){ const ms=meshArrayFromBrep(obj); for(let j=0;j<ms.length;j++){ scenes[0].group.add(rhinoMeshToThree(ms[j])) } } else if (obj instanceof rhino.Mesh){ scenes[0].group.add(rhinoMeshToThree(obj)) } }
               }
             }catch{}
           }
@@ -232,8 +232,8 @@ function renderResult(result){
                 for (let i=0;i<objs.count;i++){
                   const ro = objs.get(i); const geo = ro.geometry(); if (!geo) continue
                   if (geo instanceof rhino.Brep){
-                    const ms = rhino.Mesh.createFromBrep(geo, rhino.MeshingParameters.default)
-                    if (ms){ for (let j=0;j<ms.length;j++){ scenes[viewerIdx].group.add(rhinoMeshToThree(ms.get(j))) } }
+                    const ms = meshArrayFromBrep(geo)
+                    for (let j=0;j<ms.length;j++){ scenes[viewerIdx].group.add(rhinoMeshToThree(ms[j])) }
                   } else if (geo instanceof rhino.Mesh){ scenes[viewerIdx].group.add(rhinoMeshToThree(geo)) }
                 }
               }
@@ -241,8 +241,8 @@ function renderResult(result){
               const obj = rhino.CommonObject.decode(data)
               if (obj){
                 if (obj instanceof rhino.Brep){
-                  const ms = rhino.Mesh.createFromBrep(obj, rhino.MeshingParameters.default)
-                  if (ms){ for (let j=0;j<ms.length;j++){ scenes[viewerIdx].group.add(rhinoMeshToThree(ms.get(j))) } }
+                  const ms = meshArrayFromBrep(obj)
+                  for (let j=0;j<ms.length;j++){ scenes[viewerIdx].group.add(rhinoMeshToThree(ms[j])) }
                 } else if (obj instanceof rhino.Mesh){ scenes[viewerIdx].group.add(rhinoMeshToThree(obj)) }
               }
             }
@@ -254,6 +254,19 @@ function renderResult(result){
     renderKeyToViewer(0, 'RH_OUT:hyperboloid')
     fitView(scenes[0])
   }catch{}
+}
+
+function meshArrayFromBrep(brep){
+  const meshes = rhino.Mesh.createFromBrep(brep, rhino.MeshingParameters.default)
+  const out = []
+  if (!meshes) return out
+  if (Array.isArray(meshes)) return meshes
+  const n = (typeof meshes.length === 'number') ? meshes.length : (typeof meshes.count === 'number' ? meshes.count : 0)
+  for (let i=0;i<n;i++){
+    const m = (typeof meshes.get === 'function') ? meshes.get(i) : meshes[i]
+    if (m) out.push(m)
+  }
+  return out
 }
 
 function fitView(v){
