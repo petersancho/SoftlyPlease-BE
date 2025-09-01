@@ -1,0 +1,48 @@
+<!doctype html>
+<meta charset="utf-8"><title>hyperboloid.gh</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/styles/softly.css">
+<header><h1>hyperboloid.gh</h1><nav><a href="/">Home</a> <a href="/my-examples/">My Examples</a></nav></header>
+<main>
+  <section>
+    <h3>Configurator</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:8px 0">
+      <label>move A <input type="range" id="move_a" min="-100" max="100" step="1" value="0"> <output id="move_aVal">0</output></label>
+      <label>move B <input type="range" id="move_b" min="-100" max="100" step="1" value="0"> <output id="move_bVal">0</output></label>
+      <label>ellipse X <input type="range" id="elipse_x" min="1" max="100" step="1" value="20"> <output id="elipse_xVal">20</output></label>
+      <label>ellipse Y <input type="range" id="elipse_y" min="1" max="100" step="1" value="30"> <output id="elipse_yVal">30</output></label>
+      <label>twist rings <input type="range" id="twist_configurator_rings" min="0" max="50" step="1" value="10"> <output id="twist_configurator_ringsVal">10</output></label>
+      <label>height <input type="range" id="configurator_height" min="10" max="500" step="1" value="100"> <output id="configurator_heightVal">100</output></label>
+    </div>
+    <canvas id="viewA" style="width:100%;height:45vh;background:#fff"></canvas>
+  </section>
+  <section style="margin-top:16px">
+    <h3>Positive</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:8px 0">
+      <label>move cone A <input type="range" id="move_cone_a" min="-100" max="100" step="1" value="0"> <output id="move_cone_aVal">0</output></label>
+      <label>move cone B <input type="range" id="move_cone_b" min="-100" max="100" step="1" value="0"> <output id="move_cone_bVal">0</output></label>
+      <label>move cone C <input type="range" id="move_cone_c" min="-100" max="100" step="1" value="0"> <output id="move_cone_cVal">0</output></label>
+    </div>
+    <canvas id="viewB" style="width:100%;height:45vh;background:#fff"></canvas>
+  </section>
+  <section style="margin-top:16px">
+    <h3>Panels</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:8px 0">
+      <label>array <input type="range" id="array" min="1" max="100" step="1" value="10"> <output id="arrayVal">10</output></label>
+    </div>
+    <canvas id="viewC" style="width:100%;height:45vh;background:#fff"></canvas>
+  </section>
+</main>
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+    "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.158.0/examples/jsm/controls/OrbitControls.js",
+    "three/examples/jsm/loaders/3DMLoader": "https://unpkg.com/three@0.158.0/examples/jsm/loaders/3DMLoader.js",
+    "rhino3dm": "https://unpkg.com/rhino3dm@8.17.0/rhino3dm.module.js"
+  }
+}
+</script>
+<script type="module" src="./script.js"></script>
+
