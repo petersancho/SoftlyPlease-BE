@@ -10,9 +10,9 @@ let rhino
 await (rhino3dm().then(m=>{ rhino = m }))
 
 const viewers = [
-  { canvas: document.getElementById('viewA'), filter: (name)=> /^RH_OUT:Configurator$/i.test(name) },
-  { canvas: document.getElementById('viewB'), filter: (name)=> /^$/i.test(name) },
-  { canvas: document.getElementById('viewC'), filter: (name)=> /^$/i.test(name) },
+  { canvas: document.getElementById('viewA'), filter: (name)=> /^(RH_OUT:Configurator|RH_OUT:points|RH_OUT:text_a|RH_OUT:text_b|RH_OUT:hyperboloid)$/i.test(name) },
+  { canvas: document.getElementById('viewB'), filter: (name)=> /^RH_OUT:positive$/i.test(name) },
+  { canvas: document.getElementById('viewC'), filter: (name)=> /^RH_OUT:panels$/i.test(name) },
 ]
 
 const scenes = viewers.map(v=>{
@@ -36,19 +36,26 @@ function animate(){
 animate()
 
 function getInputs(){
-  // Step 1: focus on the first RH_IN only
+  // Viewer 1 (Configurator) inputs
   return {
-    'RH_IN:move_a': Number(document.getElementById('move_a').value)
+    'RH_IN:move_a': Number(document.getElementById('move_a').value),
+    'RH_IN:move_b': Number(document.getElementById('move_b').value),
+    'RH_IN:elipse_x': Number(document.getElementById('elipse_x').value),
+    'RH_IN:elipse_y': Number(document.getElementById('elipse_y').value),
+    'RH_IN:twist_configurator_rings': Number(document.getElementById('twist_configurator_rings').value),
+    'RH_IN:configurator_height': Number(document.getElementById('configurator_height').value)
   }
 }
 
 function bindOutputs(){
-  const ids = ['move_a']
+  const ids = ['move_a','move_b','elipse_x','elipse_y','twist_configurator_rings','configurator_height']
+  const debounced = debounce(()=>onSolve(),150)
   for (const id of ids){
     const el = document.getElementById(id)
+    if (!el) continue
     const out = document.getElementById(id+'Val')
     const evt = 'input'
-    el.addEventListener(evt, ()=>{ if (out) out.textContent = String(el.value); onSolve() })
+    el.addEventListener(evt, ()=>{ if (out) out.textContent = String(el.value); debounced() })
     if (out) out.textContent = String(el.value)
   }
 }
