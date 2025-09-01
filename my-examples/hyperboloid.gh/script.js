@@ -118,6 +118,16 @@ function renderResult(result){
   try{
     const cfg = (result.values||[]).find(e => (e.ParamName||'').toLowerCase() === 'rh_out:configurator')
     if (cfg){
+      try{
+        const firstBranch = Object.values(cfg.InnerTree||{})[0]||[]
+        const firstItem = firstBranch[0]
+        console.log('Configurator sample item:', {
+          hasItem: !!firstItem,
+          itemType: firstItem?.type,
+          dataType: typeof firstItem?.data,
+          dataHead: (typeof firstItem?.data==='string') ? String(firstItem.data).slice(0,80) : (firstItem?.data && typeof firstItem.data === 'object' ? Object.keys(firstItem.data) : null)
+        })
+      }catch{}
       const tree = cfg.InnerTree || {}
       for (const path in tree){ for (const item of (tree[path]||[])) addItemDataToGroup(item.data, scenes[0].group) }
     }
@@ -297,8 +307,28 @@ function addRhinoGeometryToGroup(geo, group){
     if (!geo) return
     const t = geo.objectType
     if (t === rhino.ObjectType.Brep){
+      // Try meshing; if empty, draw wireframe edges as fallback
       const meshes = meshArrayFromBrep(geo)
-      for (let j=0;j<meshes.length;j++){ group.add(rhinoMeshToThree(meshes[j])) }
+      if (meshes.length){
+        for (let j=0;j<meshes.length;j++){ group.add(rhinoMeshToThree(meshes[j])) }
+      } else {
+        try{
+          const edges = geo.edges ? geo.edges() : null
+          if (edges && typeof edges.count === 'number'){
+            const mat = new THREE.LineBasicMaterial({ color:0x333333 })
+            for (let i=0;i<edges.count;i++){
+              try{
+                const crv = edges.get(i).toNurbsCurve()
+                if (!crv) continue
+                const pts = crv.points(); const arr=[]
+                for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) }
+                const g=new THREE.BufferGeometry().setFromPoints(arr)
+                group.add(new THREE.Line(g, mat))
+              }catch{}
+            }
+          }
+        }catch{}
+      }
       return
     }
     if (t === rhino.ObjectType.Extrusion){
