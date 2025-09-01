@@ -112,10 +112,10 @@ function renderResult(result){
                     const ro = objs.get(i)
                     const geo = ro.geometry()
                     if (!geo) continue
-                    if (geo instanceof rhino.Brep){
+                    if (geo.objectType === rhino.ObjectType.Brep){
                       const meshes = rhino.Mesh.createFromBrep(geo, rhino.MeshingParameters.default)
                       if (meshes){ for (let j=0;j<meshes.length;j++){ v.group.add(rhinoMeshToThree(meshes.get(j))) } }
-                    } else if (geo instanceof rhino.Mesh){
+                    } else if (geo.objectType === rhino.ObjectType.Mesh){
                       v.group.add(rhinoMeshToThree(geo))
                     }
                   }
@@ -145,10 +145,10 @@ function renderResult(result){
         const ro = objects.get(i)
         const geo = ro.geometry()
         if (!geo) continue
-        if (geo instanceof rhino.Brep){
+        if (geo.objectType === rhino.ObjectType.Brep){
           const meshes = rhino.Mesh.createFromBrep(geo, rhino.MeshingParameters.default)
           if (meshes){ for (let j=0; j<meshes.length; j++){ scenes[0].group.add(rhinoMeshToThree(meshes.get(j))) } }
-        } else if (geo instanceof rhino.Mesh){
+        } else if (geo.objectType === rhino.ObjectType.Mesh){
           scenes[0].group.add(rhinoMeshToThree(geo))
         }
       }

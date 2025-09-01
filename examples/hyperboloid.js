@@ -132,7 +132,7 @@
     if (!arr) return;
     for (const obj of arr){
       if (!obj) continue;
-      if (obj.__encoded3dm){
+      if (obj && obj.__encoded3dm){
         try{
           const bytes = Uint8Array.from(atob(obj.__encoded3dm), c=>c.charCodeAt(0));
           const doc = rhino.File3dm.fromByteArray(bytes);
@@ -149,12 +149,12 @@
           continue;
         }catch{}
       }
-      if (obj instanceof rhino.Brep){
+      if (obj && obj instanceof rhino.Brep){
         const meshes = rhino.Mesh.createFromBrep(obj, rhino.MeshingParameters.default);
         if (meshes) for (let i=0;i<meshes.length;i++) scene.add(toThreeMesh(meshes.get(i)));
-      } else if (obj instanceof rhino.Mesh){
+      } else if (obj && obj instanceof rhino.Mesh){
         scene.add(toThreeMesh(obj));
-      } else if (obj instanceof rhino.Curve){
+      } else if (obj && obj instanceof rhino.Curve){
         scene.add(toThreeCurve(obj));
       }
     }
