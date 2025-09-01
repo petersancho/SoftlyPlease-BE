@@ -10,9 +10,9 @@ let rhino
 await (rhino3dm().then(m=>{ rhino = m }))
 
 const viewers = [
-  { canvas: document.getElementById('viewA'), filter: (name)=> /^(RH_OUT:Configurator|RH_OUT:points|RH_OUT:text_a|RH_OUT:text_b|RH_OUT:hyperboloid)$/i.test(name) },
-  { canvas: document.getElementById('viewB'), filter: (name)=> /^RH_OUT:positive$/i.test(name) },
-  { canvas: document.getElementById('viewC'), filter: (name)=> /^RH_OUT:panels$/i.test(name) },
+  { canvas: document.getElementById('viewA'), filter: (name)=> /^RH_OUT:Configurator$/i.test(name) },
+  { canvas: document.getElementById('viewB'), filter: (name)=> /^$/i.test(name) },
+  { canvas: document.getElementById('viewC'), filter: (name)=> /^$/i.test(name) },
 ]
 
 const scenes = viewers.map(v=>{
@@ -36,28 +36,20 @@ function animate(){
 animate()
 
 function getInputs(){
+  // Step 1: focus on the first RH_IN only
   return {
-    'RH_IN:move_a': Number(document.getElementById('move_a').value),
-    'RH_IN:move_b': Number(document.getElementById('move_b').value),
-    'RH_IN:elipse_x': Number(document.getElementById('elipse_x').value),
-    'RH_IN:elipse_y': Number(document.getElementById('elipse_y').value),
-    'RH_IN:twist_configurator_rings': Number(document.getElementById('twist_configurator_rings').value),
-    'RH_IN:configurator_height': Number(document.getElementById('configurator_height').value),
-    'RH_IN:move_cone_a': Number(document.getElementById('move_cone_a').value),
-    'RH_IN:move_cone_b': Number(document.getElementById('move_cone_b').value),
-    'RH_IN:move_cone_c': Number(document.getElementById('move_cone_c').value),
-    'RH_IN:array_panels': Number(document.getElementById('array').value)
+    'RH_IN:move_a': Number(document.getElementById('move_a').value)
   }
 }
 
 function bindOutputs(){
-  const ids = ['move_a','move_b','elipse_x','elipse_y','twist_configurator_rings','configurator_height','move_cone_a','move_cone_b','move_cone_c','array']
+  const ids = ['move_a']
   for (const id of ids){
     const el = document.getElementById(id)
     const out = document.getElementById(id+'Val')
     const evt = 'input'
-    el.addEventListener(evt, ()=>{ out.textContent = String(el.value); onSolve() })
-    out.textContent = String(el.value)
+    el.addEventListener(evt, ()=>{ if (out) out.textContent = String(el.value); onSolve() })
+    if (out) out.textContent = String(el.value)
   }
 }
 bindOutputs()
@@ -110,14 +102,14 @@ function renderResult(result){
     }
   }
 
-  // flush doc to each viewer if any non-mesh objects accumulated
+  // flush doc only for active viewer
   if (doc && doc.objects().count > 0){
     const buffer = new Uint8Array(doc.toByteArray()).buffer
-    scenes.forEach(v=> loader.parse(buffer, (obj)=>{ v.group.add(obj) }))
+    loader.parse(buffer, (obj)=>{ scenes[0].group.add(obj) })
   }
 
-  // fit each view
-  scenes.forEach(v=> fitView(v))
+  // fit only active view
+  fitView(scenes[0])
 }
 
 function fitView(v){
