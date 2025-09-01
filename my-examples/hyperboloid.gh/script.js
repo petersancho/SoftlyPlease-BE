@@ -224,14 +224,35 @@ function renderResult(result){
 }
 
 function meshArrayFromBrep(brep){
-  const meshes = rhino.Mesh.createFromBrep(brep, rhino.MeshingParameters.default)
+  let meshes = rhino.Mesh.createFromBrep(brep, rhino.MeshingParameters.default)
   const out = []
-  if (!meshes) return out
-  if (Array.isArray(meshes)) return meshes
-  const n = (typeof meshes.length === 'number') ? meshes.length : (typeof meshes.count === 'number' ? meshes.count : 0)
-  for (let i=0;i<n;i++){
-    const m = (typeof meshes.get === 'function') ? meshes.get(i) : meshes[i]
-    if (m) out.push(m)
+  if (meshes){
+    if (Array.isArray(meshes)){
+      for (const m of meshes){ if (m) out.push(m) }
+    } else {
+      const n = (typeof meshes.length === 'number') ? meshes.length : (typeof meshes.count === 'number' ? meshes.count : 0)
+      for (let i=0;i<n;i++){
+        const m = (typeof meshes.get === 'function') ? meshes.get(i) : meshes[i]
+        if (m) out.push(m)
+      }
+    }
+  }
+  if (out.length === 0){
+    const presets = [rhino.MeshingParameters.smooth, rhino.MeshingParameters.coarse]
+    for (const p of presets){
+      try{
+        const retry = rhino.Mesh.createFromBrep(brep, p)
+        if (Array.isArray(retry)) { for (const m of retry){ if (m) out.push(m) } }
+        else if (retry){
+          const n2 = (typeof retry.length === 'number') ? retry.length : (typeof retry.count === 'number' ? retry.count : 0)
+          for (let i=0;i<n2;i++){
+            const mm = (typeof retry.get === 'function') ? retry.get(i) : retry[i]
+            if (mm) out.push(mm)
+          }
+        }
+        if (out.length) break
+      }catch{}
+    }
   }
   return out
 }
