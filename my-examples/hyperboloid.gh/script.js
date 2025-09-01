@@ -431,7 +431,7 @@ function addItemDataToGroup(rawData, group){
       try{
         const rhObj = rhino.CommonObject.decode(data)
         if (rhObj){
-          try{ console.log('Configurator decoded typename:', rhObj?._typename || (rhObj.objects ? 'File3dm' : typeof rhObj)) }catch{}
+          try{ console.log('Configurator decoded typename:', rhObj?.constructor?.name, 'faces?', typeof rhObj?.faces === 'function', 'toBrep?', typeof rhObj?.toBrep === 'function') }catch{}
           if (typeof rhObj.objects === 'function'){
             try{
               const objs = rhObj.objects();
