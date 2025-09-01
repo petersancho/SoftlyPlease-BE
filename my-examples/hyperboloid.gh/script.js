@@ -395,6 +395,58 @@ function addItemDataToGroup(rawData, group){
         }
       }catch{}
     }
+    // Nested inner data string case (e.g., { data: '{...}' })
+    if (data && typeof data === 'object' && typeof data.data === 'string'){
+      let inner = data.data
+      try{ inner = JSON.parse(inner) }catch{}
+      if (inner && typeof inner === 'object'){
+        if (typeof inner.archive3dm !== 'undefined' && typeof inner.data === 'string'){
+          try{
+            const bytes = Uint8Array.from(atob(inner.data), c=>c.charCodeAt(0))
+            const file = rhino.File3dm.fromByteArray(bytes)
+            if (file){
+              const objs = file.objects();
+              for (let i=0;i<objs.count;i++){
+                const ro = objs.get(i); const geo = ro.geometry(); if (!geo) continue
+                addRhinoGeometryToGroup(geo, group)
+              }
+              return
+            }
+          }catch{}
+        } else {
+          try{ const rhObj = rhino.CommonObject.decode(inner); if (rhObj) { addRhinoGeometryToGroup(rhObj, group); return } }catch{}
+        }
+      }
+      if (typeof inner === 'string' && inner.length > 500){
+        try{
+          const bytes = Uint8Array.from(atob(inner), c=>c.charCodeAt(0))
+          const file = rhino.File3dm.fromByteArray(bytes)
+          if (file){
+            const objs = file.objects();
+            for (let i=0;i<objs.count;i++){
+              const ro = objs.get(i); const geo = ro.geometry(); if (!geo) continue
+              addRhinoGeometryToGroup(geo, group)
+            }
+            return
+          }
+        }catch{}
+      }
+    }
+    // Rhino archive JSON case: { version, archive3dm, opennurbs, data: base64 }
+    if (data && typeof data === 'object' && typeof data.archive3dm !== 'undefined' && typeof data.data === 'string'){
+      try{
+        const bytes = Uint8Array.from(atob(data.data), c=>c.charCodeAt(0))
+        const file = rhino.File3dm.fromByteArray(bytes)
+        if (file){
+          const objs = file.objects()
+          for (let i=0;i<objs.count;i++){
+            const ro = objs.get(i); const geo = ro.geometry(); if (!geo) continue
+            addRhinoGeometryToGroup(geo, group)
+          }
+          return
+        }
+      }catch{}
+    }
     // Nested inner data string case
     if (data && typeof data === 'object' && typeof data.data === 'string'){
       let inner = data.data
