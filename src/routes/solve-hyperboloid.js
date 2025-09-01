@@ -55,9 +55,12 @@ router.post('/', async (req, res) => {
       t.append([0], [value])
       trees.push(t)
     }
-    // Evaluate using cached GHX bytes (two-arg form)
-    const bytes = getHyperboloidBytesLocal()
-    const response = await compute.Grasshopper.evaluateDefinition(bytes, trees)
+    // Evaluate using server pointer URL (string) to satisfy compute API signature
+    const defObj = req.app.get('definitions').find(o => o.name === defName)
+    if (!defObj) return res.status(400).json({ error: 'Definition not found on server.' })
+    const fullUrl = req.protocol + '://' + req.get('host')
+    const defUrl = `${fullUrl}/definition/${defObj.id}`
+    const response = await compute.Grasshopper.evaluateDefinition(defUrl, trees, false)
     const text = await response.text()
     if (!response.ok){
       return res.status(500).json({ error: text || (response.status + ' ' + response.statusText) })
