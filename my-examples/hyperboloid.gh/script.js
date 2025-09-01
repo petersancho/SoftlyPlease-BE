@@ -280,16 +280,22 @@ function rhinoMeshToThree(rMesh){
   const vertices = rMesh.vertices()
   const faces = rMesh.faces()
   const positions = []
-  const addTri = (a,b,c)=>{ positions.push(a[0],a[1],a[2], b[0],b[1],b[2], c[0],c[1],c[2]) }
+  const addTri = (va,vb,vc)=>{ positions.push(va.x,va.y,va.z, vb.x,vb.y,vb.z, vc.x,vc.y,vc.z) }
   for (let i=0; i<faces.count; i++){
     const f = faces.get(i)
-    const a = vertices.get(f.A), b = vertices.get(f.B), c = vertices.get(f.C)
-    const d = f.IsTriangle ? null : vertices.get(f.D)
-    addTri(a,b,c); if (d) addTri(a,c,d)
+    const a = vertices.get(f.A ?? f.a), b = vertices.get(f.B ?? f.b), c = vertices.get(f.C ?? f.c)
+    const isTri = (typeof f.isTriangle === 'boolean') ? f.isTriangle : (f.IsTriangle === true)
+    if (isTri){
+      addTri(a,b,c)
+    } else {
+      const d = vertices.get(f.D ?? f.d)
+      addTri(a,b,c); addTri(a,c,d)
+    }
   }
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions,3))
   geometry.computeVertexNormals()
-  return new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: 0x6b8cff, metalness:0.05, roughness:0.85 }))
+  const material = new THREE.MeshStandardMaterial({ color: 0x6b8cff, metalness:0.05, roughness:0.85 })
+  return new THREE.Mesh(geometry, material)
 }
 
 // initial solve
