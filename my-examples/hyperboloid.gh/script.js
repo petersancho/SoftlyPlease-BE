@@ -155,15 +155,9 @@ function renderResult(result){
               try{ console.log('Brep faces count:', facesCount) }catch{}
               const brepObj = (geom?.constructor?.name === 'Brep' || typeof geom?.faces === 'function') ? geom : (typeof geom?.toBrep === 'function' ? geom.toBrep(true) : null)
               if (brepObj){
-                let meshes = rhino.Mesh.createFromBrep(brepObj, rhino.MeshingParameters.default)
-                if (!Array.isArray(meshes) || meshes.length === 0){
-                  try{ meshes = rhino.Mesh.createFromBrep(brepObj, rhino.MeshingParameters.smooth) }catch{}
-                }
-                const mLen = Array.isArray(meshes) ? meshes.length : 0
-                console.log('Configurator brep meshed:', Array.isArray(meshes), 'len:', mLen)
-                if (Array.isArray(meshes)){
-                  for (const m of meshes){ scenes[0].group.add(rhinoMeshToThree(m)) }
-                }
+                const mArr = meshArrayFromBrep(brepObj)
+                console.log('Configurator brep meshed:', true, 'len:', mArr.length)
+                for (const m of mArr){ scenes[0].group.add(rhinoMeshToThree(m)) }
               }
             } else if (geom && typeof geom?.toNurbsCurve === 'function'){
               try{ const nurbs = geom.toNurbsCurve(); const pts=nurbs.points(); const arr=[]; for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) } const g=new THREE.BufferGeometry().setFromPoints(arr); const lm=new THREE.LineBasicMaterial({ color:0x333333 }); scenes[0].group.add(new THREE.Line(g,lm)) }catch{}
