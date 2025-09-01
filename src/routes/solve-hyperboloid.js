@@ -1,6 +1,18 @@
 const express = require('express')
 const router = express.Router()
-const { solve: computeSolve } = require('../services/compute')
+const fs = require('fs')
+const path = require('path')
+const compute = require('compute-rhino3d')
+
+// Cache GHX bytes in-memory
+let hyperboloidBytes = null
+function getHyperboloidBytesLocal(){
+  if (hyperboloidBytes) return hyperboloidBytes
+  const p = path.resolve(process.cwd(), 'files', 'Hyperboloid.ghx')
+  const xml = fs.readFileSync(p, 'utf8')
+  hyperboloidBytes = new Uint8Array(Buffer.from(xml, 'utf8')).buffer
+  return hyperboloidBytes
+}
 
 router.post('/', async (req, res) => {
   try{
@@ -27,15 +39,26 @@ router.post('/', async (req, res) => {
     if (raw['RH_IN:array'] !== undefined && raw['RH_IN:array_panels'] === undefined) raw['RH_IN:array_panels'] = raw['RH_IN:array']
     pushInt('RH_IN:array_panels', 1, 200)
 
-    // Find registered definition (by name) and build a pointer URL
-    const defObj = req.app.get('definitions').find(o => o.name === defName)
-    if (!defObj) return res.status(400).json({ message: 'Definition not found on server.' })
-    const fullUrl = req.protocol + '://' + req.get('host')
-    const defUrl = `${fullUrl}/definition/${defObj.id}`
+    // Init compute client
+    compute.url = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL
+    compute.apiKey = process.env.COMPUTE_KEY || process.env.RHINO_COMPUTE_KEY
 
-    // Compute
-    const result = await computeSolve(defObj.name, inputs, defUrl)
-    res.status(200).json(result)
+    // Build DataTrees
+    const trees = []
+    for (const [key, value] of Object.entries(inputs)){
+      const t = new compute.Grasshopper.DataTree(key)
+      t.append([0], [value])
+      trees.push(t)
+    }
+    // Evaluate with bytes
+    const bytes = getHyperboloidBytesLocal()
+    const response = await compute.Grasshopper.evaluateDefinition(bytes, trees, false)
+    const text = await response.text()
+    if (!response.ok){
+      return res.status(500).json({ error: text || (response.status + ' ' + response.statusText) })
+    }
+    const result = JSON.parse(text)
+    return res.status(200).json(result)
   } catch (error){
     const detail = (error && error.message) ? String(error.message) : 'Internal Server Error'
     res.status(500).json({ error: detail })
