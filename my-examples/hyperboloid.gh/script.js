@@ -83,7 +83,14 @@ function debounce(fn, delay){
 
 function renderResult(result){
   const values = Array.isArray(result.values) ? result.values : []
-  try{ console.log('Hyperboloid ParamNames:', values.map(v=>({name:v.ParamName, count:Object.values(v.InnerTree||{}).reduce((a,b)=>a+(b?.length||0),0)}))) }catch{}
+  try{
+    console.log('Hyperboloid ParamNames:', values.map(v=>({
+      name: v.ParamName,
+      branches: Object.keys(v.InnerTree||{}).length,
+      countsByBranch: Object.entries(v.InnerTree||{}).map(([k,arr])=>({path:k,count:(arr||[]).length})),
+      sampleType: (()=>{ try{ const it=(Object.values(v.InnerTree||{})[0]||[])[0]; return it?.type || (it?.data && typeof it.data); }catch{return null} })()
+    })))
+  }catch{}
   for (const v of scenes){
     if (v.group){ v.scene.remove(v.group); disposeGroup(v.group); v.group = null }
     v.group = new THREE.Group(); v.scene.add(v.group)
@@ -151,6 +158,18 @@ function renderResult(result){
       const tryKeys = ['rh_out:configurator','rh_out:hyperboloid','rh_out:panels','rh_out:positive']
       for (const key of tryKeys){
         const tree = map[key]; if (!tree) continue
+        for (const path in tree){ for (const item of (tree[path]||[])) addItemDataToGroup(item.data, scenes[0].group) }
+      }
+      fitView(scenes[0])
+    }catch{}
+  }
+
+  // Final fallback: render anything that looks like geometry from any output
+  const hasMesh2 = (()=>{ let ok=false; scenes[0].scene.traverse(o=>{ if(o.isMesh) ok=true }); return ok })()
+  if (!hasMesh2){
+    try{
+      for (const entry of (result.values||[])){
+        const tree = entry.InnerTree || {}
         for (const path in tree){ for (const item of (tree[path]||[])) addItemDataToGroup(item.data, scenes[0].group) }
       }
       fitView(scenes[0])
