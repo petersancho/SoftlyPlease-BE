@@ -111,8 +111,9 @@ function renderResult(result){
   for (const out of values){
     const name = out.ParamName || ''
     const tree = out.InnerTree || {}
-    for (const path in tree){
-      for (const item of tree[path]||[]){
+    const paths = Object.keys(tree).sort()
+    for (const path of paths){
+      for (const item of (tree[path]||[])){
         try{
           // route to matching viewer(s)
           scenes.forEach((v,idx)=>{
@@ -316,11 +317,12 @@ function addRhinoGeometryToGroup(geo, group){
   try{
     if (!geo) return
     const t = geo.objectType
-    if (t === rhino.ObjectType.Brep){
+    if (t === rhino.ObjectType.Brep || (geo?._typename && String(geo._typename).includes('Brep'))){
       // Try meshing; if empty, draw wireframe edges as fallback
       const meshes = meshArrayFromBrep(geo)
-      if (meshes.length){
-        for (let j=0;j<meshes.length;j++){ group.add(rhinoMeshToThree(meshes[j])) }
+      try{ console.log('Configurator brep meshed:', Array.isArray(meshes), 'len:', (Array.isArray(meshes)? meshes.length : (meshes?.length||0))) }catch{}
+      if (Array.isArray(meshes) && meshes.length){
+        for (const m of meshes){ group.add(rhinoMeshToThree(m)) }
       } else {
         try{
           const edges = geo.edges ? geo.edges() : null
@@ -350,12 +352,12 @@ function addRhinoGeometryToGroup(geo, group){
     if (t === rhino.ObjectType.Surface){
       try{ const b = rhino.Brep.createFromSurface(geo); if (b) return addRhinoGeometryToGroup(b, group) }catch{}
     }
-    if (t === rhino.ObjectType.Mesh){ group.add(rhinoMeshToThree(geo)); return }
-    if (t === rhino.ObjectType.Curve){
+    if (t === rhino.ObjectType.Mesh || (geo?._typename && String(geo._typename).includes('Mesh'))){ group.add(rhinoMeshToThree(geo)); return }
+    if (t === rhino.ObjectType.Curve || (geo?._typename && String(geo._typename).includes('Curve'))){
       try{ const nurbs = geo.toNurbsCurve(); const pts=nurbs.points(); const arr=[]; for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) } const g=new THREE.BufferGeometry().setFromPoints(arr); const m=new THREE.LineBasicMaterial({ color:0x333333 }); group.add(new THREE.Line(g,m)) }catch{}
       return
     }
-    if (t === rhino.ObjectType.Point){
+    if (t === rhino.ObjectType.Point || (geo?._typename && String(geo._typename).includes('Point'))){
       try{ const p=geo.location||geo; const sph=new THREE.Mesh(new THREE.SphereGeometry(0.5,12,8), new THREE.MeshStandardMaterial({ color:0x0070f3 })); sph.position.set(p.x,p.y,p.z); group.add(sph) }catch{}
       return
     }
@@ -375,9 +377,26 @@ function addItemDataToGroup(rawData, group){
     if (typeof data === 'string'){
       try{ data = JSON.parse(data) }catch{ /* leave as-is */ }
     }
-    // Preferred: decode Rhino CommonObject JSON directly (handles Brep/Curve/Mesh)
+    // Preferred: decode Rhino CommonObject JSON directly (handles Brep/Curve/Mesh or File3dm)
     if (data && typeof data === 'object'){
-      try{ const rhObj = rhino.CommonObject.decode(data); if (rhObj) { addRhinoGeometryToGroup(rhObj, group); return } }catch{}
+      try{
+        const rhObj = rhino.CommonObject.decode(data)
+        if (rhObj){
+          try{ console.log('Configurator decoded typename:', rhObj?._typename || (rhObj.objects ? 'File3dm' : typeof rhObj)) }catch{}
+          if (typeof rhObj.objects === 'function'){
+            try{
+              const objs = rhObj.objects();
+              for (let i=0;i<objs.count;i++){
+                const ro = objs.get(i); const geo = ro.geometry(); if (!geo) continue
+                addRhinoGeometryToGroup(geo, group)
+              }
+              return
+            }catch{}
+          }
+          addRhinoGeometryToGroup(rhObj, group)
+          return
+        }
+      }catch{}
     }
     // If still a long string, try decoding as base64 .3dm
     if (typeof data === 'string' && data.length > 500){
