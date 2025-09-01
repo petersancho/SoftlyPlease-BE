@@ -138,6 +138,28 @@ function renderResult(result){
           dataType: typeof firstItem?.data,
           dataHead: (typeof firstItem?.data==='string') ? String(firstItem.data).slice(0,80) : (firstItem?.data && typeof firstItem.data === 'object' ? Object.keys(firstItem.data) : null)
         })
+        if (firstItem && typeof firstItem.data === 'string'){
+          let arch = firstItem.data
+          try{ arch = JSON.parse(arch) }catch{}
+          if (typeof arch === 'string') { try{ arch = JSON.parse(arch) }catch{} }
+          let geom = null
+          try{ geom = rhino.CommonObject.decode(arch) }catch{}
+          try{
+            console.log('Configurator decoded typename:', geom?._typename, 'constructor:', geom?.constructor?.name, 'proto:', Object.getPrototypeOf(geom||{})?.constructor?.name)
+          }catch{}
+          // Brep meshing proof
+          try{
+            const isBrepLike = !!(geom && (geom._typename?.includes('Brep') || typeof geom.toBrep === 'function' || typeof geom.faces !== 'undefined'))
+            if (isBrepLike){
+              const brepObj = (geom._typename?.includes('Brep') || typeof geom.faces !== 'undefined') ? geom : (typeof geom.toBrep === 'function' ? geom.toBrep(true) : null)
+              if (brepObj){
+                const mArr = rhino.Mesh.createFromBrep(brepObj, rhino.MeshingParameters.default)
+                const mLen = Array.isArray(mArr) ? mArr.length : (mArr ? (typeof mArr.length === 'number' ? mArr.length : (typeof mArr.count === 'number' ? mArr.count : 0)) : 0)
+                console.log('Configurator brep meshed:', Array.isArray(mArr), 'len:', mLen)
+              }
+            }
+          }catch{}
+        }
       }catch{}
       const tree = cfg.InnerTree || {}
       for (const path in tree){ for (const item of (tree[path]||[])) addItemDataToGroup(item.data, scenes[0].group) }
