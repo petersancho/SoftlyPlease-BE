@@ -114,6 +114,15 @@ function renderResult(result){
     }
   }
 
+  // Ensure Configurator specifically renders into Viewer 1 regardless of filters
+  try{
+    const cfg = (result.values||[]).find(e => (e.ParamName||'').toLowerCase() === 'rh_out:configurator')
+    if (cfg){
+      const tree = cfg.InnerTree || {}
+      for (const path in tree){ for (const item of (tree[path]||[])) addItemDataToGroup(item.data, scenes[0].group) }
+    }
+  }catch{}
+
   // flush doc only for active viewer (manually mesh Breps)
   if (doc && doc.objects().count > 0){
     try{
