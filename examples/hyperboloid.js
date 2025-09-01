@@ -41,6 +41,29 @@
 
     // Phase 2: render only Configurator in viewer 1
     addObjects(viewers[0].scene, decodeMany(out['RH_OUT:Configurator'] || out['Configurator']));
+    // If still no visible geometry, mesh any Breps from encoded 3dm items explicitly
+    if (viewers[0].scene.children.filter(c=>c.isMesh).length === 0){
+      const items = out['RH_OUT:Configurator'] || out['Configurator'] || []
+      for (const it of items){
+        try{
+          const dat = JSON.parse(it.data)
+          if (dat && dat.encoded){
+            const bytes = Uint8Array.from(atob(dat.encoded), c=>c.charCodeAt(0))
+            const doc = rhino.File3dm.fromByteArray(bytes)
+            if (doc){
+              const objs = doc.objects()
+              for (let i=0;i<objs.count;i++){
+                const ro = objs.get(i); const geo = ro.geometry(); if (!geo) continue;
+                if (geo instanceof rhino.Brep){
+                  const meshes = rhino.Mesh.createFromBrep(geo, rhino.MeshingParameters.default)
+                  if (meshes){ for (let j=0;j<meshes.length;j++){ viewers[0].scene.add(toThreeMesh(meshes.get(j))) } }
+                } else if (geo instanceof rhino.Mesh){ viewers[0].scene.add(toThreeMesh(geo)) }
+              }
+            }
+          }
+        }catch{}
+      }
+    }
 
     viewers.forEach(v => v.render());
   }

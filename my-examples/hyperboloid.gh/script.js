@@ -119,10 +119,22 @@ function renderResult(result){
     }
   }
 
-  // flush doc only for active viewer
+  // flush doc only for active viewer (manually mesh Breps)
   if (doc && doc.objects().count > 0){
-    const buffer = new Uint8Array(doc.toByteArray()).buffer
-    loader.parse(buffer, (obj)=>{ scenes[0].group.add(obj) })
+    try{
+      const objects = doc.objects()
+      for (let i=0; i<objects.count; i++){
+        const ro = objects.get(i)
+        const geo = ro.geometry()
+        if (!geo) continue
+        if (geo instanceof rhino.Brep){
+          const meshes = rhino.Mesh.createFromBrep(geo, rhino.MeshingParameters.default)
+          if (meshes){ for (let j=0; j<meshes.length; j++){ scenes[0].group.add(rhinoMeshToThree(meshes.get(j))) } }
+        } else if (geo instanceof rhino.Mesh){
+          scenes[0].group.add(rhinoMeshToThree(geo))
+        }
+      }
+    }catch{}
   }
 
   // fit only active view
