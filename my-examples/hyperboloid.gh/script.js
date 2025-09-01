@@ -97,27 +97,10 @@ function renderResult(result){
     for (const path in tree){
       for (const item of tree[path]||[]){
         try{
-          const data = JSON.parse(item.data)
           // route to matching viewer(s)
           scenes.forEach((v,idx)=>{
             if (!viewers[idx].filter(name)) return
-            if (data && data.encoded){
-              try{
-                const bytes = new Uint8Array(base64ToArrayBuffer(data.encoded))
-                const doc3dm = rhino.File3dm.fromByteArray(bytes)
-                if (doc3dm){
-                  const objs = doc3dm.objects()
-                  for (let i=0; i<objs.count; i++){
-                    const ro = objs.get(i)
-                    const geo = ro.geometry(); if (!geo) continue
-                    addRhinoGeometryToGroup(geo, v.group)
-                  }
-                }
-              }catch{}
-            } else if (data && rhino){
-              const rhObj = rhino.CommonObject.decode(data)
-              if (rhObj){ addRhinoGeometryToGroup(rhObj, v.group) }
-            }
+            addItemDataToGroup(item.data, v.group)
           })
         }catch{}
       }
@@ -158,31 +141,17 @@ function renderResult(result){
   // fit only active view
   fitView(scenes[0])
 
-  // Fallback: if nothing visible yet, try alternate outputs
+  // Fallback: if nothing visible yet, try alternate outputs (case-insensitive)
   const hasMesh = (()=>{ let ok=false; scenes[0].scene.traverse(o=>{ if(o.isMesh) ok=true }); return ok })()
   if (!hasMesh){
     try{
       const values2 = result.values || []
       const map = {}
-      for (const entry of values2){ map[entry.ParamName] = entry.InnerTree || {} }
-      const tryKeys = ['RH_OUT:hyperboloid','hyperboloid','RH_OUT:panels','panels','RH_OUT:positive','positive']
+      for (const entry of values2){ map[(entry.ParamName||'').toLowerCase()] = entry.InnerTree || {} }
+      const tryKeys = ['rh_out:configurator','rh_out:hyperboloid','rh_out:panels','rh_out:positive']
       for (const key of tryKeys){
         const tree = map[key]; if (!tree) continue
-        for (const path in tree){
-          for (const item of (tree[path]||[])){
-            try{
-              const data = JSON.parse(item.data)
-              if (data.encoded){
-                const bytes = new Uint8Array(base64ToArrayBuffer(data.encoded))
-                const d = rhino.File3dm.fromByteArray(bytes)
-                if (d){ const objs=d.objects(); for (let i=0;i<objs.count;i++){ const ro=objs.get(i); const geo=ro.geometry(); if(!geo) continue; if (geo.objectType === rhino.ObjectType.Brep){ const ms=meshArrayFromBrep(geo); for(let j=0;j<ms.length;j++){ scenes[0].group.add(rhinoMeshToThree(ms[j])) } } else if (geo.objectType === rhino.ObjectType.Mesh){ scenes[0].group.add(rhinoMeshToThree(geo)) } else if (geo.objectType === rhino.ObjectType.Curve){ try{ const nurbs=geo.toNurbsCurve(); const pts=nurbs.points(); const arr=[]; for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) } const g=new THREE.BufferGeometry().setFromPoints(arr); const m=new THREE.LineBasicMaterial({ color:0x333333 }); scenes[0].group.add(new THREE.Line(g,m)) }catch{} } else if (geo.objectType === rhino.ObjectType.Point){ try{ const p=geo.location||geo; const sph=new THREE.Mesh(new THREE.SphereGeometry(0.5,12,8), new THREE.MeshStandardMaterial({ color:0x0070f3 })); sph.position.set(p.x,p.y,p.z); scenes[0].group.add(sph) }catch{} } } }
-              } else {
-                const obj = rhino.CommonObject.decode(data)
-                if (obj){ if (obj instanceof rhino.Brep){ const ms=meshArrayFromBrep(obj); for(let j=0;j<ms.length;j++){ scenes[0].group.add(rhinoMeshToThree(ms[j])) } } else if (obj instanceof rhino.Mesh){ scenes[0].group.add(rhinoMeshToThree(obj)) } }
-              }
-            }catch{}
-          }
-        }
+        for (const path in tree){ for (const item of (tree[path]||[])) addItemDataToGroup(item.data, scenes[0].group) }
       }
       fitView(scenes[0])
     }catch{}
@@ -191,38 +160,10 @@ function renderResult(result){
   // Additionally, explicitly render Configurator + hyperboloid into viewer 1 from all branches
   try{
     const map = {}
-    for (const entry of (result.values||[])) map[entry.ParamName] = entry.InnerTree||{}
+    for (const entry of (result.values||[])) map[(entry.ParamName||'').toLowerCase()] = entry.InnerTree||{}
     const renderKeyToViewer = (viewerIdx, key)=>{
-      const tree = map[key]; if (!tree) return
-      for (const path in tree){
-        for (const item of (tree[path]||[])){
-          try{
-            const data = JSON.parse(item.data)
-            if (data && data.encoded){
-              const bytes = new Uint8Array(base64ToArrayBuffer(data.encoded))
-              const file = rhino.File3dm.fromByteArray(bytes)
-              if (file){
-                const objs = file.objects()
-                for (let i=0;i<objs.count;i++){
-                  const ro = objs.get(i); const geo = ro.geometry(); if (!geo) continue
-                  if (geo instanceof rhino.Brep){
-                    const ms = meshArrayFromBrep(geo)
-                    for (let j=0;j<ms.length;j++){ scenes[viewerIdx].group.add(rhinoMeshToThree(ms[j])) }
-                  } else if (geo instanceof rhino.Mesh){ scenes[viewerIdx].group.add(rhinoMeshToThree(geo)) }
-                }
-              }
-            } else {
-              const obj = rhino.CommonObject.decode(data)
-              if (obj){
-                if (obj instanceof rhino.Brep){
-                  const ms = meshArrayFromBrep(obj)
-                  for (let j=0;j<ms.length;j++){ scenes[viewerIdx].group.add(rhinoMeshToThree(ms[j])) }
-                } else if (obj instanceof rhino.Mesh){ scenes[viewerIdx].group.add(rhinoMeshToThree(obj)) }
-              }
-            }
-          }catch{}
-        }
-      }
+      const tree = map[(key||'').toLowerCase()]; if (!tree) return
+      for (const path in tree){ for (const item of (tree[path]||[])) addItemDataToGroup(item.data, scenes[viewerIdx].group) }
     }
     renderKeyToViewer(0, 'RH_OUT:Configurator')
     renderKeyToViewer(0, 'RH_OUT:hyperboloid')
@@ -329,6 +270,38 @@ function addRhinoGeometryToGroup(geo, group){
     }
     if (t === rhino.ObjectType.Point){
       try{ const p=geo.location||geo; const sph=new THREE.Mesh(new THREE.SphereGeometry(0.5,12,8), new THREE.MeshStandardMaterial({ color:0x0070f3 })); sph.position.set(p.x,p.y,p.z); group.add(sph) }catch{}
+      return
+    }
+  }catch{}
+}
+
+function addItemDataToGroup(rawData, group){
+  if (!rawData) return
+  try{
+    // Some Compute outputs nest JSON strings twice
+    let data = rawData
+    // First parse
+    if (typeof data === 'string'){
+      try{ data = JSON.parse(data) }catch{ /* leave as-is */ }
+    }
+    // If still a stringified JSON, parse again
+    if (typeof data === 'string'){
+      try{ data = JSON.parse(data) }catch{ /* leave as-is */ }
+    }
+    if (data && data.encoded){
+      const bytes = new Uint8Array(base64ToArrayBuffer(data.encoded))
+      const file = rhino.File3dm.fromByteArray(bytes)
+      if (file){
+        const objs = file.objects()
+        for (let i=0;i<objs.count;i++){
+          const ro = objs.get(i); const geo = ro.geometry(); if (!geo) continue
+          addRhinoGeometryToGroup(geo, group)
+        }
+      }
+      return
+    }
+    if (data && rhino){
+      try{ const rhObj = rhino.CommonObject.decode(data); if (rhObj) addRhinoGeometryToGroup(rhObj, group) }catch{}
       return
     }
   }catch{}
