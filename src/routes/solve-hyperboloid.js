@@ -64,11 +64,18 @@ router.post('/', async (req, res) => {
     try{ console.log('[solve-hyperboloid] defUrl:', defUrl) }catch{}
     const response = await compute.Grasshopper.evaluateDefinition(defUrl, trees, false)
     const text = await response.text()
+    // Treat Compute success as success even if status misreported; detect by JSON shape
+    try{
+      const parsed = JSON.parse(text)
+      if (parsed && parsed.values){
+        return res.status(200).json(parsed)
+      }
+    }catch{}
     if (!response.ok){
       return res.status(500).json({ error: text || (response.status + ' ' + response.statusText) })
     }
-    const result = JSON.parse(text)
-    return res.status(200).json(result)
+    // Fallback: forward text
+    return res.status(200).send(text)
   } catch (error){
     const detail = (error && error.message) ? String(error.message) : 'Internal Server Error'
     res.status(500).json({ error: detail })
