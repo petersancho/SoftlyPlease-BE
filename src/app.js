@@ -55,6 +55,7 @@ app.use('/solve', require('./routes/solve'))
 app.use('/view', require('./routes/template'))
 app.use('/version', require('./routes/version'))
 app.use('/status/memcache', require('./routes/status-memcache'))
+app.use('/solve-hyperboloid', require('./routes/solve-hyperboloid'))
 app.use('/', require('./routes/index'))
 
 // SPA fallback - serve index.html for unknown routes (except API routes)
