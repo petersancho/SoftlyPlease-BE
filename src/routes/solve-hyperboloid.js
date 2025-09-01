@@ -16,8 +16,13 @@ function getHyperboloidBytesLocal(){
 
 router.post('/', async (req, res) => {
   try{
-    const defName = String(req.body?.definition || 'Hyperboloid.ghx')
+    const defNameRaw = req.body?.definition
+    try { console.log('[solve-hyperboloid] def typeof:', typeof defNameRaw, ' body:', JSON.stringify(req.body).slice(0,100)) } catch {}
+    const defName = 'Hyperboloid.ghx' // ignore provided definition operationally
     const raw = Object.assign({}, req.body?.inputs || {})
+    if (raw && typeof raw !== 'object'){
+      return res.status(400).json({ error: 'inputs must be an object of RH_IN:* -> number' })
+    }
     // Strict whitelist, coerce and clamp
     const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n))
     const toNum = (v) => (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v))
@@ -50,12 +55,9 @@ router.post('/', async (req, res) => {
       t.append([0], [value])
       trees.push(t)
     }
-    // Evaluate using pointer URL to definition on this server (avoid bytes API mismatch)
-    const defObj = req.app.get('definitions').find(o => o.name === defName)
-    if (!defObj) return res.status(400).json({ error: 'Definition not found on server.' })
-    const fullUrl = req.protocol + '://' + req.get('host')
-    const defUrl = `${fullUrl}/definition/${defObj.id}`
-    const response = await compute.Grasshopper.evaluateDefinition(defUrl, trees, false)
+    // Evaluate using cached GHX bytes (two-arg form)
+    const bytes = getHyperboloidBytesLocal()
+    const response = await compute.Grasshopper.evaluateDefinition(bytes, trees)
     const text = await response.text()
     if (!response.ok){
       return res.status(500).json({ error: text || (response.status + ' ' + response.statusText) })
