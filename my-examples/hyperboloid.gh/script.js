@@ -365,6 +365,10 @@ function addItemDataToGroup(rawData, group){
     if (typeof data === 'string'){
       try{ data = JSON.parse(data) }catch{ /* leave as-is */ }
     }
+    // Preferred: decode Rhino CommonObject JSON directly (handles Brep/Curve/Mesh)
+    if (data && typeof data === 'object'){
+      try{ const rhObj = rhino.CommonObject.decode(data); if (rhObj) { addRhinoGeometryToGroup(rhObj, group); return } }catch{}
+    }
     // If still a long string, try decoding as base64 .3dm
     if (typeof data === 'string' && data.length > 500){
       try{
