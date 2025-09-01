@@ -102,7 +102,6 @@ function renderResult(result){
           scenes.forEach((v,idx)=>{
             if (!viewers[idx].filter(name)) return
             if (data && data.encoded){
-              // Prefer manual decode+meshing for Breps to avoid 3DMLoader missing mesh error
               try{
                 const bytes = new Uint8Array(base64ToArrayBuffer(data.encoded))
                 const doc3dm = rhino.File3dm.fromByteArray(bytes)
@@ -110,39 +109,14 @@ function renderResult(result){
                   const objs = doc3dm.objects()
                   for (let i=0; i<objs.count; i++){
                     const ro = objs.get(i)
-                    const geo = ro.geometry()
-                    if (!geo) continue
-                    if (geo.objectType === rhino.ObjectType.Brep){
-                      const meshes = meshArrayFromBrep(geo)
-                      for (let j=0;j<meshes.length;j++){ v.group.add(rhinoMeshToThree(meshes[j])) }
-                    } else if (geo.objectType === rhino.ObjectType.Mesh){
-                      v.group.add(rhinoMeshToThree(geo))
-                    } else if (geo.objectType === rhino.ObjectType.Curve){
-                      try{
-                        const nurbs = geo.toNurbsCurve(); const pts = nurbs.points(); const arr=[]
-                        for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) }
-                        const g=new THREE.BufferGeometry().setFromPoints(arr); const m=new THREE.LineBasicMaterial({ color:0x333333 });
-                        v.group.add(new THREE.Line(g,m))
-                      }catch{}
-                    } else if (geo.objectType === rhino.ObjectType.Point){
-                      try{
-                        const p = geo.location || geo
-                        const sph = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 8), new THREE.MeshStandardMaterial({ color:0x0070f3 }))
-                        sph.position.set(p.x,p.y,p.z); v.group.add(sph)
-                      }catch{}
-                    }
+                    const geo = ro.geometry(); if (!geo) continue
+                    addRhinoGeometryToGroup(geo, v.group)
                   }
                 }
               }catch{}
             } else if (data && rhino){
               const rhObj = rhino.CommonObject.decode(data)
-              if (rhObj){
-                if (isRhinoMesh(rhObj)){
-                  v.group.add(rhinoMeshToThree(rhObj))
-                } else if (doc){
-                  doc.objects().add(rhObj, null)
-                }
-              }
+              if (rhObj){ addRhinoGeometryToGroup(rhObj, v.group) }
             }
           })
         }catch{}
@@ -337,6 +311,27 @@ function rhinoMeshToThree(rMesh){
   geometry.computeVertexNormals()
   const material = new THREE.MeshStandardMaterial({ color: 0x6b8cff, metalness:0.05, roughness:0.85, side: THREE.DoubleSide })
   return new THREE.Mesh(geometry, material)
+}
+
+function addRhinoGeometryToGroup(geo, group){
+  try{
+    if (!geo) return
+    const t = geo.objectType
+    if (t === rhino.ObjectType.Brep){
+      const meshes = meshArrayFromBrep(geo)
+      for (let j=0;j<meshes.length;j++){ group.add(rhinoMeshToThree(meshes[j])) }
+      return
+    }
+    if (t === rhino.ObjectType.Mesh){ group.add(rhinoMeshToThree(geo)); return }
+    if (t === rhino.ObjectType.Curve){
+      try{ const nurbs = geo.toNurbsCurve(); const pts=nurbs.points(); const arr=[]; for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) } const g=new THREE.BufferGeometry().setFromPoints(arr); const m=new THREE.LineBasicMaterial({ color:0x333333 }); group.add(new THREE.Line(g,m)) }catch{}
+      return
+    }
+    if (t === rhino.ObjectType.Point){
+      try{ const p=geo.location||geo; const sph=new THREE.Mesh(new THREE.SphereGeometry(0.5,12,8), new THREE.MeshStandardMaterial({ color:0x0070f3 })); sph.position.set(p.x,p.y,p.z); group.add(sph) }catch{}
+      return
+    }
+  }catch{}
 }
 
 // initial solve
