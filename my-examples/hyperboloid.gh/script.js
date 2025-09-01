@@ -391,12 +391,15 @@ function addItemDataToGroup(rawData, group){
         const file = rhino.File3dm.fromByteArray(bytes)
         if (file){
           const objs = file.objects()
+          try{ console.log('Configurator 3dm objects:', objs.count) }catch{}
           for (let i=0;i<objs.count;i++){
             const ro = objs.get(i); const geo = ro.geometry(); if (!geo) continue
             addRhinoGeometryToGroup(geo, group)
           }
           return
         }
+        // Fallback: let Rhino3dmLoader try to parse anything else
+        try{ loader.parse(bytes.buffer, obj=>{ try{ group.add(obj) }catch{} }) }catch{}
       }catch{}
     }
     // Nested inner data string case (e.g., { data: '{...}' })
@@ -410,12 +413,15 @@ function addItemDataToGroup(rawData, group){
             const file = rhino.File3dm.fromByteArray(bytes)
             if (file){
               const objs = file.objects();
+              try{ console.log('Configurator inner 3dm objects:', objs.count) }catch{}
               for (let i=0;i<objs.count;i++){
                 const ro = objs.get(i); const geo = ro.geometry(); if (!geo) continue
                 addRhinoGeometryToGroup(geo, group)
               }
               return
             }
+            // Fallback: Rhino3dmLoader parse
+            try{ loader.parse(bytes.buffer, obj=>{ try{ group.add(obj) }catch{} }) }catch{}
           }catch{}
         } else {
           try{ const rhObj = rhino.CommonObject.decode(inner); if (rhObj) { addRhinoGeometryToGroup(rhObj, group); return } }catch{}
