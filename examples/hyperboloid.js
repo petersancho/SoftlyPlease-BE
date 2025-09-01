@@ -65,7 +65,8 @@
       }
     }
 
-    viewers.forEach(v => v.render());
+    // Fit and render
+    viewers.forEach(v => { fitView(v); v.render(); })
   }
 
   function collect(result){
@@ -104,6 +105,27 @@
     function resize(){ const w=canvas.clientWidth,h=canvas.clientHeight; if(canvas.width!==w||canvas.height!==h){ renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); } }
     function render(){ resize(); renderer.render(scene,camera); }
     return { canvas, renderer, scene, camera, controls, render };
+  }
+
+  function fitView(v){
+    const box = new THREE.Box3();
+    v.scene.traverse(obj=>{ if (obj.isMesh){ box.expandByObject(obj) } });
+    if (!box.isEmpty()){
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const halfFovY = (v.camera.fov*Math.PI/180)*0.5;
+      const halfFovX = Math.atan(Math.tan(halfFovY)*(v.camera.aspect||1));
+      const distY = (size.y*0.5)/Math.tan(halfFovY);
+      const distX = (size.x*0.5)/Math.tan(halfFovX);
+      const dist = Math.max(distX, distY) * 2.0;
+      v.camera.near = Math.max(0.1, dist/100);
+      v.camera.far = dist*100;
+      v.camera.updateProjectionMatrix();
+      const dir = new THREE.Vector3().subVectors(v.camera.position, v.controls.target).normalize();
+      v.camera.position.copy(center.clone().add(dir.multiplyScalar(dist)));
+      v.controls.target.copy(center);
+      v.controls.update();
+    }
   }
 
   function addObjects(scene, arr){
