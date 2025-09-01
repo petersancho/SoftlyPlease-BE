@@ -156,6 +156,7 @@ function renderResult(result){
 
   // fit only active view
   fitView(scenes[0])
+  try{ console.log('Configurator viewer stats:', viewerStats(scenes[0])) }catch{}
 
   // Fallback: if nothing visible yet, try alternate outputs (case-insensitive)
   const hasMesh = (()=>{ let ok=false; scenes[0].scene.traverse(o=>{ if(o.isMesh) ok=true }); return ok })()
@@ -233,6 +234,15 @@ function fitView(v){
     v.controls.target.copy(center)
     v.controls.update()
   }
+}
+
+function viewerStats(v){
+  let meshCount = 0
+  try{ v.scene.traverse(o=>{ if (o.isMesh) meshCount++ }) }catch{}
+  const box = new THREE.Box3()
+  if (v.group) box.expandByObject(v.group)
+  const size = box.getSize(new THREE.Vector3())
+  return { meshCount, hasMeshes: meshCount>0, bbox:{ x:size.x||0, y:size.y||0, z:size.z||0 } }
 }
 
 function base64ToArrayBuffer(base64) {
