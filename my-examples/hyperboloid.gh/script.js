@@ -46,7 +46,7 @@ function getInputs(){
     'RH_IN:move_cone_a': Number(document.getElementById('move_cone_a').value),
     'RH_IN:move_cone_b': Number(document.getElementById('move_cone_b').value),
     'RH_IN:move_cone_c': Number(document.getElementById('move_cone_c').value),
-    'RH_IN:array': Number(document.getElementById('array').value)
+    'RH_IN:array_panels': Number(document.getElementById('array').value)
   }
 }
 
