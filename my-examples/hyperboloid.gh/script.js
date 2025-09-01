@@ -145,16 +145,18 @@ function renderResult(result){
           let geom = null
           try{ geom = rhino.CommonObject.decode(arch) }catch{}
           try{
-            console.log('Configurator decoded typename:', geom?._typename, 'constructor:', geom?.constructor?.name, 'proto:', Object.getPrototypeOf(geom||{})?.constructor?.name)
+            console.log('Configurator decoded typename:', geom?.constructor?.name, 'faces?', typeof geom?.faces === 'function', 'toBrep?', typeof geom?.toBrep === 'function')
           }catch{}
           // Brep meshing proof
           try{
-            const isBrepLike = !!(geom && (geom._typename?.includes('Brep') || typeof geom.toBrep === 'function' || typeof geom.faces !== 'undefined'))
+            const isBrepLike = !!(geom && (geom?.constructor?.name === 'Brep' || typeof geom?.faces === 'function' || typeof geom?.toBrep === 'function'))
             if (isBrepLike){
-              const brepObj = (geom._typename?.includes('Brep') || typeof geom.faces !== 'undefined') ? geom : (typeof geom.toBrep === 'function' ? geom.toBrep(true) : null)
+              const facesCount = (()=>{ try{ const f=geom.faces?.(); return f?.count }catch{return undefined} })()
+              try{ console.log('Brep faces count:', facesCount) }catch{}
+              const brepObj = (geom?.constructor?.name === 'Brep' || typeof geom?.faces === 'function') ? geom : (typeof geom?.toBrep === 'function' ? geom.toBrep(true) : null)
               if (brepObj){
                 const mArr = rhino.Mesh.createFromBrep(brepObj, rhino.MeshingParameters.default)
-                const mLen = Array.isArray(mArr) ? mArr.length : (mArr ? (typeof mArr.length === 'number' ? mArr.length : (typeof mArr.count === 'number' ? mArr.count : 0)) : 0)
+                const mLen = Array.isArray(mArr) ? mArr.length : 0
                 console.log('Configurator brep meshed:', Array.isArray(mArr), 'len:', mLen)
               }
             }
