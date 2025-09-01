@@ -40,7 +40,7 @@
     const out = collect(result);
 
     // Phase 2: render only Configurator in viewer 1
-    addObjects(viewers[0].scene, out['RH_OUT:Configurator'] || out['Configurator']);
+    addObjects(viewers[0].scene, decodeMany(out['RH_OUT:Configurator'] || out['Configurator']));
 
     viewers.forEach(v => v.render());
   }
@@ -49,13 +49,24 @@
     const map = {};
     for (const entry of (result.values || [])){
       const items = entry.InnerTree?.['{0}'] || [];
-      const decoded = items.map(it => {
-        try { return rhino.CommonObject.decode(JSON.parse(it.data)); }
-        catch { return it.data; }
-      });
+      const decoded = items; // delay decode for meshing fallback
       map[entry.ParamName] = decoded;
     }
     return map;
+  }
+
+  function decodeMany(items){
+    const out = [];
+    for (const it of (items||[])){
+      const dat = it?.data; if (!dat) continue;
+      try {
+        const parsed = JSON.parse(dat);
+        const obj = rhino.CommonObject.decode(parsed);
+        if (obj) out.push(obj);
+        else if (parsed && parsed.encoded) out.push({ __encoded3dm: parsed.encoded });
+      } catch { out.push(dat); }
+    }
+    return out;
   }
 
   function makeViewer(canvasId){
@@ -76,6 +87,23 @@
     if (!arr) return;
     for (const obj of arr){
       if (!obj) continue;
+      if (obj.__encoded3dm){
+        try{
+          const bytes = Uint8Array.from(atob(obj.__encoded3dm), c=>c.charCodeAt(0));
+          const doc = rhino.File3dm.fromByteArray(bytes);
+          if (doc){
+            const objs = doc.objects();
+            for (let i=0;i<objs.count;i++){
+              const ro = objs.get(i); const geo = ro.geometry(); if (!geo) continue;
+              if (geo instanceof rhino.Brep){
+                const meshes = rhino.Mesh.createFromBrep(geo, rhino.MeshingParameters.default);
+                if (meshes){ for (let j=0;j<meshes.length;j++){ scene.add(toThreeMesh(meshes.get(j))) } }
+              } else if (geo instanceof rhino.Mesh){ scene.add(toThreeMesh(geo)) }
+            }
+          }
+          continue;
+        }catch{}
+      }
       if (obj instanceof rhino.Brep){
         const meshes = rhino.Mesh.createFromBrep(obj, rhino.MeshingParameters.default);
         if (meshes) for (let i=0;i<meshes.length;i++) scene.add(toThreeMesh(meshes.get(i)));

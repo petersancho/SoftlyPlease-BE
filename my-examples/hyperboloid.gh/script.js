@@ -84,8 +84,25 @@ function renderResult(result){
           scenes.forEach((v,idx)=>{
             if (!viewers[idx].filter(name)) return
             if (data && data.encoded){
-              const buffer = base64ToArrayBuffer(data.encoded)
-              loader.parse(buffer, (obj)=>{ v.group.add(obj) })
+              // Prefer manual decode+meshing for Breps to avoid 3DMLoader missing mesh error
+              try{
+                const bytes = new Uint8Array(base64ToArrayBuffer(data.encoded))
+                const doc3dm = rhino.File3dm.fromByteArray(bytes)
+                if (doc3dm){
+                  const objs = doc3dm.objects()
+                  for (let i=0; i<objs.count; i++){
+                    const ro = objs.get(i)
+                    const geo = ro.geometry()
+                    if (!geo) continue
+                    if (geo instanceof rhino.Brep){
+                      const meshes = rhino.Mesh.createFromBrep(geo, rhino.MeshingParameters.default)
+                      if (meshes){ for (let j=0;j<meshes.length;j++){ v.group.add(rhinoMeshToThree(meshes.get(j))) } }
+                    } else if (geo instanceof rhino.Mesh){
+                      v.group.add(rhinoMeshToThree(geo))
+                    }
+                  }
+                }
+              }catch{}
             } else if (data && rhino){
               const rhObj = rhino.CommonObject.decode(data)
               if (rhObj){
