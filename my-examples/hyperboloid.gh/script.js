@@ -8,6 +8,9 @@ loader.setLibraryPath('https://cdn.jsdelivr.net/npm/rhino3dm@8.17.0/')
 
 let rhino
 await (rhino3dm().then(m=>{ rhino = m }))
+try{ console.log('rhino3dm ready:', typeof rhino?.CommonObject?.decode === 'function') }catch{}
+
+let currentSolveAbort = null
 
 const viewers = [
   { canvas: document.getElementById('viewA'), filter: (name)=> /^(RH_OUT:Configurator|RH_OUT:points|RH_OUT:text_a|RH_OUT:text_b|RH_OUT:hyperboloid)$/i.test(name) },
@@ -53,7 +56,10 @@ function getInputs(){
 }
 
 function bindOutputs(){
-  const ids = ['move_a','move_b','elipse_x','elipse_y','twist_configurator_rings','configurator_height']
+  const ids = [
+    'move_a','move_b','elipse_x','elipse_y','twist_configurator_rings','configurator_height',
+    'move_cone_a','move_cone_b','move_cone_c','array'
+  ]
   const debounced = debounce(()=>onSolve(),150)
   for (const id of ids){
     const el = document.getElementById(id)
@@ -67,9 +73,13 @@ function bindOutputs(){
 bindOutputs()
 
 async function onSolve(){
+  // cancel in-flight
+  try{ if (currentSolveAbort){ currentSolveAbort.abort(); currentSolveAbort = null } }catch{}
   const inputs = getInputs()
   const payload = { definition: 'Hyperboloid.ghx', inputs }
-  const res = await fetch('/solve-hyperboloid', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+  currentSolveAbort = new AbortController()
+  const res = await fetch('/solve-hyperboloid', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), signal: currentSolveAbort.signal }).catch(e=>{ if (e?.name === 'AbortError') return null; throw e })
+  if (!res) return // aborted
   const text = await res.text()
   if (!res.ok) throw new Error(text||('HTTP '+res.status))
   const result = JSON.parse(text)
