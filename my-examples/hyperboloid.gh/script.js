@@ -252,6 +252,8 @@ function renderResult(result){
     }
     renderKeyToViewer(0, 'RH_OUT:Configurator')
     renderKeyToViewer(0, 'RH_OUT:hyperboloid')
+    // Also try panels to ensure visible geometry appears
+    renderKeyToViewer(0, 'RH_OUT:panels')
     fitView(scenes[0])
   }catch{}
 }
