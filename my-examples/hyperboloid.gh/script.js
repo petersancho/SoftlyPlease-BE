@@ -83,6 +83,7 @@ function debounce(fn, delay){
 
 function renderResult(result){
   const values = Array.isArray(result.values) ? result.values : []
+  try{ console.log('Hyperboloid ParamNames:', values.map(v=>v.ParamName)) }catch{}
   for (const v of scenes){
     if (v.group){ v.scene.remove(v.group); disposeGroup(v.group); v.group = null }
     v.group = new THREE.Group(); v.scene.add(v.group)
