@@ -97,6 +97,11 @@ router.post('/', async (req, res) => {
     if (raw['RH_IN:array'] !== undefined && raw['RH_IN:array_panels'] === undefined) raw['RH_IN:array_panels'] = raw['RH_IN:array']
     pushInt('RH_IN:array_panels', 1, 10)
 
+    try{ console.log('[solve] path=%s keys=%j', req.path, Object.keys(inputs)) }catch{}
+    if (req.query && req.query.echo === '1'){
+      return res.status(200).json({ ok:true, keys: Object.keys(inputs) })
+    }
+
     // Init compute client (prefer env; fallback to Rhino Compute cloud + local token file)
     let computeUrl = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL
     if (!computeUrl){ computeUrl = 'https://compute.rhino3d.com' }
@@ -120,7 +125,7 @@ router.post('/', async (req, res) => {
     const defObj = req.app.get('definitions').find(o => o.name === defName)
     if (!defObj) return res.status(400).json({ error: 'Definition not found on server.' })
     const defBytes = getHyperboloidBytesLocal()
-    try{ console.log('[solve-hyperboloid] using local GHX bytes for', defObj.name) }catch{}
+    try{ console.log('[solve-hyperboloid] using local GHX bytes for', defObj.name, 'len=', defBytes?.byteLength||0) }catch{}
 
     // ---- Cache check and coalescing ----
     const defNameForKey = defObj.name
