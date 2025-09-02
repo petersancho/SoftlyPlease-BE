@@ -54,9 +54,9 @@ function createMeshesFromBrepCompat(brep){
 }
 
 const viewers = [
-  { canvas: document.getElementById('viewA'), filter: (name)=> /^(RH_OUT:Configurator|RH_OUT:points|RH_OUT:text_a|RH_OUT:text_b|RH_OUT:hyperboloid)$/i.test(name) },
-  { canvas: document.getElementById('viewB'), filter: (name)=> /^RH_OUT:positive$/i.test(name) },
-  { canvas: document.getElementById('viewC'), filter: (name)=> /^RH_OUT:panels$/i.test(name) },
+  { canvas: document.getElementById('viewA'), filter: (name)=> /^(RH_OUT:Configurator|RH_OUT:Configurator_Mesh|RH_OUT:points|RH_OUT:text_a|RH_OUT:text_b|RH_OUT:hyperboloid)$/i.test(name) },
+  { canvas: document.getElementById('viewB'), filter: (name)=> /^(RH_OUT:positive|RH_OUT:positive_Mesh)$/i.test(name) },
+  { canvas: document.getElementById('viewC'), filter: (name)=> /^(RH_OUT:panels|RH_OUT:panels_Mesh)$/i.test(name) },
 ]
 
 const scenes = viewers.map(v=>{
@@ -134,89 +134,96 @@ function debounce(fn, delay){
 
 function renderResult(result){
   const values = Array.isArray(result.values) ? result.values : []
-  // Prefer RH_OUT:ConfiguratorMesh (server meshed)
-  const meshEntries = values.filter(v => v.ParamName === 'RH_OUT:ConfiguratorMesh')
-  if (meshEntries.length){
-    try{
-      const v1 = scenes[0]
-      clearScene(v1.scene)
-      if (v1.group){ v1.scene.remove(v1.group); disposeGroup(v1.group); v1.group=null }
-      v1.group = new THREE.Group(); v1.scene.add(v1.group)
-
-      const flatMeshItems = meshEntries.flatMap(e => flattenItems(e))
-      console.log('Configurator meshes from server:', flatMeshItems.length)
-
-      let childBefore = v1.scene.children.length
-      for (const it of flatMeshItems){
-        try{
-          const meshJson = JSON.parse(it.data)
-          const rhMesh = rhino.CommonObject.decode(meshJson)
-          if (!rhMesh) continue
-          // count triangles for log
-          let tri = 0; try{ const faces = rhMesh.faces(); for (let i=0;i<faces.count;i++){ const f=faces.get(i); tri += (f[2] !== f[3]) ? 2 : 1 } }catch{}
-          const threeMesh = convertRhinoMeshToThree(rhMesh)
-          if (threeMesh){ v1.group.add(threeMesh); console.log('Added mesh triangles:', tri) }
-        }catch{}
+  
+  // Process all three viewers
+  viewers.forEach((viewer, idx) => {
+    const v = scenes[idx]
+    clearScene(v.scene)
+    if (v.group){ v.scene.remove(v.group); disposeGroup(v.group); v.group=null }
+    v.group = new THREE.Group(); v.scene.add(v.group)
+    
+    // Find outputs that match this viewer's filter
+    const relevantValues = values.filter(val => viewer.filter(val.ParamName))
+    
+    for (const value of relevantValues) {
+      const items = flattenItems(value)
+      console.log(`Viewer ${idx} - Processing ${value.ParamName}: ${items.length} items`)
+      
+      for (const item of items) {
+        try {
+          // Parse the data
+          let data = item.data
+          if (typeof data === 'string') {
+            data = JSON.parse(data)
+          }
+          
+          // Decode the geometry
+          const geo = rhino.CommonObject.decode(data)
+          if (!geo) continue
+          
+          // Add to scene based on geometry type
+          addRhinoGeometryToGroup(geo, v.group)
+        } catch (e) {
+          console.error(`Failed to process ${value.ParamName}:`, e)
+        }
       }
-      // Fit and render
-      fitView(v1)
-      v1.renderer.render(v1.scene, v1.camera)
-      console.log('v1 scene children:', v1.scene.children.length, '(was', childBefore, ')')
-      return
-    }catch(e){ console.warn('ConfiguratorMesh render error:', e?.message||String(e)) }
-  }
-
-  // 1) Pick only RH_OUT:Configurator
-  const configuratorEntries = values.filter(v => v.ParamName === 'RH_OUT:Configurator')
-  if (!configuratorEntries.length){ console.error('No RH_OUT:Configurator found'); return }
-  // Flatten all branches and take the first item
-  const flat = configuratorEntries.flatMap(e => flattenItems(e))
-  if (!flat.length){ console.error('Configurator has no items'); return }
-
-  // 2) Decode first item to Brep
-  let parsed
-  try{ parsed = JSON.parse(flat[0].data) }catch(e){ console.error('Configurator JSON parse failed:', e); return }
-  let brep
-  try{ brep = rhino.CommonObject.decode(parsed) }catch(e){ console.error('Configurator decode failed:', e); return }
-  try{
-    const ctor = brep?.constructor?.name
-    const facesCount = typeof brep?.faces === 'function' ? brep.faces().count : 0
-    console.log('Configurator decoded:', { constructor: ctor, facesCount })
-    if (ctor !== 'Brep' || facesCount <= 0){ console.error('Configurator is not a valid Brep'); return }
-  }catch{}
-
-  // 3) Mesh via toMesh (createFromBrep unavailable in this build)
-  // 4) Render wireframe from Brep edges (no meshing)
-  const renderConfiguratorWireframe = (theBrep, group, color=0x00ffff)=>{
-    if (!theBrep || !theBrep.edges){ console.error('No brep edges'); return 0 }
-    const edges = theBrep.edges(); let added=0
-    for (let i=0;i<edges.count;i++){
-      try{
-        const edge = edges.get(i)
-        const crv = edge.toNurbsCurve ? edge.toNurbsCurve() : edge
-        if (!crv || !crv.points) continue
-        const cps = crv.points(); if (!cps || cps.count < 2) continue
-        const linePoints = []
-        for (let j=0;j<cps.count;j++){ const p=cps.get(j); linePoints.push(new THREE.Vector3(p[0],p[1],p[2])) }
-        const g = new THREE.BufferGeometry().setFromPoints(linePoints)
-        const line = new THREE.Line(g, new THREE.LineBasicMaterial({ color }))
-        group.add(line); added++
-      }catch{}
     }
-    return added
+    
+    // Fit camera and render
+    if (v.group.children.length > 0) {
+      fitView(v)
+    }
+    v.renderer.render(v.scene, v.camera)
+  })
+  
+  // Check if we have any meshed outputs (prefer these over raw geometry)
+  const hasMeshedOutputs = values.some(v => v.ParamName.endsWith('_Mesh'))
+  if (hasMeshedOutputs) {
+    console.log('Using server-meshed outputs')
   }
 
-  const v1 = scenes[0]
-  clearScene(v1.scene)
-  if (v1.group){ v1.scene.remove(v1.group); disposeGroup(v1.group); v1.group=null }
-  v1.group = new THREE.Group(); v1.scene.add(v1.group)
-  const linesAdded = renderConfiguratorWireframe(brep, v1.group, 0x00ffff)
-  if (!linesAdded){ console.error('Configurator wireframe produced no edges'); return }
-
-  // Fit camera to geometry bbox
-  fitView(v1)
-  v1.renderer.render(v1.scene, v1.camera)
-  try{ console.log('Configurator viewer stats:', viewerStats(v1)) }catch{}
+  // Fallback: if no server mesh and no viewer processing worked, try wireframe
+  const configuratorEntries = values.filter(v => v.ParamName === 'RH_OUT:Configurator')
+  if (configuratorEntries.length && scenes[0].group.children.length === 0) {
+    const flat = configuratorEntries.flatMap(e => flattenItems(e))
+    if (flat.length) {
+      try {
+        const parsed = JSON.parse(flat[0].data)
+        const brep = rhino.CommonObject.decode(parsed)
+        if (brep && typeof brep.edges === 'function') {
+          const v1 = scenes[0]
+          const edges = brep.edges()
+          const mat = new THREE.LineBasicMaterial({ color: 0x00ffff })
+          
+          for (let i = 0; i < edges.count; i++) {
+            try {
+              const edge = edges.get(i)
+              const crv = edge.toNurbsCurve ? edge.toNurbsCurve() : edge
+              if (!crv || !crv.points) continue
+              const pts = crv.points()
+              if (!pts || pts.count < 2) continue
+              
+              const linePoints = []
+              for (let j = 0; j < pts.count; j++) {
+                const p = pts.get(j)
+                linePoints.push(new THREE.Vector3(p[0] || p.x, p[1] || p.y, p[2] || p.z))
+              }
+              
+              const g = new THREE.BufferGeometry().setFromPoints(linePoints)
+              v1.group.add(new THREE.Line(g, mat))
+            } catch (e) {
+              console.error('Edge processing error:', e)
+            }
+          }
+          
+          fitView(v1)
+          v1.renderer.render(v1.scene, v1.camera)
+        }
+      } catch (e) {
+        console.error('Wireframe fallback failed:', e)
+      }
+    }
+  }
 }
 
 function meshArrayFromBrep(brep){
@@ -346,55 +353,112 @@ function addRhinoGeometryToGroup(geo, group){
   try{
     if (!geo) return
     const ctor = geo?.constructor?.name
-    const isBrep = (ctor === 'Brep') || (typeof geo?.faces === 'function') || (typeof geo?.toBrep === 'function' && !geo?.toNurbsCurve)
-    const isMesh = (ctor === 'Mesh') || (geo?.vertices && geo?.faces)
-    const isCurve = (typeof geo?.toNurbsCurve === 'function')
-    const isExtrusionOrSubD = (typeof geo?.toBrep === 'function' && !isBrep && !isCurve)
-
-    if (isBrep){
-      const meshes = meshArrayFromBrep(geo)
-      try{ console.log('Configurator brep meshed:', Array.isArray(meshes), 'len:', (Array.isArray(meshes)? meshes.length : 0)) }catch{}
-      if (Array.isArray(meshes) && meshes.length){
-        for (const m of meshes){ group.add(rhinoMeshToThree(m)) }
-      } else {
-        // fallback to edge wireframe
-        try{
-          const edges = geo.edges ? geo.edges() : null
-          if (edges && typeof edges.count === 'number'){
-            const mat = new THREE.LineBasicMaterial({ color:0x333333 })
-            for (let i=0;i<edges.count;i++){
-              try{
-                const crv = edges.get(i).toNurbsCurve()
-                if (!crv) continue
-                const pts = crv.points(); const arr=[]
-                for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) }
-                const g=new THREE.BufferGeometry().setFromPoints(arr)
-                group.add(new THREE.Line(g, mat))
-              }catch{}
-            }
-          }
-        }catch{}
+    console.log(`Processing geometry type: ${ctor}`)
+    
+    // Check if it's a Mesh first (most common for server-meshed geometry)
+    if (ctor === 'Mesh' || (geo?.vertices && geo?.faces && typeof geo.vertices === 'function')) {
+      const threeMesh = convertRhinoMeshToThree(geo)
+      if (threeMesh) {
+        group.add(threeMesh)
+        console.log('Added mesh to scene')
       }
       return
     }
-
-    if (isExtrusionOrSubD){
-      try{ const b = geo.toBrep(true); if (b) return addRhinoGeometryToGroup(b, group) }catch{}
-    }
-
-    if (isMesh){ group.add(rhinoMeshToThree(geo)); return }
-
-    if (isCurve){
-      try{ const nurbs = geo.toNurbsCurve(); const pts=nurbs.points(); const arr=[]; for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) } const g=new THREE.BufferGeometry().setFromPoints(arr); const m=new THREE.LineBasicMaterial({ color:0x333333 }); group.add(new THREE.Line(g,m)) }catch{}
+    
+    // Check if it's a Brep
+    if (ctor === 'Brep' || typeof geo?.faces === 'function') {
+      // Since client-side meshing is not available, render as wireframe
+      try {
+        const edges = geo.edges()
+        if (edges && edges.count > 0) {
+          const mat = new THREE.LineBasicMaterial({ color: 0x00aaff })
+          for (let i = 0; i < edges.count; i++) {
+            try {
+              const edge = edges.get(i)
+              const crv = edge.toNurbsCurve ? edge.toNurbsCurve() : edge
+              if (!crv || !crv.points) continue
+              
+              const pts = crv.points()
+              const arr = []
+              for (let k = 0; k < pts.count; k++) {
+                const p = pts.get(k)
+                const loc = p.location || p
+                arr.push(new THREE.Vector3(loc.x || loc[0], loc.y || loc[1], loc.z || loc[2]))
+              }
+              
+              if (arr.length >= 2) {
+                const g = new THREE.BufferGeometry().setFromPoints(arr)
+                group.add(new THREE.Line(g, mat))
+              }
+            } catch (e) {
+              console.error('Edge rendering error:', e)
+            }
+          }
+          console.log('Added Brep as wireframe')
+        }
+      } catch (e) {
+        console.error('Brep wireframe rendering failed:', e)
+      }
       return
     }
-
-    // Points
-    if (ctor === 'Point' || ctor === 'Point3d'){
-      try{ const p=geo.location||geo; const sph=new THREE.Mesh(new THREE.SphereGeometry(0.5,12,8), new THREE.MeshStandardMaterial({ color:0x0070f3 })); sph.position.set(p.x,p.y,p.z); group.add(sph) }catch{}
+    
+    // Check if it's a Curve
+    if (ctor === 'NurbsCurve' || typeof geo?.toNurbsCurve === 'function') {
+      try {
+        const nurbs = geo.toNurbsCurve ? geo.toNurbsCurve() : geo
+        const pts = nurbs.points()
+        const arr = []
+        for (let k = 0; k < pts.count; k++) {
+          const p = pts.get(k)
+          const loc = p.location || p
+          arr.push(new THREE.Vector3(loc.x || loc[0], loc.y || loc[1], loc.z || loc[2]))
+        }
+        if (arr.length >= 2) {
+          const g = new THREE.BufferGeometry().setFromPoints(arr)
+          const m = new THREE.LineBasicMaterial({ color: 0x333333 })
+          group.add(new THREE.Line(g, m))
+          console.log('Added curve')
+        }
+      } catch (e) {
+        console.error('Curve rendering error:', e)
+      }
       return
     }
-  }catch{}
+    
+    // Check if it's a Point
+    if (ctor === 'Point' || ctor === 'Point3d' || geo?.location) {
+      try {
+        const p = geo.location || geo
+        const sph = new THREE.Mesh(
+          new THREE.SphereGeometry(0.5, 12, 8),
+          new THREE.MeshStandardMaterial({ color: 0x0070f3 })
+        )
+        sph.position.set(p.x || p[0], p.y || p[1], p.z || p[2])
+        group.add(sph)
+        console.log('Added point')
+      } catch (e) {
+        console.error('Point rendering error:', e)
+      }
+      return
+    }
+    
+    // Handle Extrusion/SubD by converting to Brep
+    if (typeof geo?.toBrep === 'function') {
+      try {
+        const b = geo.toBrep(true)
+        if (b) {
+          console.log('Converting Extrusion/SubD to Brep')
+          return addRhinoGeometryToGroup(b, group)
+        }
+      } catch (e) {
+        console.error('toBrep conversion error:', e)
+      }
+    }
+    
+    console.log('Unhandled geometry type:', ctor)
+  } catch (e) {
+    console.error('addRhinoGeometryToGroup error:', e)
+  }
 }
 
 // Flatten InnerTree entries into a single array (sorted by path)
