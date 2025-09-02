@@ -105,7 +105,7 @@ router.post('/', async (req, res) => {
                         const entry = {
                           ParamName: 'RH_OUT:ConfiguratorMesh',
                           InnerTree: {
-                            '{0;0}': meshes.map(m => ({ type: 'Rhino.Geometry.Mesh', data: JSON.stringify(m) }))
+                            '{0}': meshes.map(m => ({ type: 'Rhino.Geometry.Mesh', data: JSON.stringify(m) }))
                           }
                         }
                         parsed.values.push(entry)
