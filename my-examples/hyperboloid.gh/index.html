@@ -72,20 +72,7 @@ try{
   console.log = function(){ if (shouldSuppress(arguments)) return; return origLog.apply(console, arguments) }
   console.warn = function(){ if (shouldSuppress(arguments)) return; return origWarn.apply(console, arguments) }
 }catch(e){}
-try{
-  var origFetch = window.fetch
-  window.fetch = function(input, init){
-    var url = (typeof input === 'string') ? input : (input && input.url) || ''
-    if (url.indexOf('/solve-hyperboloid') !== -1){
-      try{
-        var body = init && init.body ? JSON.parse(init.body) : null
-        var payload = body && body.inputs ? body.inputs : undefined
-        return origFetch('/solve', Object.assign({}, init, { body: JSON.stringify({ definition:'Hyperboloid.ghx', inputs: payload }) }))
-      }catch(e){ return origFetch('/solve', init) }
-    }
-    return origFetch(input, init)
-  }
-}catch(e){}
+// removed fetch override
 try{ window.addEventListener('unhandledrejection', function(e){ if (e && e.preventDefault) e.preventDefault() }) }catch(e){}
 })();
 </script>

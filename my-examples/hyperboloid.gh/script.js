@@ -113,13 +113,7 @@ async function onSolve(){
   let res = await fetch('/solve-hyperboloid', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), signal: currentSolveAbort.signal }).catch(e=>{ if (e?.name === 'AbortError') return null; return { ok:false, text: ()=> Promise.resolve(String(e&&e.message||'network error')) } })
   if (!res) return // aborted
   let text = await res.text()
-  if (!res.ok){
-    // fallback to generic /solve
-    try{
-      res = await fetch('/solve', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ definition:'Hyperboloid.ghx', inputs }), signal: currentSolveAbort.signal })
-      text = await res.text()
-    }catch{}
-  }
+  // no fallback to /solve; rely on /solve-hyperboloid
   if (!res.ok){
     try{ renderFallback(inputs) }catch{}
     return
