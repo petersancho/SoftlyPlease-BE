@@ -389,18 +389,9 @@ function addItemsPipeline(items, scene, label){
     if (ctor === 'Brep' || typeof geom?.faces === 'function' || (typeof geom?.toBrep === 'function' && !geom?.toNurbsCurve)){
       console.log(`${label}[${i}] BREP DETECTED - Starting mesh process`)
       try{ const fc=geom.faces?.()?.count; console.log(`${label}[${i}] Brep has ${fc} faces`) }catch{}
-      const meshes = meshArrayFromBrep(geom)
-      console.log(`${label}[${i}] createFromBrep result:`, { isArray: Array.isArray(meshes), length: meshes.length })
-      if (meshes.length > 0){
-        let added = 0
-        for (const m of meshes){
-          if (!m) continue
-          const three = convertRhinoMeshToThree(m)
-          if (three){ scene.add(three); added++; totalMeshCount++ ; console.log(`${label}[${i}] Mesh added (${added})`) }
-        }
-      } else {
-        console.error(`${label}[${i}] CRITICAL: No meshes created from Brep!`)
-      }
+      const added = processBrep(geom, scene, `${label}[${i}]`)
+      console.log(`${label}[${i}] PROCESSING COMPLETE: ${added} meshes`)
+      totalMeshCount += added
       continue
     }
     // Curve (NurbsCurve)
