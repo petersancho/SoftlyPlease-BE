@@ -54,6 +54,7 @@ app.use('/my-examples', express.static(path.join(process.cwd(), 'my-examples'), 
 } }))
 // Force cache-bust for hyperboloid page
 app.get('/my-examples/hyperboloid.gh', (req, res, next)=> res.redirect(302, '/my-examples/hyperboloid.gh/?v=now'))
+app.get('/my-examples/hyperboloid.gh/', (req, res, next)=> res.redirect(302, '/my-examples/hyperboloid.gh/?v=now'))
 app.use('/files', express.static(path.join(process.cwd(), 'files')))
 app.get('/favicon.ico', (req, res) => res.status(200))
 app.use('/definition', require('./routes/definition'))
