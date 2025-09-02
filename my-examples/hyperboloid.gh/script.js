@@ -123,11 +123,8 @@ async function onSolve(){
     try{ if (Array.isArray(result?.values)) localStorage.setItem('hyperboloid:lastValues', JSON.stringify(result.values)) }catch{}
     renderResult(result)
   } catch (e){
-    try{
-      const cached = localStorage.getItem('hyperboloid:lastValues')
-      if (cached){ const values = JSON.parse(cached); if (Array.isArray(values) && values.length){ renderResult({ values }); return } }
-    }catch{}
-    try{ renderFallbackAll(inputs) }catch{}
+    // Stop fallback; surface real error in console from postSolve()
+    return
   }
 }
 

@@ -108,11 +108,12 @@ router.post('/', async (req, res) => {
     if (apiKey) compute.apiKey = apiKey
     try{ console.log('[solve-hyperboloid] compute.url:', compute.url, ' apiKeyPresent:', !!apiKey) }catch{}
 
-    // Build DataTrees
+    // Build DataTrees (System.Double for numbers)
     const trees = []
     for (const [key, value] of Object.entries(inputs)){
       const t = new compute.Grasshopper.DataTree(key)
-      t.append([0], [value])
+      const v = (typeof value === 'number' && isFinite(value)) ? value : Number(value)
+      t.append([0], [v])
       trees.push(t)
     }
     // Evaluate by sending GHX bytes directly to Compute (avoids pointer fetch failures)
@@ -146,12 +147,14 @@ router.post('/', async (req, res) => {
     const promise = (async ()=>{
       const response = await compute.Grasshopper.evaluateDefinition(defBytes, trees, false)
       const text = await response.text()
-      return { ok: response.ok, status: response.status, statusText: response.statusText, text }
+      if (!response.ok){
+        throw Object.assign(new Error(text||('HTTP '+response.status)), { response: { status: response.status, data: text } })
+      }
+      return text
     })()
     inflight.set(cacheKey, promise)
-    let evalRes
-    try{ evalRes = await promise } finally { inflight.delete(cacheKey) }
-    const { ok, status, statusText, text } = evalRes || {}
+    let text
+    try{ text = await promise } finally { inflight.delete(cacheKey) }
     // Treat Compute success as success even if status misreported; detect by JSON shape
     try{
       const parsed = JSON.parse(text)
@@ -229,9 +232,7 @@ router.post('/', async (req, res) => {
         return res.status(200).send(body)
       }
     }catch{}
-    if (!ok){
-      return res.status(500).json({ error: text || ((status + ' ' + statusText) || 'Compute error') })
-    }
+    // ok
     // Fallback: forward text (also cache raw if possible)
     if (!nocache){
       if (mc){ try{ const ttl = Number(process.env.MEMCACHE_TTL_SECS || process.env.CACHE_TTL_SECS || DEFAULT_TTL); await new Promise(resolve => mc.set(cacheKey, text, { expires: ttl }, ()=> resolve())) }catch{} }
