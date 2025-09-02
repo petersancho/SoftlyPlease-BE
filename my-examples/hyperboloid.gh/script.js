@@ -106,7 +106,7 @@ function bindOutputs(){
     'move_a','move_b','elipse_x','elipse_y','twist_configurator_rings','configurator_height',
     'move_cone_a','move_cone_b','move_cone_c','move_cone_d','array_panels'
   ]
-  const debounced = debounce(()=>onSolve(),150)
+  const debounced = debounce(()=>{ try{ const p = onSolve(); if (p && typeof p.catch === 'function') p.catch(()=>{}) }catch{} },150)
   for (const id of ids){
     const el = document.getElementById(id)
     if (!el) continue
