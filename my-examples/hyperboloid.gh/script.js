@@ -165,6 +165,28 @@ function renderResult(result){
       console.log('v1 scene children:', v1.scene.children.length, '(was', childBefore, ')')
     }catch(e){ console.warn('ConfiguratorMesh render error:', e?.message||String(e)) }
   }
+  if (!meshEntries.length){
+    // Fall back to direct Brep output
+    try{
+      const configuratorEntries = values.filter(v => v.ParamName === 'RH_OUT:Configurator')
+      const flat = configuratorEntries.flatMap(e => flattenItems(e))
+      if (flat.length){
+        let parsed
+        try{ parsed = JSON.parse(flat[0].data) }catch{}
+        let brep
+        try{ brep = rhino.CommonObject.decode(parsed) }catch{}
+        if (brep){
+          const v1 = scenes[0]
+          clearScene(v1.scene)
+          if (v1.group){ v1.scene.remove(v1.group); disposeGroup(v1.group); v1.group=null }
+          v1.group = new THREE.Group(); v1.scene.add(v1.group)
+          addRhinoGeometryToGroup(brep, v1.group)
+          fitView(v1)
+          v1.renderer.render(v1.scene, v1.camera)
+        }
+      }
+    }catch{}
+  }
   // Render Positive (Viewer B)
   try{
     const posEntries = values.filter(v => v.ParamName === 'RH_OUT:positive')
@@ -313,6 +335,15 @@ function convertRhinoMeshToThree(rMesh){
   }
 }
 
+// Robustly convert a rhino3dm point/control point to THREE.Vector3
+function pointToVector3(p){
+  const src = (p && p.location) ? p.location : p
+  const x = (src && (src.x ?? src.X ?? src[0])) ?? 0
+  const y = (src && (src.y ?? src.Y ?? src[1])) ?? 0
+  const z = (src && (src.z ?? src.Z ?? src[2])) ?? 0
+  return new THREE.Vector3(x,y,z)
+}
+
 // Ultimate Brep meshing pipeline with multiple strategies and detailed logs
 // client-side meshing disabled
 function processBrep(){ return 0 }
@@ -342,7 +373,7 @@ function addRhinoGeometryToGroup(geo, group){
                 const crv = edges.get(i).toNurbsCurve()
                 if (!crv) continue
                 const pts = crv.points(); const arr=[]
-                for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) }
+                for (let k=0;k<pts.count;k++){ const p=pts.get(k); arr.push(pointToVector3(p)) }
                 const g=new THREE.BufferGeometry().setFromPoints(arr)
                 group.add(new THREE.Line(g, mat))
               }catch{}
