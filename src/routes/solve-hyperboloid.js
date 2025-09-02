@@ -87,12 +87,25 @@ router.post('/', async (req, res) => {
                       ? compute.MeshingParameters.qualityRenderMesh()
                       : (typeof compute.MeshingParameters?.default === 'function' ? compute.MeshingParameters.default() : null)
                     if (compute.Mesh && typeof compute.Mesh.createFromBrep === 'function' && mp){
-                      const meshes = await compute.Mesh.createFromBrep(brepJson, mp)
+                      let meshes = await compute.Mesh.createFromBrep(brepJson, mp)
+                      if (!Array.isArray(meshes) || meshes.length === 0){
+                        try{
+                          const mpFast = typeof compute.MeshingParameters.fastRenderMesh === 'function' ? compute.MeshingParameters.fastRenderMesh() : null
+                          if (mpFast) meshes = await compute.Mesh.createFromBrep(brepJson, mpFast)
+                        }catch{}
+                      }
+                      if (!Array.isArray(meshes) || meshes.length === 0){
+                        try{
+                          const mpDef = typeof compute.MeshingParameters.default === 'function' ? compute.MeshingParameters.default() : null
+                          if (mpDef) meshes = await compute.Mesh.createFromBrep(brepJson, mpDef)
+                        }catch{}
+                      }
+                      try{ console.log('[solve-hyperboloid] Configurator meshed: submeshes=' + (Array.isArray(meshes)? meshes.length : 0)) }catch{}
                       if (Array.isArray(meshes) && meshes.length){
                         const entry = {
                           ParamName: 'RH_OUT:ConfiguratorMesh',
                           InnerTree: {
-                            '{0}': meshes.map(m => ({ type: 'Rhino.Geometry.Mesh', data: JSON.stringify(m) }))
+                            '{0;0}': meshes.map(m => ({ type: 'Rhino.Geometry.Mesh', data: JSON.stringify(m) }))
                           }
                         }
                         parsed.values.push(entry)
