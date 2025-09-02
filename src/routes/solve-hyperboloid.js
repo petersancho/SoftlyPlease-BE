@@ -124,16 +124,16 @@ router.post('/', async (req, res) => {
       if (mc){
         try{
           const cached = await new Promise(resolve => mc.get(cacheKey, (err,val)=> resolve(err==null && val ? val.toString() : null)))
-          if (cached){ return res.status(200).send(cached) }
+          if (cached){ res.setHeader('X-Cache-Status','HIT'); return res.status(200).send(cached) }
         }catch{}
       } else {
         const cached = nodeCache.get(cacheKey)
-        if (cached !== undefined){ return res.status(200).send(cached) }
+        if (cached !== undefined){ res.setHeader('X-Cache-Status','HIT'); return res.status(200).send(cached) }
       }
     }
 
     if (inflight.has(cacheKey)){
-      try{ const cachedText = await inflight.get(cacheKey); return res.status(200).send(cachedText) }catch(e){ return res.status(500).json({ error: e?.message||'Compute error' }) }
+      try{ const cachedText = await inflight.get(cacheKey); res.setHeader('X-Cache-Status','HIT-INF'); return res.status(200).send(cachedText) }catch(e){ return res.status(500).json({ error: e?.message||'Compute error' }) }
     }
 
     const promise = (async ()=>{

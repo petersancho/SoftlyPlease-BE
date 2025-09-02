@@ -54,9 +54,9 @@ function createMeshesFromBrepCompat(brep){
 }
 
 const viewers = [
-  { canvas: document.getElementById('viewA'), filter: (name)=> /^(RH_OUT:ConfiguratorMesh|RH_OUT:Configurator|RH_OUT:points|RH_OUT:text_a|RH_OUT:text_b|RH_OUT:hyperboloid)$/i.test(name) },
-  { canvas: document.getElementById('viewB'), filter: (name)=> /^(RH_OUT:positiveMesh|RH_OUT:positive)$/i.test(name) },
-  { canvas: document.getElementById('viewC'), filter: (name)=> /^(RH_OUT:panelsMesh|RH_OUT:panels)$/i.test(name) },
+  { canvas: document.getElementById('viewA'), filter: (name)=> /^(RH_OUT:ConfiguratorMesh|RH_OUT:Configurator|RH_OUT:points|RH_OUT:text_a|RH_OUT:text_b|RH_OUT:hyperboloid)$/i.test(name), color: 0xe91e63 }, // pink
+  { canvas: document.getElementById('viewB'), filter: (name)=> /^(RH_OUT:positiveMesh|RH_OUT:positive)$/i.test(name), color: 0x2196f3 }, // blue
+  { canvas: document.getElementById('viewC'), filter: (name)=> /^(RH_OUT:panelsMesh|RH_OUT:panels)$/i.test(name), color: 0xffeb3b }, // yellow
 ]
 
 const scenes = viewers.map(v=>{
@@ -163,8 +163,8 @@ function renderResult(result){
           if (threeMesh){ v1.group.add(threeMesh); console.log('Added mesh triangles:', tri) }
         }catch{}
       }
-      // Color viewer A meshes blue, fit and render
-      try{ v1.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(0x2196f3) } }) }catch{}
+      // Color viewer A meshes pink, fit and render; also add hyperboloid curve + points
+      try{ v1.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(viewers[0].color) } }) }catch{}
       // Fit and render
       fitView(v1)
       v1.renderer.render(v1.scene, v1.camera)
@@ -187,6 +187,9 @@ function renderResult(result){
           if (v1.group){ v1.scene.remove(v1.group); disposeGroup(v1.group); v1.group=null }
           v1.group = new THREE.Group(); v1.scene.add(v1.group)
           addRhinoGeometryToGroup(brep, v1.group)
+          // Add hyperboloid curve + points
+          try{ const hypEntries = values.filter(v => v.ParamName === 'RH_OUT:hyperboloid'); const hyps = hypEntries.flatMap(e => flattenItems(e)); for (const it of hyps){ addItemDataToGroup(it.data, v1.group) } }catch{}
+          try{ const ptEntries = values.filter(v => v.ParamName === 'RH_OUT:points'); const pts = ptEntries.flatMap(e => flattenItems(e)); for (const it of pts){ addItemDataToGroup(it.data, v1.group) } }catch{}
           fitView(v1)
           v1.renderer.render(v1.scene, v1.camera)
         }
@@ -204,7 +207,7 @@ function renderResult(result){
       vB.group = new THREE.Group(); vB.scene.add(vB.group)
       const posItems = posEntries.flatMap(e => flattenItems(e))
       for (const it of posItems){ addItemDataToGroup(it.data, vB.group) }
-      try{ vB.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(0xffd54f) } }) }catch{}
+      try{ vB.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(viewers[1].color) } }) }catch{}
       if (posItems.length){ fitView(vB); vB.renderer.render(vB.scene, vB.camera) }
     }
   }catch(e){ console.warn('Positive render error:', e?.message||String(e)) }
@@ -220,7 +223,7 @@ function renderResult(result){
       vC.group = new THREE.Group(); vC.scene.add(vC.group)
       const panItems = panEntries.flatMap(e => flattenItems(e))
       for (const it of panItems){ addItemDataToGroup(it.data, vC.group) }
-      try{ vC.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(0xe91e63) } }) }catch{}
+      try{ vC.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(viewers[2].color) } }) }catch{}
       if (panItems.length){ fitView(vC); vC.renderer.render(vC.scene, vC.camera) }
     }
   }catch(e){ console.warn('Panels render error:', e?.message||String(e)) }
