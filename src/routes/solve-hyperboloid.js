@@ -19,6 +19,20 @@ if(process.env.MEMCACHIER_SERVERS !== undefined) {
 }
 const inflight = new Map()
 
+// Lightweight diagnostics (GET /solve-hyperboloid/debug)
+router.get('/debug', (req, res) => {
+  try{
+    const defs = req.app.get('definitions') || []
+    const defName = 'Hyperboloid.ghx'
+    const defObj = defs.find(o => o.name === defName) || null
+    const fullUrl = req.protocol + '://' + req.get('host')
+    const defUrl = defObj ? `${fullUrl}/definition/${defObj.id}` : null
+    const url = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL || compute.url || null
+    const apiKeyPresent = Boolean(process.env.COMPUTE_KEY || process.env.RHINO_COMPUTE_KEY || compute.apiKey)
+    res.status(200).json({ ok:true, compute:{ url, apiKeyPresent }, definition:{ name:defName, present: !!defObj, id: defObj?.id || null, url: defUrl } })
+  }catch(e){ res.status(500).json({ ok:false, error: e?.message||String(e) }) }
+})
+
 function parseExcludeList(defName){
   const raw = process.env.CACHE_EXCLUDE_KEYS
   if (!raw) return []
@@ -83,17 +97,23 @@ router.post('/', async (req, res) => {
     const pushInt = (k, lo, hi) => { if (raw[k] !== undefined) inputs[k] = Math.round(clamp(toNum(raw[k]), lo, hi)) }
     pushDouble('RH_IN:move_a', -20, 20)
     pushDouble('RH_IN:move_b', -20, 20)
-    pushDouble('RH_IN:elipse_x', 0.1, 50)
-    pushDouble('RH_IN:elipse_y', 0.1, 50)
-    pushDouble('RH_IN:twist_configurator_rings', -360, 360)
-    pushDouble('RH_IN:configurator_height', 1, 200)
+    // Match GHX slider domains and defaults precisely
+    // elipse_x: Min 10, Max 100, Default 88
+    pushDouble('RH_IN:elipse_x', 10, 100)
+    // elipse_y: Min 0, Max 180, Default 121 (based on slider near group)
+    pushDouble('RH_IN:elipse_y', 0, 180)
+    // twist_configurator_rings: Min 0, Max 180, Default 121
+    pushDouble('RH_IN:twist_configurator_rings', 0, 180)
+    // configurator_height: Min 1, Max 500, Default 203
+    pushDouble('RH_IN:configurator_height', 1, 500)
     pushDouble('RH_IN:move_cone_a', -20, 20)
     pushDouble('RH_IN:move_cone_b', -20, 20)
     pushDouble('RH_IN:move_cone_c', -20, 20)
     pushDouble('RH_IN:move_cone_d', -20, 20)
     // alias support
     if (raw['RH_IN:array'] !== undefined && raw['RH_IN:array_panels'] === undefined) raw['RH_IN:array_panels'] = raw['RH_IN:array']
-    pushInt('RH_IN:array_panels', 1, 10)
+    // array_panels: Min 0, Max 10, Default 2
+    pushInt('RH_IN:array_panels', 0, 10)
 
     // Init compute client
     compute.url = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL
@@ -137,13 +157,19 @@ router.post('/', async (req, res) => {
     }
 
     const promise = (async ()=>{
-      const response = await compute.Grasshopper.evaluateDefinition(defUrl, trees, false)
-      const text = await response.text()
-      return text
+      try{
+        const response = await compute.Grasshopper.evaluateDefinition(defUrl, trees, false)
+        const text = await response.text()
+        return { text, ok: response.ok, status: response.status, statusText: response.statusText }
+      }catch(err){
+        console.error('[solve-hyperboloid] evaluateDefinition threw:', err?.message||String(err))
+        return { text: JSON.stringify({ error: err?.message||String(err) }), ok: false, status: 500, statusText: 'Compute evaluateDefinition error' }
+      }
     })()
     inflight.set(cacheKey, promise)
-    let text
-    try{ text = await promise } finally { inflight.delete(cacheKey) }
+    let evaluated
+    try{ evaluated = await promise } finally { inflight.delete(cacheKey) }
+    const text = evaluated && typeof evaluated.text === 'string' ? evaluated.text : String(evaluated || '')
     // Treat Compute success as success even if status misreported; detect by JSON shape
     try{
       const parsed = JSON.parse(text)
@@ -207,8 +233,11 @@ router.post('/', async (req, res) => {
         return res.status(200).send(body)
       }
     }catch{}
-    if (!response.ok){
-      return res.status(500).json({ error: text || (response.status + ' ' + response.statusText) })
+    if (evaluated && evaluated.ok === false){
+      const status = evaluated.status || 500
+      const statusText = evaluated.statusText || 'Compute error'
+      try{ console.error('[solve-hyperboloid] Compute non-OK:', status, statusText, String(text).slice(0,200)) }catch{}
+      return res.status(500).json({ error: text || (status + ' ' + statusText) })
     }
     // Fallback: forward text (also cache raw if possible)
     if (!nocache){
