@@ -117,29 +117,18 @@ async function onSolve(){
   // cancel in-flight
   try{ if (currentSolveAbort){ currentSolveAbort.abort(); currentSolveAbort = null } }catch{}
   const inputs = getInputs()
-  const payload = { definition: 'Hyperboloid.ghx', inputs }
   currentSolveAbort = new AbortController()
-  // Post to the correct route for this page
-  let res = await fetch(SOLVE_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ inputs }),
-    signal: currentSolveAbort.signal
-  }).catch(e=>{ if (e?.name === 'AbortError') return null; return { ok:false, text: ()=> Promise.resolve(String(e&&e.message||'network error')) } })
-  if (!res) return // aborted
-  let text = await res.text()
-  // no fallback to /solve; rely on /solve-hyperboloid
-  if (!res.ok){
+  try{
+    const result = await postSolve(inputs)
+    try{ if (Array.isArray(result?.values)) localStorage.setItem('hyperboloid:lastValues', JSON.stringify(result.values)) }catch{}
+    renderResult(result)
+  } catch (e){
     try{
       const cached = localStorage.getItem('hyperboloid:lastValues')
       if (cached){ const values = JSON.parse(cached); if (Array.isArray(values) && values.length){ renderResult({ values }); return } }
     }catch{}
     try{ renderFallbackAll(inputs) }catch{}
-    return
   }
-  const result = JSON.parse(text)
-  try{ if (Array.isArray(result?.values)) localStorage.setItem('hyperboloid:lastValues', JSON.stringify(result.values)) }catch{}
-  renderResult(result)
 }
 
 function debounce(fn, delay){
