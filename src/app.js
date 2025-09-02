@@ -38,6 +38,24 @@ if (!process.env.RHINO_COMPUTE_URL)
 
 console.log('RHINO_COMPUTE_URL: ' + process.env.RHINO_COMPUTE_URL)
 
+// Boot health-check: log Compute reachability and GHX bytes length
+;(async ()=>{
+  try{
+    const fetch = require('node-fetch')
+    const url = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL
+    console.log('[boot] COMPUTE_URL=%s key=%s', url, (process.env.COMPUTE_KEY||process.env.RHINO_COMPUTE_KEY)?'yes':'no')
+    if (url){
+      try{ const v = await fetch(new URL('version', url)).then(r=>r.text()); console.log('[boot] compute version:', v) }catch(e){ console.error('[boot] compute unreachable:', e.message) }
+    }
+  }catch(e){ console.error('[boot] fetch error:', e.message) }
+  try{
+    const fs = require('fs'); const path = require('path')
+    const p = path.join(process.cwd(),'files','Hyperboloid.ghx')
+    const len = fs.existsSync(p) ? fs.readFileSync(p).length : 0
+    console.log('[boot] ghxBytes length:', len)
+  }catch(e){ console.error('[boot] ghxBytes error:', e.message) }
+})()
+
 app.set('view engine', 'hbs');
 app.set('views', './src/views')
 
