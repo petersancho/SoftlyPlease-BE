@@ -211,6 +211,12 @@ router.post('/', async (req, res) => {
         if (!nocache){
           if (mc){ try{ const ttl = Number(process.env.MEMCACHE_TTL_SECS || process.env.CACHE_TTL_SECS || DEFAULT_TTL); await new Promise(resolve => mc.set(cacheKey, body, { expires: ttl }, ()=> resolve())) }catch{} }
           else { nodeCache.set(cacheKey, body, Number(process.env.CACHE_TTL_SECS || DEFAULT_TTL)) }
+          // also store as last-known-good for this definition
+          try{
+            const lastKey = `last:${defNameForKey}`
+            if (mc){ try{ const ttl2 = Number(process.env.MEMCACHE_TTL_SECS || process.env.CACHE_TTL_SECS || DEFAULT_TTL); await new Promise(resolve => mc.set(lastKey, body, { expires: ttl2 }, ()=> resolve())) }catch{} }
+            else { nodeCache.set(lastKey, body, Number(process.env.CACHE_TTL_SECS || DEFAULT_TTL)) }
+          }catch{}
         }
         res.setHeader('X-Cache-Set', '1')
         return res.status(200).send(body)
@@ -230,11 +236,16 @@ router.post('/', async (req, res) => {
         res.setHeader('X-Fallback', 'compute-service')
         return res.status(200).send(body)
       }catch(e){
-        // Last resort: serve stale cached result if available
+        // Last resort: serve stale cached result if available, else last-known-good for this definition
         try{
           let stale = null
           if (mc){ try{ stale = await new Promise(resolve => mc.get(cacheKey, (err,val)=> resolve(err==null && val ? val.toString() : null))) }catch{} }
           else { stale = nodeCache.get(cacheKey) }
+          if (!stale){
+            const lastKey = `last:${defNameForKey}`
+            if (mc){ try{ stale = await new Promise(resolve => mc.get(lastKey, (err,val)=> resolve(err==null && val ? val.toString() : null))) }catch{} }
+            else { stale = nodeCache.get(lastKey) }
+          }
           if (stale){ res.setHeader('X-Cache-Status','STALE'); res.setHeader('X-Fallback','stale-cache'); return res.status(200).send(stale) }
         }catch{}
         return res.status(500).json({ error: text || ((status + ' ' + statusText) || (e?.message||'Compute error')) })
