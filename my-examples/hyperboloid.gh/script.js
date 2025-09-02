@@ -360,6 +360,16 @@ function rhinoMeshToThree(rMesh){
   return new THREE.Mesh(geometry, material)
 }
 
+// Convert rhino3dm Mesh to THREE.Mesh with diagnostics
+function convertRhinoMeshToThree(rMesh){
+  try{
+    return rhinoMeshToThree(rMesh)
+  }catch(e){
+    try{ console.error('convertRhinoMeshToThree failed:', e?.message||String(e)) }catch{}
+    return null
+  }
+}
+
 function addRhinoGeometryToGroup(geo, group){
   try{
     if (!geo) return
@@ -413,6 +423,71 @@ function addRhinoGeometryToGroup(geo, group){
       return
     }
   }catch{}
+}
+
+// Flatten InnerTree entries into a single array (sorted by path)
+function flattenItems(entry){
+  const flat = []
+  const tree = entry.InnerTree || {}
+  Object.keys(tree).sort().forEach(path=>{ const arr = tree[path]||[]; for (const it of arr) flat.push(it) })
+  return flat
+}
+
+// Diagnostic rendering pipeline per ParamName items list
+function addItemsPipeline(items, scene, label){
+  console.log(`\n=== ${label} RENDERING PIPELINE START ===`)
+  let totalMeshCount = 0
+  for (let i=0; i<(items?.length||0); i++){
+    const item = items[i]
+    console.log(`${label}[${i}] Processing item:`, { hasData: !!item?.data, dataType: typeof item?.data, dataLength: item?.data?.length })
+    // Parse JSON (double-encoded guard)
+    let parsed
+    try{ parsed = JSON.parse(item.data); if (typeof parsed === 'string'){ try{ parsed = JSON.parse(parsed) }catch{} } console.log(`${label}[${i}] JSON parsed successfully`) }catch(e){ console.error(`${label}[${i}] JSON parse failed:`, e); continue }
+    // Decode
+    let geom
+    try{ geom = rhino.CommonObject.decode(parsed); console.log(`${label}[${i}] Decoded to:`, { constructor: geom?.constructor?.name, hasFaces: typeof geom?.faces === 'function', hasToBrep: typeof geom?.toBrep === 'function', hasToNurbsCurve: typeof geom?.toNurbsCurve === 'function' }) }catch(e){ console.error(`${label}[${i}] Decode failed:`, e); continue }
+    const ctor = geom?.constructor?.name || 'Unknown'
+    // Brep
+    if (ctor === 'Brep' || typeof geom?.faces === 'function' || (typeof geom?.toBrep === 'function' && !geom?.toNurbsCurve)){
+      console.log(`${label}[${i}] BREP DETECTED - Starting mesh process`)
+      try{ const fc=geom.faces?.()?.count; console.log(`${label}[${i}] Brep has ${fc} faces`) }catch{}
+      const meshes = meshArrayFromBrep(geom)
+      console.log(`${label}[${i}] createFromBrep result:`, { isArray: Array.isArray(meshes), length: meshes.length })
+      if (meshes.length > 0){
+        let added = 0
+        for (const m of meshes){
+          if (!m) continue
+          const three = convertRhinoMeshToThree(m)
+          if (three){ scene.add(three); added++; totalMeshCount++ ; console.log(`${label}[${i}] Mesh added (${added})`) }
+        }
+      } else {
+        console.error(`${label}[${i}] CRITICAL: No meshes created from Brep!`)
+      }
+      continue
+    }
+    // Curve (NurbsCurve)
+    if (ctor === 'NurbsCurve' || typeof geom?.toNurbsCurve === 'function'){
+      console.log(`${label}[${i}] CURVE DETECTED - Rendering as line`)
+      try{ const crv = geom.toNurbsCurve ? geom.toNurbsCurve() : geom; const pts = crv.points(); if (pts && pts.count>0){ const arr=[]; for (let j=0;j<pts.count;j++){ const p=pts.get(j); const x=p[0]??p.x, y=p[1]??p.y, z=p[2]??p.z; arr.push(new THREE.Vector3(x,y,z)) } const g=new THREE.BufferGeometry().setFromPoints(arr); const l=new THREE.Line(g, new THREE.LineBasicMaterial({ color:0x333333 })); scene.add(l); console.log(`${label}[${i}] Curve added as line with ${pts.count} points`) } }catch(e){ console.error(`${label}[${i}] Curve rendering failed:`, e) }
+      continue
+    }
+    // Mesh direct
+    if (ctor === 'Mesh' || (geom?.vertices && geom?.faces)){
+      console.log(`${label}[${i}] MESH DETECTED - Adding directly`)
+      const three = convertRhinoMeshToThree(geom)
+      if (three){ scene.add(three); totalMeshCount++ }
+      continue
+    }
+    // Extrusion/SubD
+    if (typeof geom?.toBrep === 'function'){
+      console.log(`${label}[${i}] EXTRUSION/SUBD DETECTED - Converting to Brep`)
+      try{ const b = geom.toBrep(true); if (b){ const meshes = meshArrayFromBrep(b); console.log(`${label}[${i}] toBrep meshed:`, { isArray:Array.isArray(meshes), length: meshes.length }); for (const m of meshes){ const three = convertRhinoMeshToThree(m); if (three){ scene.add(three); totalMeshCount++ } } } }catch(e){ console.error(`${label}[${i}] toBrep meshing failed:`, e) }
+      continue
+    }
+    console.log(`${label}[${i}] Unhandled type: ${ctor}`)
+  }
+  console.log(`=== ${label} RENDERING COMPLETE: ${totalMeshCount} meshes ===\n`)
+  return totalMeshCount
 }
 
 function addItemDataToGroup(rawData, group){
