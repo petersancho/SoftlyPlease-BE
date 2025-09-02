@@ -287,34 +287,22 @@ function convertRhinoMeshToThree(rMesh){
 // Ultimate Brep meshing pipeline with multiple strategies and detailed logs
 function processBrep(geom, scene, label){
   console.log(`[${label}] STARTING BREP PROCESSING`)
-  if (!rhino || !rhino.Mesh || !rhino.Mesh.createFromBrep){
-    console.error(`[${label}] CRITICAL: rhino3dm not initialized properly`)
-    return 0
-  }
-  // Build strategy list based on available MeshingParameters keys
-  const mp = rhino.MeshingParameters || {}
-  const candidates = []
-  if (mp.Default) candidates.push(mp.Default)
-  if (mp.default) candidates.push(mp.default)
-  if (mp.QualityRenderMesh) candidates.push(mp.QualityRenderMesh)
-  if (mp.smooth) candidates.push(mp.smooth)
-  if (mp.Coarse) candidates.push(mp.Coarse)
-  if (mp.coarse) candidates.push(mp.coarse)
-  try{ const custom = new rhino.MeshingParameters(0.5,0.3); if (custom) candidates.push(custom) }catch{}
+  // Use compatibility wrapper first (handles createFromBrep absence and toMesh fallback)
   let meshes = []
-  for (let i=0;i<candidates.length;i++){
-    try{
-      console.log(`[${label}] Trying meshing strategy ${i+1}`)
-      const res = rhino.Mesh.createFromBrep(geom, candidates[i])
-      if (Array.isArray(res) && res.length>0){ meshes = res; console.log(`[${label}] Success with strategy ${i+1}: ${res.length} meshes`); break }
-    }catch(e){ console.warn(`[${label}] Strategy ${i+1} failed:`, e?.message||String(e)) }
-  }
+  try{ meshes = createMeshesFromBrepCompat(geom) }catch{}
+  // If still empty, attempt additional presets if available
   if (!Array.isArray(meshes) || meshes.length===0){
-    console.error(`[${label}] ALL MESHING STRATEGIES FAILED!`)
-    // last resort
-    try{ if (typeof geom.toMesh === 'function'){ const m = geom.toMesh(); if (m) meshes=[m]; console.log(`[${label}] Direct toMesh conversion ${meshes.length? 'succeeded':''}`) } }catch(e){ console.error(`[${label}] Direct conversion failed:`, e?.message||String(e)) }
-    if (!Array.isArray(meshes) || meshes.length===0){ console.error(`[${label}] UNABLE TO MESH BREP`); return 0 }
+    const MP = rhino?.MeshingParameters || {}
+    const presets = [MP.qualityRenderMesh, MP.fastRenderMesh, MP.coarse, MP.default].filter(Boolean)
+    for (let i=0;i<presets.length;i++){
+      try{
+        console.log(`[${label}] Trying meshing strategy ${i+1}`)
+        const res = rhino?.Mesh?.createFromBrep ? rhino.Mesh.createFromBrep(geom, presets[i]) : []
+        if (Array.isArray(res) && res.length>0){ meshes = res; console.log(`[${label}] Success with strategy ${i+1}: ${res.length} meshes`); break }
+      }catch(e){ console.warn(`[${label}] Strategy ${i+1} failed:`, e?.message||String(e)) }
+    }
   }
+  if (!Array.isArray(meshes) || meshes.length===0){ console.error(`[${label}] UNABLE TO MESH BREP`); return 0 }
   let added = 0
   for (const m of meshes){ const three = convertRhinoMeshToThree(m); if (three){ scene.add(three); added++; console.log(`[${label}] Mesh added to scene`) } }
   return added
