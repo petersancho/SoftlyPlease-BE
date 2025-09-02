@@ -19,6 +19,20 @@ if(process.env.MEMCACHIER_SERVERS !== undefined) {
 }
 const inflight = new Map()
 
+// Lightweight diagnostics (GET /solve-hyperboloid/debug)
+router.get('/debug', (req, res) => {
+  try{
+    const defs = req.app.get('definitions') || []
+    const defName = 'Hyperboloid.ghx'
+    const defObj = defs.find(o => o.name === defName) || null
+    const fullUrl = req.protocol + '://' + req.get('host')
+    const defUrl = defObj ? `${fullUrl}/definition/${defObj.id}` : null
+    const url = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL || compute.url || null
+    const apiKeyPresent = Boolean(process.env.COMPUTE_KEY || process.env.RHINO_COMPUTE_KEY || compute.apiKey)
+    res.status(200).json({ ok:true, compute:{ url, apiKeyPresent }, definition:{ name:defName, present: !!defObj, id: defObj?.id || null, url: defUrl } })
+  }catch(e){ res.status(500).json({ ok:false, error: e?.message||String(e) }) }
+})
+
 function parseExcludeList(defName){
   const raw = process.env.CACHE_EXCLUDE_KEYS
   if (!raw) return []
@@ -143,9 +157,14 @@ router.post('/', async (req, res) => {
     }
 
     const promise = (async ()=>{
-      const response = await compute.Grasshopper.evaluateDefinition(defUrl, trees, false)
-      const text = await response.text()
-      return { text, ok: response.ok, status: response.status, statusText: response.statusText }
+      try{
+        const response = await compute.Grasshopper.evaluateDefinition(defUrl, trees, false)
+        const text = await response.text()
+        return { text, ok: response.ok, status: response.status, statusText: response.statusText }
+      }catch(err){
+        console.error('[solve-hyperboloid] evaluateDefinition threw:', err?.message||String(err))
+        return { text: JSON.stringify({ error: err?.message||String(err) }), ok: false, status: 500, statusText: 'Compute evaluateDefinition error' }
+      }
     })()
     inflight.set(cacheKey, promise)
     let evaluated
@@ -217,6 +236,7 @@ router.post('/', async (req, res) => {
     if (evaluated && evaluated.ok === false){
       const status = evaluated.status || 500
       const statusText = evaluated.statusText || 'Compute error'
+      try{ console.error('[solve-hyperboloid] Compute non-OK:', status, statusText, String(text).slice(0,200)) }catch{}
       return res.status(500).json({ error: text || (status + ' ' + statusText) })
     }
     // Fallback: forward text (also cache raw if possible)
