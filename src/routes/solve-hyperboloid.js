@@ -95,10 +95,16 @@ router.post('/', async (req, res) => {
     if (raw['RH_IN:array'] !== undefined && raw['RH_IN:array_panels'] === undefined) raw['RH_IN:array_panels'] = raw['RH_IN:array']
     pushInt('RH_IN:array_panels', 1, 10)
 
-    // Init compute client
-    compute.url = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL
-    compute.apiKey = process.env.COMPUTE_KEY || process.env.RHINO_COMPUTE_KEY
-    try{ console.log('[solve-hyperboloid] compute.url:', compute.url, ' apiKeyPresent:', !!compute.apiKey) }catch{}
+    // Init compute client (prefer env; fallback to Rhino Compute cloud + local token file)
+    let computeUrl = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL
+    if (!computeUrl){ computeUrl = 'https://compute.rhino3d.com' }
+    compute.url = computeUrl
+    let apiKey = process.env.COMPUTE_KEY || process.env.RHINO_COMPUTE_KEY
+    if (!apiKey){
+      try{ const tokenPath = path.resolve(process.cwd(), 'rhino_token.txt'); const raw = fs.readFileSync(tokenPath, 'utf8'); if (raw && raw.trim()) apiKey = raw.trim() }catch{}
+    }
+    if (apiKey) compute.apiKey = apiKey
+    try{ console.log('[solve-hyperboloid] compute.url:', compute.url, ' apiKeyPresent:', !!apiKey) }catch{}
 
     // Build DataTrees
     const trees = []
@@ -224,33 +230,7 @@ router.post('/', async (req, res) => {
       }
     }catch{}
     if (!ok){
-      // Server-side fallback using compute service helper
-      try{
-        const { solve } = require('../services/compute')
-        const solved = await solve(defName, inputs, defUrl)
-        const body = JSON.stringify(solved)
-        if (!nocache){
-          if (mc){ try{ const ttl = Number(process.env.MEMCACHE_TTL_SECS || process.env.CACHE_TTL_SECS || DEFAULT_TTL); await new Promise(resolve => mc.set(cacheKey, body, { expires: ttl }, ()=> resolve())) }catch{} }
-          else { nodeCache.set(cacheKey, body, Number(process.env.CACHE_TTL_SECS || DEFAULT_TTL)) }
-        }
-        res.setHeader('X-Cache-Set', '1')
-        res.setHeader('X-Fallback', 'compute-service')
-        return res.status(200).send(body)
-      }catch(e){
-        // Last resort: serve stale cached result if available, else last-known-good for this definition
-        try{
-          let stale = null
-          if (mc){ try{ stale = await new Promise(resolve => mc.get(cacheKey, (err,val)=> resolve(err==null && val ? val.toString() : null))) }catch{} }
-          else { stale = nodeCache.get(cacheKey) }
-          if (!stale){
-            const lastKey = `last:${defNameForKey}`
-            if (mc){ try{ stale = await new Promise(resolve => mc.get(lastKey, (err,val)=> resolve(err==null && val ? val.toString() : null))) }catch{} }
-            else { stale = nodeCache.get(lastKey) }
-          }
-          if (stale){ res.setHeader('X-Cache-Status','STALE'); res.setHeader('X-Fallback','stale-cache'); return res.status(200).send(stale) }
-        }catch{}
-        return res.status(500).json({ error: text || ((status + ' ' + statusText) || (e?.message||'Compute error')) })
-      }
+      return res.status(500).json({ error: text || ((status + ' ' + statusText) || 'Compute error') })
     }
     // Fallback: forward text (also cache raw if possible)
     if (!nocache){
