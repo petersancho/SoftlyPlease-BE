@@ -245,15 +245,28 @@ function renderFallback(inputs){
     clearScene(v1.scene)
     if (v1.group){ v1.scene.remove(v1.group); disposeGroup(v1.group); v1.group=null }
     v1.group = new THREE.Group(); v1.scene.add(v1.group)
-    const a = Number(inputs['RH_IN:elipse_x']||20), b = Number(inputs['RH_IN:elipse_y']||30), h = Number(inputs['RH_IN:configurator_height']||200)
-    const seg = 64
+    const a = Number(inputs['RH_IN:elipse_x']||20)
+    const b = Number(inputs['RH_IN:elipse_y']||30)
+    const h = Number(inputs['RH_IN:configurator_height']||200)
+    const twistDeg = Number(inputs['RH_IN:twist_configurator_rings']||0)
+    const twist = (twistDeg*Math.PI)/180
+    const moveA = Number(inputs['RH_IN:move_a']||0)
+    const moveB = Number(inputs['RH_IN:move_b']||0)
+    const panels = Math.max(1, Number(inputs['RH_IN:array_panels']||5))
+    const seg = Math.max(8, panels*12)
     const geo = new THREE.BufferGeometry()
     const pos = []
     for (let i=0;i<=seg;i++){
-      const t=i/seg, ang=t*Math.PI*2
+      const t=i/seg
+      const ang = t*Math.PI*2
+      const angTop = ang + twist
       const r1 = a, r2 = b
-      const x1 = r1*Math.cos(ang), y1 = r2*Math.sin(ang), z1 = -h*0.5
-      const x2 = -r1*Math.cos(ang), y2 = -r2*Math.sin(ang), z2 = h*0.5
+      const x1 = r1*Math.cos(ang) + moveA
+      const y1 = r2*Math.sin(ang) + moveB
+      const z1 = -h*0.5
+      const x2 = r1*Math.cos(angTop) + moveA
+      const y2 = r2*Math.sin(angTop) + moveB
+      const z2 = h*0.5
       pos.push(x1,y1,z1, x2,y2,z2)
     }
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3))
