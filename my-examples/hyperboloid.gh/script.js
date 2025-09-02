@@ -110,9 +110,16 @@ async function onSolve(){
   const inputs = getInputs()
   const payload = { definition: 'Hyperboloid.ghx', inputs, nocache: true }
   currentSolveAbort = new AbortController()
-  const res = await fetch('/solve-hyperboloid', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), signal: currentSolveAbort.signal }).catch(e=>{ if (e?.name === 'AbortError') return null; throw e })
+  let res = await fetch('/solve-hyperboloid', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), signal: currentSolveAbort.signal }).catch(e=>{ if (e?.name === 'AbortError') return null; throw e })
   if (!res) return // aborted
-  const text = await res.text()
+  let text = await res.text()
+  if (!res.ok){
+    // fallback to generic /solve
+    try{
+      res = await fetch('/solve', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ definition:'Hyperboloid.ghx', inputs }), signal: currentSolveAbort.signal })
+      text = await res.text()
+    }catch{}
+  }
   if (!res.ok) throw new Error(text||('HTTP '+res.status))
   const result = JSON.parse(text)
   renderResult(result)
