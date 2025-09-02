@@ -83,17 +83,23 @@ router.post('/', async (req, res) => {
     const pushInt = (k, lo, hi) => { if (raw[k] !== undefined) inputs[k] = Math.round(clamp(toNum(raw[k]), lo, hi)) }
     pushDouble('RH_IN:move_a', -20, 20)
     pushDouble('RH_IN:move_b', -20, 20)
-    pushDouble('RH_IN:elipse_x', 0.1, 50)
-    pushDouble('RH_IN:elipse_y', 0.1, 50)
-    pushDouble('RH_IN:twist_configurator_rings', -360, 360)
-    pushDouble('RH_IN:configurator_height', 1, 200)
+    // Match GHX slider domains and defaults precisely
+    // elipse_x: Min 10, Max 100, Default 88
+    pushDouble('RH_IN:elipse_x', 10, 100)
+    // elipse_y: Min 0, Max 180, Default 121 (based on slider near group)
+    pushDouble('RH_IN:elipse_y', 0, 180)
+    // twist_configurator_rings: Min 0, Max 180, Default 121
+    pushDouble('RH_IN:twist_configurator_rings', 0, 180)
+    // configurator_height: Min 1, Max 500, Default 203
+    pushDouble('RH_IN:configurator_height', 1, 500)
     pushDouble('RH_IN:move_cone_a', -20, 20)
     pushDouble('RH_IN:move_cone_b', -20, 20)
     pushDouble('RH_IN:move_cone_c', -20, 20)
     pushDouble('RH_IN:move_cone_d', -20, 20)
     // alias support
     if (raw['RH_IN:array'] !== undefined && raw['RH_IN:array_panels'] === undefined) raw['RH_IN:array_panels'] = raw['RH_IN:array']
-    pushInt('RH_IN:array_panels', 1, 10)
+    // array_panels: Min 0, Max 10, Default 2
+    pushInt('RH_IN:array_panels', 0, 10)
 
     // Init compute client
     compute.url = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL
