@@ -209,7 +209,21 @@ router.post('/', async (req, res) => {
       }
     }catch{}
     if (!ok){
-      return res.status(500).json({ error: text || ((status + ' ' + statusText) || 'Compute error') })
+      // Server-side fallback using compute service helper
+      try{
+        const { solve } = require('../services/compute')
+        const solved = await solve(defName, inputs, defUrl)
+        const body = JSON.stringify(solved)
+        if (!nocache){
+          if (mc){ try{ const ttl = Number(process.env.MEMCACHE_TTL_SECS || process.env.CACHE_TTL_SECS || DEFAULT_TTL); await new Promise(resolve => mc.set(cacheKey, body, { expires: ttl }, ()=> resolve())) }catch{} }
+          else { nodeCache.set(cacheKey, body, Number(process.env.CACHE_TTL_SECS || DEFAULT_TTL)) }
+        }
+        res.setHeader('X-Cache-Set', '1')
+        res.setHeader('X-Fallback', 'compute-service')
+        return res.status(200).send(body)
+      }catch(e){
+        return res.status(500).json({ error: text || ((status + ' ' + statusText) || (e?.message||'Compute error')) })
+      }
     }
     // Fallback: forward text (also cache raw if possible)
     if (!nocache){
