@@ -110,8 +110,9 @@ router.post('/', async (req, res) => {
     // Evaluate using server pointer URL (string) to satisfy compute API signature
     const defObj = req.app.get('definitions').find(o => o.name === defName)
     if (!defObj) return res.status(400).json({ error: 'Definition not found on server.' })
-    const fullUrl = req.protocol + '://' + req.get('host')
-    const defUrl = `${fullUrl}/definition/${defObj.id}`
+    const origin = process.env.PUBLIC_APP_ORIGIN || (req.protocol + '://' + req.get('host'))
+    // Use publicly served files URL to ensure Compute can fetch without appserver routing issues
+    const defUrl = `${origin}/files/${encodeURIComponent(defObj.name)}`
     try{ console.log('[solve-hyperboloid] defUrl:', defUrl) }catch{}
 
     // ---- Cache check and coalescing ----
