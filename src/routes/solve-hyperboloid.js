@@ -240,8 +240,12 @@ router.post('/', async (req, res) => {
     res.setHeader('X-Cache-Set', '1')
     return res.status(200).send(text)
   } catch (error){
-    const detail = (error && error.message) ? String(error.message) : 'Internal Server Error'
-    res.status(500).json({ error: detail })
+    const status = (error && error.response && error.response.status) ? error.response.status : 500
+    let body = null
+    try{ body = (error && error.response && error.response.data) ? error.response.data : (error && error.message ? error.message : String(error)) }catch{ body = 'Internal Server Error' }
+    try{ console.error('[solve-hyperboloid] error:', body) }catch{}
+    if (typeof body === 'string') return res.status(status).type('text/plain').send(body)
+    return res.status(status).type('application/json').send(JSON.stringify(body))
   }
 })
 
