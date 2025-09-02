@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const { solve: computeSolve } = require('../services/compute')
+const compute = require('compute-rhino3d')
 const {performance} = require('perf_hooks')
 const crypto = require('crypto')
 let rhinoModulePromise = null
