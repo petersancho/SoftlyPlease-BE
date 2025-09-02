@@ -19,7 +19,17 @@ async function solve(definition, inputs = {}, defUrl) {
 
     // Set compute URL from environment (fallback to RHINO_COMPUTE_URL)
     compute.url = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL;
-    compute.apiKey = process.env.RHINO_COMPUTE_KEY;
+    // Prefer COMPUTE_KEY, then RHINO_COMPUTE_KEY, then optional local token file
+    let apiKey = process.env.COMPUTE_KEY || process.env.RHINO_COMPUTE_KEY;
+    if (!apiKey) {
+      try {
+        const fs = require('fs'); const path = require('path');
+        const tokenPath = path.resolve(process.cwd(), 'rhino_token.txt');
+        const raw = fs.readFileSync(tokenPath, 'utf8');
+        if (raw && raw.trim()) apiKey = raw.trim();
+      } catch {}
+    }
+    if (apiKey) compute.apiKey = apiKey;
 
     // Build absolute URL for Rhino Compute (hotfix)
     const absoluteDefUrl = defUrl || `${ORIGIN}/files/${encodeURIComponent(defName)}`;
