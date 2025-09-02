@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader'
 import rhino3dm from 'rhino3dm'
+const SOLVE_URL = '/solve-hyperboloid'
 
 const loader = new Rhino3dmLoader()
 loader.setLibraryPath('https://cdn.jsdelivr.net/npm/rhino3dm@8.17.0/')
@@ -111,7 +112,7 @@ async function onSolve(){
   const payload = { definition: 'Hyperboloid.ghx', inputs }
   currentSolveAbort = new AbortController()
   // Post to the correct route for this page
-  let res = await fetch('/solve-hyperboloid', {
+  let res = await fetch(SOLVE_URL, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ inputs }),

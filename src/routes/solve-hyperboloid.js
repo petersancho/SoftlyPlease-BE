@@ -65,11 +65,13 @@ function getHyperboloidBytesLocal(){
 }
 
 router.post('/', async (req, res) => {
+  try{ console.log('[solve-hyperboloid] path=/solve-hyperboloid bodyKeys=', Object.keys(req.body||{})) }catch{}
   try{
     const defNameRaw = req.body?.definition
     try { console.log('[solve-hyperboloid] def typeof:', typeof defNameRaw, ' body:', JSON.stringify(req.body).slice(0,100)) } catch {}
     const defName = 'Hyperboloid.ghx' // ignore provided definition operationally
     const raw = Object.assign({}, req.body?.inputs || {})
+    if (!raw || typeof raw !== 'object') return res.status(400).json({ error: 'missing inputs' })
     if (raw && typeof raw !== 'object'){
       return res.status(400).json({ error: 'inputs must be an object of RH_IN:* -> number' })
     }
