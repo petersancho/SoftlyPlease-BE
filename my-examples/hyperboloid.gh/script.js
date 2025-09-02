@@ -112,7 +112,7 @@ async function onSolve(){
   const inputs = getInputs()
   const now = Date.now()
   if (now < nextRetryAtMs){ try{ renderFallbackAll(inputs) }catch{} return }
-  const payload = { definition: 'Hyperboloid.ghx', inputs, nocache: true }
+  const payload = { definition: 'Hyperboloid.ghx', inputs }
   currentSolveAbort = new AbortController()
   let res = await fetch('/solve-hyperboloid', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), signal: currentSolveAbort.signal }).catch(e=>{ if (e?.name === 'AbortError') return null; return { ok:false, text: ()=> Promise.resolve(String(e&&e.message||'network error')) } })
   if (!res) return // aborted
