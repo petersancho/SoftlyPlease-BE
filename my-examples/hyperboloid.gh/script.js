@@ -657,5 +657,6 @@ function addItemDataToGroup(rawData, group){
 }
 
 // initial solve
-onSolve().catch(console.error)
+// start initial solve without noisy console output
+try{ onSolve() }catch{}
 
