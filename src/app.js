@@ -47,7 +47,13 @@ app.set('definitions', registerDefinitions())
 
 // Routes for this app
 app.use('/examples', express.static(path.join(process.cwd(), 'examples'), { setHeaders: (res)=>{ res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate'); res.setHeader('Pragma','no-cache'); res.setHeader('Expires','0'); } }))
-app.use('/my-examples', express.static(path.join(process.cwd(), 'my-examples'), { setHeaders: (res)=>{ res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate'); res.setHeader('Pragma','no-cache'); res.setHeader('Expires','0'); } }))
+app.use('/my-examples', express.static(path.join(process.cwd(), 'my-examples'), { setHeaders: (res, path)=>{
+  res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate')
+  res.setHeader('Pragma','no-cache')
+  res.setHeader('Expires','0')
+} }))
+// Force cache-bust for hyperboloid page
+app.get('/my-examples/hyperboloid.gh', (req, res, next)=> res.redirect(302, '/my-examples/hyperboloid.gh/?v=now'))
 app.use('/files', express.static(path.join(process.cwd(), 'files')))
 app.get('/favicon.ico', (req, res) => res.status(200))
 app.use('/definition', require('./routes/definition'))
