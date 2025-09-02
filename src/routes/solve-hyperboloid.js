@@ -95,7 +95,7 @@ router.post('/', async (req, res) => {
     pushDouble('RH_IN:move_cone_d', -20, 20)
     // alias support
     if (raw['RH_IN:array'] !== undefined && raw['RH_IN:array_panels'] === undefined) raw['RH_IN:array_panels'] = raw['RH_IN:array']
-    pushInt('RH_IN:array_panels', 1, 10)
+    pushInt('RH_IN:array_panels', 1, 200)
 
     try{ console.log('[solve] path=%s keys=%j', req.path, Object.keys(inputs)) }catch{}
     if (req.query && req.query.echo === '1'){
@@ -121,11 +121,12 @@ router.post('/', async (req, res) => {
       t.append([0], [v])
       trees.push(t)
     }
-    // Evaluate by sending GHX bytes directly to Compute (avoids pointer fetch failures)
+    // Evaluate using server pointer URL that Compute fetches (standard flow)
     const defObj = req.app.get('definitions').find(o => o.name === defName)
     if (!defObj) return res.status(400).json({ error: 'Definition not found on server.' })
-    const defBytes = getHyperboloidBytesLocal()
-    try{ console.log('[solve-hyperboloid] using local GHX bytes for', defObj.name, 'len=', defBytes?.byteLength||0) }catch{}
+    const fullUrl = req.protocol + '://' + req.get('host')
+    const defUrl = `${fullUrl}/definition/${defObj.id}`
+    try{ console.log('[solve-hyperboloid] defUrl:', defUrl) }catch{}
 
     // ---- Cache check and coalescing ----
     const defNameForKey = defObj.name
@@ -150,7 +151,7 @@ router.post('/', async (req, res) => {
     }
 
     const promise = (async ()=>{
-      const response = await compute.Grasshopper.evaluateDefinition(defBytes, trees, false)
+      const response = await compute.Grasshopper.evaluateDefinition(defUrl, trees, false)
       const text = await response.text()
       if (!response.ok){
         throw Object.assign(new Error(text||('HTTP '+response.status)), { response: { status: response.status, data: text } })
