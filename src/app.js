@@ -47,6 +47,28 @@ app.set('definitions', registerDefinitions())
 
 // Routes for this app
 app.use('/examples', express.static(path.join(process.cwd(), 'examples'), { setHeaders: (res)=>{ res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate'); res.setHeader('Pragma','no-cache'); res.setHeader('Expires','0'); } }))
+
+// Canonical hyperboloid page routes (override static to ensure latest HTML/JS and headers)
+app.get('/my-examples/hyperboloid.gh', (req, res) => {
+  res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate')
+  res.setHeader('Pragma','no-cache')
+  res.setHeader('Expires','0')
+  res.sendFile(path.join(process.cwd(), 'my-examples', 'hyperboloid.gh', 'index.html'))
+})
+app.get('/my-examples/hyperboloid.gh/', (req, res) => {
+  res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate')
+  res.setHeader('Pragma','no-cache')
+  res.setHeader('Expires','0')
+  res.sendFile(path.join(process.cwd(), 'my-examples', 'hyperboloid.gh', 'index.html'))
+})
+app.get('/my-examples/hyperboloid.gh/script.js', (req, res) => {
+  res.setHeader('Content-Type','text/javascript; charset=utf-8')
+  res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate')
+  res.setHeader('Pragma','no-cache')
+  res.setHeader('Expires','0')
+  res.sendFile(path.join(process.cwd(), 'my-examples', 'hyperboloid.gh', 'script.js'))
+})
+
 app.use('/my-examples', express.static(path.join(process.cwd(), 'my-examples'), { setHeaders: (res, path)=>{
   res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate')
   res.setHeader('Pragma','no-cache')
