@@ -139,8 +139,8 @@ function debounce(fn, delay){
 
 function renderResult(result){
   const values = Array.isArray(result.values) ? result.values : []
-  // Prefer RH_OUT:ConfiguratorMesh (server meshed)
-  const meshEntries = values.filter(v => v.ParamName === 'RH_OUT:ConfiguratorMesh')
+  // Prefer RH_OUT:ConfiguratorMesh (server meshed) - case-insensitive
+  const meshEntries = values.filter(v => String(v.ParamName||'').toLowerCase() === 'rh_out:configuratormesh')
   if (meshEntries.length){
     try{
       const v1 = scenes[0]
@@ -176,28 +176,29 @@ function renderResult(result){
     }catch(e){ console.warn('ConfiguratorMesh render error:', e?.message||String(e)) }
   }
   if (!meshEntries.length){
-    // Fall back to direct Brep or Mesh output
+    // Fall back to direct output (Mesh or Brep) - case-insensitive
     try{
-      const configuratorEntries = values.filter(v => v.ParamName === 'RH_OUT:Configurator')
+      const configuratorEntries = values.filter(v => String(v.ParamName||'').toLowerCase() === 'rh_out:configurator')
       const flat = configuratorEntries.flatMap(e => flattenItems(e))
       if (flat.length){
-        let parsed
-        try{ parsed = JSON.parse(flat[0].data) }catch{}
-        let obj
-        try{ obj = rhino.CommonObject.decode(parsed) }catch{}
         const v1 = scenes[0]
         clearScene(v1.scene)
         if (v1.group){ v1.scene.remove(v1.group); disposeGroup(v1.group); v1.group=null }
         v1.group = new THREE.Group(); v1.scene.add(v1.group)
-        if (obj){
-          // If already a Mesh, add directly; else use geometry fallback
+        let added = 0
+        for (const it of flat){
+          let parsed = null, obj = null
+          try{ parsed = JSON.parse(it.data) }catch{}
+          try{ obj = parsed ? rhino.CommonObject.decode(parsed) : null }catch{}
+          if (!obj) continue
           if (obj && obj.vertices && obj.faces){
             const meshThree = convertRhinoMeshToThree(obj, viewers[0].color)
-            if (meshThree) v1.group.add(meshThree)
+            if (meshThree){ v1.group.add(meshThree); added++ }
           } else {
-            addRhinoGeometryToGroup(obj, v1.group)
+            addRhinoGeometryToGroup(obj, v1.group); added++
           }
         }
+        try{ console.log('Configurator fallback added items:', added) }catch{}
         // Add hyperboloid curve + points
         try{ const hypEntries = values.filter(v => v.ParamName === 'RH_OUT:hyperboloid'); const hyps = hypEntries.flatMap(e => flattenItems(e)); for (const it of hyps){ addItemDataToGroup(it.data, v1.group) } }catch{}
         try{ const ptEntries = values.filter(v => v.ParamName === 'RH_OUT:points' || v.ParamName === 'RH_OUT:point'); const pts = ptEntries.flatMap(e => flattenItems(e)); for (const it of pts){ addItemDataToGroup(it.data, v1.group) } }catch{}
@@ -208,14 +209,15 @@ function renderResult(result){
   }
   // Render Positive (Viewer B) in yellow
   try{
-    const posMesh = values.filter(v => v.ParamName === 'RH_OUT:positiveMesh')
-    const posEntries = posMesh.length ? posMesh : values.filter(v => v.ParamName === 'RH_OUT:positive')
+    const posMesh = values.filter(v => String(v.ParamName||'').toLowerCase() === 'rh_out:positivemesh')
+    const posEntries = posMesh.length ? posMesh : values.filter(v => String(v.ParamName||'').toLowerCase() === 'rh_out:positive')
     const vB = scenes[1]
     if (vB){
       clearScene(vB.scene)
       if (vB.group){ vB.scene.remove(vB.group); disposeGroup(vB.group); vB.group=null }
       vB.group = new THREE.Group(); vB.scene.add(vB.group)
       const posItems = posEntries.flatMap(e => flattenItems(e))
+      try{ console.log('Positive items:', posItems.length) }catch{}
       for (const it of posItems){ addItemDataToGroup(it.data, vB.group) }
       try{ vB.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(viewers[1].color) } }) }catch{}
       if (posItems.length){ fitView(vB); vB.renderer.render(vB.scene, vB.camera) }
@@ -224,14 +226,15 @@ function renderResult(result){
 
   // Render Panels (Viewer C) in pink
   try{
-    const panMesh = values.filter(v => v.ParamName === 'RH_OUT:panelsMesh')
-    const panEntries = panMesh.length ? panMesh : values.filter(v => v.ParamName === 'RH_OUT:panels')
+    const panMesh = values.filter(v => String(v.ParamName||'').toLowerCase() === 'rh_out:panelsmesh')
+    const panEntries = panMesh.length ? panMesh : values.filter(v => String(v.ParamName||'').toLowerCase() === 'rh_out:panels')
     const vC = scenes[2]
     if (vC){
       clearScene(vC.scene)
       if (vC.group){ vC.scene.remove(vC.group); disposeGroup(vC.group); vC.group=null }
       vC.group = new THREE.Group(); vC.scene.add(vC.group)
       const panItems = panEntries.flatMap(e => flattenItems(e))
+      try{ console.log('Panels items:', panItems.length) }catch{}
       for (const it of panItems){ addItemDataToGroup(it.data, vC.group) }
       try{ vC.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(viewers[2].color) } }) }catch{}
       if (panItems.length){ fitView(vC); vC.renderer.render(vC.scene, vC.camera) }
