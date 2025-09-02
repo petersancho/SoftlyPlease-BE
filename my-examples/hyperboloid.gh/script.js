@@ -163,7 +163,11 @@ function renderResult(result){
           if (threeMesh){ v1.group.add(threeMesh); console.log('Added mesh triangles:', tri) }
         }catch{}
       }
-      // Color viewer A meshes pink, fit and render; also add hyperboloid curve + points
+      // Add hyperboloid curve + points alongside meshes
+      try{ const hypEntries = values.filter(v => v.ParamName === 'RH_OUT:hyperboloid'); const hyps = hypEntries.flatMap(e => flattenItems(e)); for (const it of hyps){ addItemDataToGroup(it.data, v1.group) } }catch{}
+      try{ const ptEntries = values.filter(v => v.ParamName === 'RH_OUT:points' || v.ParamName === 'RH_OUT:point'); const pts = ptEntries.flatMap(e => flattenItems(e)); for (const it of pts){ addItemDataToGroup(it.data, v1.group) } }catch{}
+
+      // Color viewer A meshes pink, fit and render
       try{ v1.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(viewers[0].color) } }) }catch{}
       // Fit and render
       fitView(v1)
