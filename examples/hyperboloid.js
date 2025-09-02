@@ -21,11 +21,16 @@
   async function solveAndRender(payloadInputs){
     let result;
     try {
-      const res = await fetch('/solve-hyperboloid', {
+      let res = await fetch('/solve-hyperboloid', {
         method:'POST', headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify({ definition:'Hyperboloid.ghx', inputs: payloadInputs })
       });
-      const text = await res.text();
+      let text = await res.text();
+      if (!res.ok){
+        // fallback to generic /solve
+        res = await fetch('/solve', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ definition:'Hyperboloid.ghx', inputs: payloadInputs }) });
+        text = await res.text();
+      }
       if (!res.ok) throw new Error(text||('HTTP '+res.status));
       result = JSON.parse(text);
     } catch (e) {
