@@ -104,7 +104,6 @@ app.use('/status/memcache', require('./routes/status-memcache'))
 // Allow both /solve-hyperboloid and /solve to route to the same handler
 const solveHyperboloid = require('./routes/solve-hyperboloid')
 app.use('/solve-hyperboloid', solveHyperboloid)
-app.use('/solve', solveHyperboloid)
 app.use('/', require('./routes/index'))
 
 // SPA fallback - serve index.html for unknown routes (except API routes)
