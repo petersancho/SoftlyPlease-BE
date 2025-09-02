@@ -114,8 +114,16 @@ async function onSolve(){
   if (!res) return // aborted
   let text = await res.text()
   // no fallback to /solve; rely on /solve-hyperboloid
-  if (!res.ok){ try{ renderFallbackAll(inputs) }catch{} return }
+  if (!res.ok){
+    try{
+      const cached = localStorage.getItem('hyperboloid:lastValues')
+      if (cached){ const values = JSON.parse(cached); if (Array.isArray(values) && values.length){ renderResult({ values }); return } }
+    }catch{}
+    try{ renderFallbackAll(inputs) }catch{}
+    return
+  }
   const result = JSON.parse(text)
+  try{ if (Array.isArray(result?.values)) localStorage.setItem('hyperboloid:lastValues', JSON.stringify(result.values)) }catch{}
   renderResult(result)
 }
 
