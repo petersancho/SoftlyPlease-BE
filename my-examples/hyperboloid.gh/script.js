@@ -213,13 +213,7 @@ function renderResult(result){
       clearScene(vB.scene)
       if (vB.group){ vB.scene.remove(vB.group); disposeGroup(vB.group); vB.group=null }
       vB.group = new THREE.Group(); vB.scene.add(vB.group)
-      let posItems = posEntries.flatMap(e => flattenItems(e))
-      // Fallback: mirror Configurator meshes/geometry if Positive missing
-      if (!posItems.length){
-        const cfgMeshEntries = values.filter(v => String(v.ParamName||'').toLowerCase() === 'rh_out:configuratormesh')
-        const cfgEntries = cfgMeshEntries.length ? cfgMeshEntries : values.filter(v => String(v.ParamName||'').toLowerCase() === 'rh_out:configurator')
-        posItems = cfgEntries.flatMap(e => flattenItems(e))
-      }
+      const posItems = posEntries.flatMap(e => flattenItems(e))
       try{ console.log('Positive items:', posItems.length) }catch{}
       for (const it of posItems){ addItemDataToGroup(it.data, vB.group) }
       try{ vB.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(viewers[1].color) } }) }catch{}

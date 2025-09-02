@@ -191,14 +191,7 @@ router.post('/', async (req, res) => {
               parsed.values.push({ ParamName:'RH_OUT:positiveMesh', InnerTree:{ '{0}': meshes.map(m=>({ type:'Rhino.Geometry.Mesh', data: JSON.stringify(m) })) } })
             }
           }
-          // If still no Positive mesh but ConfiguratorMesh exists, duplicate it as a fallback
-          const hasPosMesh = parsed.values.some(v => String(v.ParamName||'').toLowerCase() === 'rh_out:positivemesh')
-          if (!hasPosMesh){
-            const cfgMesh = parsed.values.find(v => String(v.ParamName||'').toLowerCase() === 'rh_out:configuratormesh')
-            if (cfgMesh && cfgMesh.InnerTree && cfgMesh.InnerTree['{0}']){
-              parsed.values.push({ ParamName:'RH_OUT:positiveMesh', InnerTree:{ '{0}': cfgMesh.InnerTree['{0}'] } })
-            }
-          }
+          // No server-side duplication fallback; viewer 2 must reflect RH_OUT:positive only
 
           // 3) Panels: mesh all items
           const panItems = collectItems('rh_out:panels')
