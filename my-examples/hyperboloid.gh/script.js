@@ -8,24 +8,10 @@ loader.setLibraryPath('https://cdn.jsdelivr.net/npm/rhino3dm@8.17.0/')
 
 let rhino
 await (rhino3dm().then(m=>{ rhino = m }))
-try{ console.log('rhino3dm ready:', typeof rhino?.CommonObject?.decode === 'function') }catch{}
 
 let currentSolveAbort = null
 
-// RHINO3DM capability diagnostics
-async function diagnoseRhino3dm(){
-  try{
-    console.log('=== RHINO3DM DIAGNOSTIC START ===')
-    console.log('1. rhino object exists:', !!rhino)
-    console.log('2. rhino.Mesh exists:', !!rhino?.Mesh)
-    console.log('3. rhino.Mesh.createFromBrep exists:', typeof rhino?.Mesh?.createFromBrep)
-    console.log('4. rhino.MeshingParameters exists:', !!rhino?.MeshingParameters)
-    try{ console.log('5. Available MeshingParameters:', rhino?.MeshingParameters ? Object.keys(rhino.MeshingParameters) : 'NONE') }catch{ console.log('5. Available MeshingParameters: UNKNOWN') }
-    console.log('6. rhino.CommonObject.decode exists:', typeof rhino?.CommonObject?.decode)
-    console.log('=== RHINO3DM DIAGNOSTIC END ===')
-  }catch{}
-}
-await diagnoseRhino3dm()
+// diagnostics removed
 
 // Ensure clearScene exists
 function clearScene(scene){
