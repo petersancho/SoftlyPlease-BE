@@ -154,40 +154,35 @@ function renderResult(result){
   }catch{}
 
   // 3) Mesh via toMesh (createFromBrep unavailable in this build)
-  const MP = rhino?.MeshingParameters || {}
-  let mp = MP.default || null
-  let mesh = (typeof brep.toMesh === 'function') ? brep.toMesh(mp) : null
-  if (!mesh && MP.qualityRenderMesh) mesh = brep.toMesh(MP.qualityRenderMesh)
-  if (!mesh && MP.fastRenderMesh) mesh = brep.toMesh(MP.fastRenderMesh)
-  if (!mesh){ console.error('Configurator toMesh failed'); return }
-
-  // 4) Convert rhino mesh → Three.js and add ONE mesh to viewer 1
-  const verts = mesh.vertices()
-  const pos = new Float32Array(verts.count * 3)
-  for (let i=0;i<verts.count;i++){ const v = verts.get(i); pos[i*3]=v[0]; pos[i*3+1]=v[1]; pos[i*3+2]=v[2] }
-  const faces = mesh.faces()
-  const idx = []
-  for (let i=0;i<faces.count;i++){ const f = faces.get(i); idx.push(f[0],f[1],f[2]); if (f[2] !== f[3]) idx.push(f[0],f[2],f[3]) }
-  const geom = new THREE.BufferGeometry()
-  geom.setAttribute('position', new THREE.BufferAttribute(pos,3))
-  geom.setIndex(idx)
-  geom.computeVertexNormals()
+  // 4) Render wireframe from Brep edges (no meshing)
+  const renderConfiguratorWireframe = (theBrep, group, color=0x00ffff)=>{
+    if (!theBrep || !theBrep.edges){ console.error('No brep edges'); return 0 }
+    const edges = theBrep.edges(); let added=0
+    for (let i=0;i<edges.count;i++){
+      try{
+        const edge = edges.get(i)
+        const crv = edge.toNurbsCurve ? edge.toNurbsCurve() : edge
+        if (!crv || !crv.points) continue
+        const cps = crv.points(); if (!cps || cps.count < 2) continue
+        const linePoints = []
+        for (let j=0;j<cps.count;j++){ const p=cps.get(j); linePoints.push(new THREE.Vector3(p[0],p[1],p[2])) }
+        const g = new THREE.BufferGeometry().setFromPoints(linePoints)
+        const line = new THREE.Line(g, new THREE.LineBasicMaterial({ color }))
+        group.add(line); added++
+      }catch{}
+    }
+    return added
+  }
 
   const v1 = scenes[0]
   clearScene(v1.scene)
   if (v1.group){ v1.scene.remove(v1.group); disposeGroup(v1.group); v1.group=null }
   v1.group = new THREE.Group(); v1.scene.add(v1.group)
-  const mat = new THREE.MeshStandardMaterial({ color:0x6b8cff, metalness:0.05, roughness:0.85, side:THREE.DoubleSide })
-  const m = new THREE.Mesh(geom, mat)
-  v1.group.add(m)
+  const linesAdded = renderConfiguratorWireframe(brep, v1.group, 0x00ffff)
+  if (!linesAdded){ console.error('Configurator wireframe produced no edges'); return }
 
   // Fit camera to geometry bbox
-  geom.computeBoundingBox(); const box = geom.boundingBox
-  const size = new THREE.Vector3().subVectors(box.max, box.min)
-  const center = new THREE.Vector3().addVectors(box.min, box.max).multiplyScalar(0.5)
-  const dist = size.length() * 1.5
-  v1.camera.position.copy(center.clone().add(new THREE.Vector3(dist, dist, dist)))
-  v1.controls.target.copy(center); v1.controls.update()
+  fitView(v1)
   v1.renderer.render(v1.scene, v1.camera)
   try{ console.log('Configurator viewer stats:', viewerStats(v1)) }catch{}
 }
