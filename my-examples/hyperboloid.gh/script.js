@@ -54,9 +54,9 @@ function createMeshesFromBrepCompat(brep){
 }
 
 const viewers = [
-  { canvas: document.getElementById('viewA'), filter: (name)=> /^(RH_OUT:Configurator|RH_OUT:points|RH_OUT:text_a|RH_OUT:text_b|RH_OUT:hyperboloid)$/i.test(name) },
-  { canvas: document.getElementById('viewB'), filter: (name)=> /^RH_OUT:positive$/i.test(name) },
-  { canvas: document.getElementById('viewC'), filter: (name)=> /^RH_OUT:panels$/i.test(name) },
+  { canvas: document.getElementById('viewA'), filter: (name)=> /^(RH_OUT:ConfiguratorMesh|RH_OUT:Configurator|RH_OUT:points|RH_OUT:text_a|RH_OUT:text_b|RH_OUT:hyperboloid)$/i.test(name) },
+  { canvas: document.getElementById('viewB'), filter: (name)=> /^(RH_OUT:positiveMesh|RH_OUT:positive)$/i.test(name) },
+  { canvas: document.getElementById('viewC'), filter: (name)=> /^(RH_OUT:panelsMesh|RH_OUT:panels)$/i.test(name) },
 ]
 
 const scenes = viewers.map(v=>{

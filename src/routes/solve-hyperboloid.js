@@ -87,14 +87,13 @@ router.post('/', async (req, res) => {
               parsed.values.push({ ParamName: outName, InnerTree: { '{0}': meshes.map(m => ({ type: 'Rhino.Geometry.Mesh', data: JSON.stringify(m) })) } })
             }
           }
-          // Mesh Configurator
+          // Mesh Configurator: all items across all branches
           const cfg = parsed.values.find(v => v.ParamName === 'RH_OUT:Configurator')
           if (cfg && cfg.InnerTree){
             const branches = Object.keys(cfg.InnerTree)
-            if (branches.length){
-              const items = cfg.InnerTree[branches[0]] || []
-              const first = items[0]
-              if (first && first.data){ try{ await meshAndAppend(JSON.parse(first.data), 'RH_OUT:ConfiguratorMesh') }catch{} }
+            for (const br of branches){
+              const items = cfg.InnerTree[br] || []
+              for (const it of items){ try{ await meshAndAppend(JSON.parse(it.data), 'RH_OUT:ConfiguratorMesh') }catch{} }
             }
           }
           // Mesh Positive
