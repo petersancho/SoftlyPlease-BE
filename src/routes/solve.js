@@ -391,6 +391,58 @@ async function commonSolve (req, res, next){
         inflight.delete(res.locals.cacheKey)
       }
 
+      // Post-process: server-side mesh Brep outputs for positive/panels
+      try{
+        const rhino = await getRhino()
+        if (rhino && result && Array.isArray(result.values)){
+          async function meshParam(paramName, outName){
+            const items = result.values.filter(v => String(v.ParamName||'').toLowerCase() === paramName).flatMap(v => Object.values(v.InnerTree||{}).flat())
+            if (!items.length) return
+            const meshesOut = []
+            for (let i=0;i<items.length;i++){
+              try{
+                let data = items[i].data
+                if (typeof data === 'string'){ try{ data = JSON.parse(data) }catch{} }
+                if (!data || typeof data !== 'object') continue
+                let obj = null
+                try{ obj = rhino.CommonObject.decode(data) }catch{}
+                if (!obj) continue
+                // Convert non-mesh geometry to Brep when possible
+                if (obj && typeof obj.toBrep === 'function' && !(obj.vertices && obj.faces)){
+                  try{ const b = obj.toBrep(true); if (b) obj = b }catch{}
+                }
+                if (obj && obj.faces && obj.vertices){
+                  // Already a mesh
+                  try{ const enc = typeof obj.encode === 'function' ? obj.encode() : (rhino.CommonObject && rhino.CommonObject.encode ? rhino.CommonObject.encode(obj) : null); if (enc) meshesOut.push({ type:'Rhino.Geometry.Mesh', data: JSON.stringify(enc) }) }catch{}
+                  continue
+                }
+                // Brep meshing
+                if (obj && typeof obj.faces === 'function'){
+                  let mp = null
+                  try{ mp = rhino.MeshingParameters && (rhino.MeshingParameters.qualityRenderMesh && rhino.MeshingParameters.qualityRenderMesh()) }catch{}
+                  try{
+                    const mArr = rhino.Mesh && typeof rhino.Mesh.createFromBrep === 'function' ? rhino.Mesh.createFromBrep(obj, mp || rhino.MeshingParameters.default) : null
+                    if (mArr && mArr.length !== undefined){
+                      const len = mArr.length || mArr.count || 0
+                      for (let k=0;k<len;k++){
+                        const m = mArr.get ? mArr.get(k) : mArr[k]
+                        if (!m) continue
+                        try{ const enc = typeof m.encode === 'function' ? m.encode() : (rhino.CommonObject && rhino.CommonObject.encode ? rhino.CommonObject.encode(m) : null); if (enc) meshesOut.push({ type:'Rhino.Geometry.Mesh', data: JSON.stringify(enc) }) }catch{}
+                      }
+                    }
+                  }catch{}
+                }
+              }catch{}
+            }
+            if (meshesOut.length){
+              result.values.push({ ParamName: outName, InnerTree: { '{0}': meshesOut } })
+            }
+          }
+          await meshParam('rh_out:positive', 'RH_OUT:positiveMesh')
+          await meshParam('rh_out:panels', 'RH_OUT:panelsMesh')
+        }
+      }catch{}
+
       // Cache the result (unless bypassed)
       const resultString = JSON.stringify(result)
       if (!res.locals.skipCache) {
