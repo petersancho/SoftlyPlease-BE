@@ -230,6 +230,13 @@ router.post('/', async (req, res) => {
         res.setHeader('X-Fallback', 'compute-service')
         return res.status(200).send(body)
       }catch(e){
+        // Last resort: serve stale cached result if available
+        try{
+          let stale = null
+          if (mc){ try{ stale = await new Promise(resolve => mc.get(cacheKey, (err,val)=> resolve(err==null && val ? val.toString() : null))) }catch{} }
+          else { stale = nodeCache.get(cacheKey) }
+          if (stale){ res.setHeader('X-Cache-Status','STALE'); res.setHeader('X-Fallback','stale-cache'); return res.status(200).send(stale) }
+        }catch{}
         return res.status(500).json({ error: text || ((status + ' ' + statusText) || (e?.message||'Compute error')) })
       }
     }
