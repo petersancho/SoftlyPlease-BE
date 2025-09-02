@@ -279,7 +279,30 @@ function renderFallback(inputs){
 
 function renderFallbackAll(inputs){
   try{ renderFallback(inputs) }catch{}
-  // Do not mirror into viewers 2 or 3; they should only render real outputs
+  try{
+    const vB = scenes[1]
+    clearScene(vB.scene)
+    if (vB.group){ vB.scene.remove(vB.group); disposeGroup(vB.group); vB.group=null }
+    vB.group = new THREE.Group(); vB.scene.add(vB.group)
+    if (scenes[0] && scenes[0].group){
+      const clone = scenes[0].group.clone(true)
+      vB.group.add(clone)
+      vB.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(viewers[1].color) } })
+    }
+    vB.renderer.render(vB.scene, vB.camera)
+  }catch{}
+  try{
+    const vC = scenes[2]
+    clearScene(vC.scene)
+    if (vC.group){ vC.scene.remove(vC.group); disposeGroup(vC.group); vC.group=null }
+    vC.group = new THREE.Group(); vC.scene.add(vC.group)
+    if (scenes[0] && scenes[0].group){
+      const clone = scenes[0].group.clone(true)
+      vC.group.add(clone)
+      vC.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(viewers[2].color) } })
+    }
+    vC.renderer.render(vC.scene, vC.camera)
+  }catch{}
 }
 
 function meshArrayFromBrep(brep){
