@@ -43,11 +43,11 @@ function createMeshesFromBrepCompat(brep){
     const MP = rhino?.MeshingParameters || {}
     const presets = [MP.default, MP.qualityRenderMesh, MP.fastRenderMesh, MP.coarse].filter(Boolean)
     for (const p of presets){
-      try{ const res = rhino?.Mesh?.createFromBrep ? rhino.Mesh.createFromBrep(brep, p) : null; if (Array.isArray(res) && res.length) return res }catch{}
+      // client-side meshing unavailable in this build; skip
     }
     // last resort: toMesh
     if (typeof brep?.toMesh === 'function'){
-      try{ const m = brep.toMesh(MP.default || null); if (m) return [m] }catch{}
+      // toMesh unavailable in this build; skip
     }
   }catch{}
   return []
@@ -134,6 +134,38 @@ function debounce(fn, delay){
 
 function renderResult(result){
   const values = Array.isArray(result.values) ? result.values : []
+  // Prefer RH_OUT:ConfiguratorMesh (server meshed)
+  const meshEntries = values.filter(v => v.ParamName === 'RH_OUT:ConfiguratorMesh')
+  if (meshEntries.length){
+    try{
+      const v1 = scenes[0]
+      clearScene(v1.scene)
+      if (v1.group){ v1.scene.remove(v1.group); disposeGroup(v1.group); v1.group=null }
+      v1.group = new THREE.Group(); v1.scene.add(v1.group)
+
+      const flatMeshItems = meshEntries.flatMap(e => flattenItems(e))
+      console.log('Configurator meshes from server:', flatMeshItems.length)
+
+      let childBefore = v1.scene.children.length
+      for (const it of flatMeshItems){
+        try{
+          const meshJson = JSON.parse(it.data)
+          const rhMesh = rhino.CommonObject.decode(meshJson)
+          if (!rhMesh) continue
+          // count triangles for log
+          let tri = 0; try{ const faces = rhMesh.faces(); for (let i=0;i<faces.count;i++){ const f=faces.get(i); tri += (f[2] !== f[3]) ? 2 : 1 } }catch{}
+          const threeMesh = convertRhinoMeshToThree(rhMesh)
+          if (threeMesh){ v1.group.add(threeMesh); console.log('Added mesh triangles:', tri) }
+        }catch{}
+      }
+      // Fit and render
+      fitView(v1)
+      v1.renderer.render(v1.scene, v1.camera)
+      console.log('v1 scene children:', v1.scene.children.length, '(was', childBefore, ')')
+      return
+    }catch(e){ console.warn('ConfiguratorMesh render error:', e?.message||String(e)) }
+  }
+
   // 1) Pick only RH_OUT:Configurator
   const configuratorEntries = values.filter(v => v.ParamName === 'RH_OUT:Configurator')
   if (!configuratorEntries.length){ console.error('No RH_OUT:Configurator found'); return }
@@ -198,7 +230,7 @@ function meshArrayFromBrep(brep){
     const presets = [MP.qualityRenderMesh, MP.coarse].filter(Boolean)
     for (const p of presets){
       try{
-        const retry = rhino?.Mesh?.createFromBrep ? rhino.Mesh.createFromBrep(brep, p) : []
+        const retry = [] // no client-side meshing
         if (Array.isArray(retry)) { for (const m of retry){ if (m) out.push(m) } }
         if (out.length) break
       }catch{}
@@ -307,21 +339,8 @@ function convertRhinoMeshToThree(rMesh){
 }
 
 // Ultimate Brep meshing pipeline with multiple strategies and detailed logs
-function processBrep(brep, scene, label){
-  console.log(`[${label}] STARTING BREP PROCESSING`)
-  try{
-    console.log(`[${label}] Calling brep.toMesh()`)
-    const mp = (rhino && rhino.MeshingParameters && rhino.MeshingParameters.default) ? rhino.MeshingParameters.default : null
-    const mesh = (brep && typeof brep.toMesh === 'function') ? brep.toMesh(mp) : null
-    if (!mesh){ console.error(`[${label}] toMesh() returned null`); return 0 }
-    console.log(`[${label}] Mesh created, converting to Three.js`)
-    const three = convertRhinoMeshToThree(mesh)
-    if (!three){ console.error(`[${label}] Mesh conversion failed`); return 0 }
-    scene.add(three)
-    console.log(`[${label}] SUCCESS: Mesh added to scene`)
-    return 1
-  }catch(e){ console.error(`[${label}] Processing failed:`, e); return 0 }
-}
+// client-side meshing disabled
+function processBrep(){ return 0 }
 
 function addRhinoGeometryToGroup(geo, group){
   try{
