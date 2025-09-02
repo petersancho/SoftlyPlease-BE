@@ -205,6 +205,7 @@ function renderResult(result){
   }
   // Render Positive (Viewer B) in yellow
   try{
+    // Case-insensitive matching for outputs
     const posMesh = values.filter(v => String(v.ParamName||'').toLowerCase() === 'rh_out:positivemesh')
     const posEntries = posMesh.length ? posMesh : values.filter(v => String(v.ParamName||'').toLowerCase() === 'rh_out:positive')
     const vB = scenes[1]

@@ -165,8 +165,15 @@ router.post('/', async (req, res) => {
             }catch(e){ console.error('[solve-hyperboloid] mesh error', label, e?.message||String(e)); return [] }
           }
 
+          // Helper: collect items case-insensitively by ParamName
+          function collectItems(nameLc){
+            return parsed.values
+              .filter(v => String(v.ParamName||'').toLowerCase() === nameLc)
+              .flatMap(v => Object.values(v.InnerTree||{}).flat())
+          }
+
           // 1) Configurator: mesh first item
-          const cfgItems = parsed.values.filter(v => v.ParamName === 'RH_OUT:Configurator').flatMap(v => Object.values(v.InnerTree||{}).flat())
+          const cfgItems = collectItems('rh_out:configurator')
           if (cfgItems.length){
             let meshes = []
             try{ const brepJson = JSON.parse(cfgItems[0].data); meshes = await meshBrepJson(brepJson, 'Configurator') }catch{}
@@ -176,7 +183,7 @@ router.post('/', async (req, res) => {
           }
 
           // 2) Positive: mesh first item
-          const posItems = parsed.values.filter(v => v.ParamName === 'RH_OUT:positive').flatMap(v => Object.values(v.InnerTree||{}).flat())
+          const posItems = collectItems('rh_out:positive')
           if (posItems.length){
             let meshes = []
             try{ const brepJson = JSON.parse(posItems[0].data); meshes = await meshBrepJson(brepJson, 'Positive') }catch{}
@@ -186,7 +193,7 @@ router.post('/', async (req, res) => {
           }
 
           // 3) Panels: mesh all items
-          const panItems = parsed.values.filter(v => v.ParamName === 'RH_OUT:panels').flatMap(v => Object.values(v.InnerTree||{}).flat())
+          const panItems = collectItems('rh_out:panels')
           if (panItems.length){
             const allMeshes = []
             for (let i=0;i<panItems.length;i++){
