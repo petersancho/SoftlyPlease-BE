@@ -3,6 +3,56 @@ const router = express.Router()
 const fs = require('fs')
 const path = require('path')
 const compute = require('compute-rhino3d')
+const crypto = require('crypto')
+const NodeCache = require('node-cache')
+const memjs = require('memjs')
+
+// Cache backends (node-cache + memcached)
+const DEFAULT_TTL = Number(process.env.CACHE_TTL_SECS || '60')
+const nodeCache = new NodeCache({ stdTTL: DEFAULT_TTL, checkperiod: Math.max(1, Math.floor(DEFAULT_TTL/5)) })
+let mc = null
+if(process.env.MEMCACHIER_SERVERS !== undefined) {
+  mc = memjs.Client.create(process.env.MEMCACHIER_SERVERS, {
+    username: process.env.MEMCACHIER_USERNAME,
+    password: process.env.MEMCACHIER_PASSWORD,
+  })
+}
+const inflight = new Map()
+
+function parseExcludeList(defName){
+  const raw = process.env.CACHE_EXCLUDE_KEYS
+  if (!raw) return []
+  const map = {}
+  try{ Object.assign(map, JSON.parse(raw)) }catch{}
+  const key = defName && map[defName]
+  return Array.isArray(key) ? key : (Array.isArray(map['*']) ? map['*'] : [])
+}
+function parseRounding(defName){
+  let map = {}
+  const raw = process.env.CACHE_ROUNDING
+  if (raw){ try { map = JSON.parse(raw) } catch {} }
+  const defDecimals = Number(process.env.CACHE_ROUND_DEFAULT_DECIMALS || '3')
+  return { map, defDecimals }
+}
+function stableInputs(inputs, defName){
+  const excluded = new Set(parseExcludeList(defName))
+  const { map: roundMap, defDecimals } = parseRounding(defName)
+  const out = {}
+  Object.keys(inputs || {}).sort().forEach(k => {
+    if (excluded.has(k)) return
+    let v = inputs[k]
+    if (k === 'RH_IN:brep' || k === 'RH_in:Brep' || k === 'RH_IN:mesh' || k === 'RH_IN:brep_3dm'){
+      try{ const s = typeof v === 'string' ? v : JSON.stringify(v); const hash = crypto.createHash('md5').update(s).digest('hex'); let tag = 'geomHash'; if (k.endsWith(':brep')) tag = 'brepHash'; if (k.endsWith(':mesh')) tag = 'meshHash'; if (k.endsWith(':brep_3dm')) tag = 'brep3dmHash'; out[tag] = hash; return }catch{}
+    }
+    if (typeof v === 'number' && isFinite(v)){
+      const decimals = typeof roundMap[k] === 'number' ? roundMap[k] : defDecimals
+      const factor = Math.pow(10, Math.max(0, decimals))
+      v = Math.round(v * factor) / factor
+    }
+    out[k] = v
+  })
+  return out
+}
 
 // Cache GHX bytes in-memory
 let hyperboloidBytes = null
@@ -63,8 +113,37 @@ router.post('/', async (req, res) => {
     const fullUrl = req.protocol + '://' + req.get('host')
     const defUrl = `${fullUrl}/definition/${defObj.id}`
     try{ console.log('[solve-hyperboloid] defUrl:', defUrl) }catch{}
-    const response = await compute.Grasshopper.evaluateDefinition(defUrl, trees, false)
-    const text = await response.text()
+
+    // ---- Cache check and coalescing ----
+    const defNameForKey = defObj.name
+    const cacheKeyObj = { definition:{ name:defNameForKey, id:defObj.id }, inputs: stableInputs(inputs, defNameForKey) }
+    const cacheKey = JSON.stringify(cacheKeyObj)
+    res.setHeader('X-Cache-Backend', mc ? 'memcachier' : 'node-cache')
+    const nocache = (req.query?.nocache==='1' || req.body?.nocache===true)
+    if (!nocache){
+      if (mc){
+        try{
+          const cached = await new Promise(resolve => mc.get(cacheKey, (err,val)=> resolve(err==null && val ? val.toString() : null)))
+          if (cached){ return res.status(200).send(cached) }
+        }catch{}
+      } else {
+        const cached = nodeCache.get(cacheKey)
+        if (cached !== undefined){ return res.status(200).send(cached) }
+      }
+    }
+
+    if (inflight.has(cacheKey)){
+      try{ const cachedText = await inflight.get(cacheKey); return res.status(200).send(cachedText) }catch(e){ return res.status(500).json({ error: e?.message||'Compute error' }) }
+    }
+
+    const promise = (async ()=>{
+      const response = await compute.Grasshopper.evaluateDefinition(defUrl, trees, false)
+      const text = await response.text()
+      return text
+    })()
+    inflight.set(cacheKey, promise)
+    let text
+    try{ text = await promise } finally { inflight.delete(cacheKey) }
     // Treat Compute success as success even if status misreported; detect by JSON shape
     try{
       const parsed = JSON.parse(text)
@@ -115,13 +194,24 @@ router.post('/', async (req, res) => {
             }
           }
         }catch(e){ console.warn('[solve-hyperboloid] post-process error:', e?.message||String(e)) }
-        return res.status(200).json(parsed)
+        const body = JSON.stringify(parsed)
+        if (!nocache){
+          if (mc){ try{ const ttl = Number(process.env.MEMCACHE_TTL_SECS || process.env.CACHE_TTL_SECS || DEFAULT_TTL); await new Promise(resolve => mc.set(cacheKey, body, { expires: ttl }, ()=> resolve())) }catch{} }
+          else { nodeCache.set(cacheKey, body, Number(process.env.CACHE_TTL_SECS || DEFAULT_TTL)) }
+        }
+        res.setHeader('X-Cache-Set', '1')
+        return res.status(200).send(body)
       }
     }catch{}
     if (!response.ok){
       return res.status(500).json({ error: text || (response.status + ' ' + response.statusText) })
     }
-    // Fallback: forward text
+    // Fallback: forward text (also cache raw if possible)
+    if (!nocache){
+      if (mc){ try{ const ttl = Number(process.env.MEMCACHE_TTL_SECS || process.env.CACHE_TTL_SECS || DEFAULT_TTL); await new Promise(resolve => mc.set(cacheKey, text, { expires: ttl }, ()=> resolve())) }catch{} }
+      else { nodeCache.set(cacheKey, text, Number(process.env.CACHE_TTL_SECS || DEFAULT_TTL)) }
+    }
+    res.setHeader('X-Cache-Set', '1')
     return res.status(200).send(text)
   } catch (error){
     const detail = (error && error.message) ? String(error.message) : 'Internal Server Error'

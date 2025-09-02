@@ -163,6 +163,8 @@ function renderResult(result){
           if (threeMesh){ v1.group.add(threeMesh); console.log('Added mesh triangles:', tri) }
         }catch{}
       }
+      // Color viewer A meshes blue, fit and render
+      try{ v1.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(0x2196f3) } }) }catch{}
       // Fit and render
       fitView(v1)
       v1.renderer.render(v1.scene, v1.camera)
@@ -191,7 +193,7 @@ function renderResult(result){
       }
     }catch{}
   }
-  // Render Positive (Viewer B)
+  // Render Positive (Viewer B) in yellow
   try{
     const posMesh = values.filter(v => v.ParamName === 'RH_OUT:positiveMesh')
     const posEntries = posMesh.length ? posMesh : values.filter(v => v.ParamName === 'RH_OUT:positive')
@@ -202,11 +204,12 @@ function renderResult(result){
       vB.group = new THREE.Group(); vB.scene.add(vB.group)
       const posItems = posEntries.flatMap(e => flattenItems(e))
       for (const it of posItems){ addItemDataToGroup(it.data, vB.group) }
+      try{ vB.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(0xffd54f) } }) }catch{}
       if (posItems.length){ fitView(vB); vB.renderer.render(vB.scene, vB.camera) }
     }
   }catch(e){ console.warn('Positive render error:', e?.message||String(e)) }
 
-  // Render Panels (Viewer C)
+  // Render Panels (Viewer C) in pink
   try{
     const panMesh = values.filter(v => v.ParamName === 'RH_OUT:panelsMesh')
     const panEntries = panMesh.length ? panMesh : values.filter(v => v.ParamName === 'RH_OUT:panels')
@@ -217,6 +220,7 @@ function renderResult(result){
       vC.group = new THREE.Group(); vC.scene.add(vC.group)
       const panItems = panEntries.flatMap(e => flattenItems(e))
       for (const it of panItems){ addItemDataToGroup(it.data, vC.group) }
+      try{ vC.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(0xe91e63) } }) }catch{}
       if (panItems.length){ fitView(vC); vC.renderer.render(vC.scene, vC.camera) }
     }
   }catch(e){ console.warn('Panels render error:', e?.message||String(e)) }
