@@ -12,6 +12,21 @@ try{ console.log('rhino3dm ready:', typeof rhino?.CommonObject?.decode === 'func
 
 let currentSolveAbort = null
 
+// RHINO3DM capability diagnostics
+async function diagnoseRhino3dm(){
+  try{
+    console.log('=== RHINO3DM DIAGNOSTIC START ===')
+    console.log('1. rhino object exists:', !!rhino)
+    console.log('2. rhino.Mesh exists:', !!rhino?.Mesh)
+    console.log('3. rhino.Mesh.createFromBrep exists:', typeof rhino?.Mesh?.createFromBrep)
+    console.log('4. rhino.MeshingParameters exists:', !!rhino?.MeshingParameters)
+    try{ console.log('5. Available MeshingParameters:', rhino?.MeshingParameters ? Object.keys(rhino.MeshingParameters) : 'NONE') }catch{ console.log('5. Available MeshingParameters: UNKNOWN') }
+    console.log('6. rhino.CommonObject.decode exists:', typeof rhino?.CommonObject?.decode)
+    console.log('=== RHINO3DM DIAGNOSTIC END ===')
+  }catch{}
+}
+await diagnoseRhino3dm()
+
 const viewers = [
   { canvas: document.getElementById('viewA'), filter: (name)=> /^(RH_OUT:Configurator|RH_OUT:points|RH_OUT:text_a|RH_OUT:text_b|RH_OUT:hyperboloid)$/i.test(name) },
   { canvas: document.getElementById('viewB'), filter: (name)=> /^RH_OUT:positive$/i.test(name) },
@@ -93,160 +108,35 @@ function debounce(fn, delay){
 
 function renderResult(result){
   const values = Array.isArray(result.values) ? result.values : []
-  try{
-    console.log('Hyperboloid ParamNames:', values.map(v=>({
-      name: v.ParamName,
-      branches: Object.keys(v.InnerTree||{}).length,
-      countsByBranch: Object.entries(v.InnerTree||{}).map(([k,arr])=>({path:k,count:(arr||[]).length})),
-      sampleType: (()=>{ try{ const it=(Object.values(v.InnerTree||{})[0]||[])[0]; return it?.type || (it?.data && typeof it.data); }catch{return null} })()
-    })))
-  }catch{}
-  for (const v of scenes){
-    if (v.group){ v.scene.remove(v.group); disposeGroup(v.group); v.group = null }
-    v.group = new THREE.Group(); v.scene.add(v.group)
-  }
+  // Group by exact ParamName
+  const grouped = {}
+  for (const v of values){ (grouped[v.ParamName] ||= []).push(v) }
+  try{ console.log('Hyperboloid ParamNames:', Object.keys(grouped).map(k=>({ name:k, count: grouped[k].length }))) }catch{}
 
-  const doc = rhino ? new rhino.File3dm() : null
+  // Clear scenes first
+  scenes.forEach(v=>{ clearScene(v.scene); if (v.group){ v.scene.remove(v.group); disposeGroup(v.group); v.group=null } v.group=new THREE.Group(); v.scene.add(v.group) })
 
-  for (const out of values){
-    const name = out.ParamName || ''
-    const tree = out.InnerTree || {}
-    const paths = Object.keys(tree).sort()
-    for (const path of paths){
-      for (const item of (tree[path]||[])){
-        try{
-          // route to matching viewer(s)
-          scenes.forEach((v,idx)=>{
-            if (!viewers[idx].filter(name)) return
-            addItemDataToGroup(item.data, v.group)
-          })
-        }catch{}
-      }
-    }
-  }
-
-  // Ensure Configurator specifically renders into Viewer 1 regardless of filters
-  try{
-    const cfg = (result.values||[]).find(e => (e.ParamName||'').toLowerCase() === 'rh_out:configurator')
-    if (cfg){
-      try{
-        const firstBranch = Object.values(cfg.InnerTree||{})[0]||[]
-        const firstItem = firstBranch[0]
-        console.log('Configurator sample item:', {
-          hasItem: !!firstItem,
-          itemType: firstItem?.type,
-          dataType: typeof firstItem?.data,
-          dataHead: (typeof firstItem?.data==='string') ? String(firstItem.data).slice(0,80) : (firstItem?.data && typeof firstItem.data === 'object' ? Object.keys(firstItem.data) : null)
-        })
-        if (firstItem && typeof firstItem.data === 'string'){
-          let arch = firstItem.data
-          try{ arch = JSON.parse(arch) }catch{}
-          if (typeof arch === 'string') { try{ arch = JSON.parse(arch) }catch{} }
-          let geom = null
-          try{ geom = rhino.CommonObject.decode(arch) }catch{}
-          try{
-            console.log('Configurator decoded typename:', geom?.constructor?.name, 'faces?', typeof geom?.faces === 'function', 'toBrep?', typeof geom?.toBrep === 'function')
-          }catch{}
-          // Brep meshing proof
-          try{
-            const isBrepLike = !!(geom && (geom?.constructor?.name === 'Brep' || typeof geom?.faces === 'function' || typeof geom?.toBrep === 'function'))
-            if (isBrepLike){
-              const facesCount = (()=>{ try{ const f=geom.faces?.(); return f?.count }catch{return undefined} })()
-              try{ console.log('Brep faces count:', facesCount) }catch{}
-              const brepObj = (geom?.constructor?.name === 'Brep' || typeof geom?.faces === 'function') ? geom : (typeof geom?.toBrep === 'function' ? geom.toBrep(true) : null)
-              if (brepObj){
-                const mArr = meshArrayFromBrep(brepObj)
-                console.log('Configurator brep meshed:', true, 'len:', mArr.length)
-                for (const m of mArr){ scenes[0].group.add(rhinoMeshToThree(m)) }
-              }
-            } else if (geom && typeof geom?.toNurbsCurve === 'function'){
-              try{ const nurbs = geom.toNurbsCurve(); const pts=nurbs.points(); const arr=[]; for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) } const g=new THREE.BufferGeometry().setFromPoints(arr); const lm=new THREE.LineBasicMaterial({ color:0x333333 }); scenes[0].group.add(new THREE.Line(g,lm)) }catch{}
-            }
-          }catch{}
-        }
-      }catch{}
-      const tree = cfg.InnerTree || {}
-      for (const path in tree){ for (const item of (tree[path]||[])) addItemDataToGroup(item.data, scenes[0].group) }
-    }
-  }catch{}
-
-  // flush doc only for active viewer (manually mesh Breps)
-  if (doc && doc.objects().count > 0){
-    try{
-      const objects = doc.objects()
-      for (let i=0; i<objects.count; i++){
-        const ro = objects.get(i)
-        const geo = ro.geometry()
-        if (!geo) continue
-        if (geo.objectType === rhino.ObjectType.Brep){
-          const meshes = meshArrayFromBrep(geo)
-          for (let j=0; j<meshes.length; j++){ scenes[0].group.add(rhinoMeshToThree(meshes[j])) }
-        } else if (geo.objectType === rhino.ObjectType.Mesh){
-          scenes[0].group.add(rhinoMeshToThree(geo))
-        } else if (geo.objectType === rhino.ObjectType.Curve){
-          try{
-            const nurbs = geo.toNurbsCurve(); const pts = nurbs.points(); const arr=[]
-            for (let k=0;k<pts.count;k++){ const p=pts.get(k).location; arr.push(new THREE.Vector3(p.x,p.y,p.z)) }
-            const g=new THREE.BufferGeometry().setFromPoints(arr); const m=new THREE.LineBasicMaterial({ color:0x333333 });
-            scenes[0].group.add(new THREE.Line(g,m))
-          }catch{}
-        } else if (geo.objectType === rhino.ObjectType.Point){
-          try{
-            const p = geo.location || geo
-            const sph = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 8), new THREE.MeshStandardMaterial({ color:0x0070f3 }))
-            sph.position.set(p.x,p.y,p.z); scenes[0].group.add(sph)
-          }catch{}
-        }
-      }
-    }catch{}
-  }
-
-  // fit only active view
+  // Viewer 1: Configurator (Brep) + hyperboloid (Curve)
+  const cfgEntries = grouped['RH_OUT:Configurator'] || []
+  const hypEntries = grouped['RH_OUT:hyperboloid'] || []
+  const cfgItems = cfgEntries.flatMap(e=>flattenItems(e))
+  const hypItems = hypEntries.flatMap(e=>flattenItems(e))
+  const cfgMeshesAdded = addItemsPipeline(cfgItems, scenes[0].scene, 'Configurator')
+  addItemsPipeline(hypItems, scenes[0].scene, 'Hyperboloid')
   fitView(scenes[0])
   try{ console.log('Configurator viewer stats:', viewerStats(scenes[0])) }catch{}
 
-  // Fallback: if nothing visible yet, try alternate outputs (case-insensitive)
-  const hasMesh = (()=>{ let ok=false; scenes[0].scene.traverse(o=>{ if(o.isMesh) ok=true }); return ok })()
-  if (!hasMesh){
-    try{
-      const values2 = result.values || []
-      const map = {}
-      for (const entry of values2){ map[(entry.ParamName||'').toLowerCase()] = entry.InnerTree || {} }
-      const tryKeys = ['rh_out:configurator','rh_out:hyperboloid','rh_out:panels','rh_out:positive']
-      for (const key of tryKeys){
-        const tree = map[key]; if (!tree) continue
-        for (const path in tree){ for (const item of (tree[path]||[])) addItemDataToGroup(item.data, scenes[0].group) }
-      }
-      fitView(scenes[0])
-    }catch{}
-  }
+  // Viewer 2: positive (Brep)
+  const posEntries = grouped['RH_OUT:positive'] || []
+  const posItems = posEntries.flatMap(e=>flattenItems(e))
+  addItemsPipeline(posItems, scenes[1].scene, 'Positive')
+  fitView(scenes[1])
 
-  // Final fallback: render anything that looks like geometry from any output
-  const hasMesh2 = (()=>{ let ok=false; scenes[0].scene.traverse(o=>{ if(o.isMesh) ok=true }); return ok })()
-  if (!hasMesh2){
-    try{
-      for (const entry of (result.values||[])){
-        const tree = entry.InnerTree || {}
-        for (const path in tree){ for (const item of (tree[path]||[])) addItemDataToGroup(item.data, scenes[0].group) }
-      }
-      fitView(scenes[0])
-    }catch{}
-  }
-
-  // Additionally, explicitly render Configurator + hyperboloid into viewer 1 from all branches
-  try{
-    const map = {}
-    for (const entry of (result.values||[])) map[(entry.ParamName||'').toLowerCase()] = entry.InnerTree||{}
-    const renderKeyToViewer = (viewerIdx, key)=>{
-      const tree = map[(key||'').toLowerCase()]; if (!tree) return
-      for (const path in tree){ for (const item of (tree[path]||[])) addItemDataToGroup(item.data, scenes[viewerIdx].group) }
-    }
-    renderKeyToViewer(0, 'RH_OUT:Configurator')
-    renderKeyToViewer(0, 'RH_OUT:hyperboloid')
-    // Also try panels to ensure visible geometry appears
-    renderKeyToViewer(0, 'RH_OUT:panels')
-    fitView(scenes[0])
-  }catch{}
+  // Viewer 3: panels (Breps list)
+  const pnlEntries = grouped['RH_OUT:panels'] || []
+  const pnlItems = pnlEntries.flatMap(e=>flattenItems(e))
+  addItemsPipeline(pnlItems, scenes[2].scene, 'Panels')
+  fitView(scenes[2])
 }
 
 function meshArrayFromBrep(brep){
