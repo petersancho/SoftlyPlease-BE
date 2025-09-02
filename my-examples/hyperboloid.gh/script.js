@@ -285,27 +285,20 @@ function convertRhinoMeshToThree(rMesh){
 }
 
 // Ultimate Brep meshing pipeline with multiple strategies and detailed logs
-function processBrep(geom, scene, label){
+function processBrep(brep, scene, label){
   console.log(`[${label}] STARTING BREP PROCESSING`)
-  // Use compatibility wrapper first (handles createFromBrep absence and toMesh fallback)
-  let meshes = []
-  try{ meshes = createMeshesFromBrepCompat(geom) }catch{}
-  // If still empty, attempt additional presets if available
-  if (!Array.isArray(meshes) || meshes.length===0){
-    const MP = rhino?.MeshingParameters || {}
-    const presets = [MP.qualityRenderMesh, MP.fastRenderMesh, MP.coarse, MP.default].filter(Boolean)
-    for (let i=0;i<presets.length;i++){
-      try{
-        console.log(`[${label}] Trying meshing strategy ${i+1}`)
-        const res = rhino?.Mesh?.createFromBrep ? rhino.Mesh.createFromBrep(geom, presets[i]) : []
-        if (Array.isArray(res) && res.length>0){ meshes = res; console.log(`[${label}] Success with strategy ${i+1}: ${res.length} meshes`); break }
-      }catch(e){ console.warn(`[${label}] Strategy ${i+1} failed:`, e?.message||String(e)) }
-    }
-  }
-  if (!Array.isArray(meshes) || meshes.length===0){ console.error(`[${label}] UNABLE TO MESH BREP`); return 0 }
-  let added = 0
-  for (const m of meshes){ const three = convertRhinoMeshToThree(m); if (three){ scene.add(three); added++; console.log(`[${label}] Mesh added to scene`) } }
-  return added
+  try{
+    console.log(`[${label}] Calling brep.toMesh()`)
+    const mp = (rhino && rhino.MeshingParameters && rhino.MeshingParameters.default) ? rhino.MeshingParameters.default : null
+    const mesh = (brep && typeof brep.toMesh === 'function') ? brep.toMesh(mp) : null
+    if (!mesh){ console.error(`[${label}] toMesh() returned null`); return 0 }
+    console.log(`[${label}] Mesh created, converting to Three.js`)
+    const three = convertRhinoMeshToThree(mesh)
+    if (!three){ console.error(`[${label}] Mesh conversion failed`); return 0 }
+    scene.add(three)
+    console.log(`[${label}] SUCCESS: Mesh added to scene`)
+    return 1
+  }catch(e){ console.error(`[${label}] Processing failed:`, e); return 0 }
 }
 
 function addRhinoGeometryToGroup(geo, group){
