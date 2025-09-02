@@ -134,35 +134,62 @@ function debounce(fn, delay){
 
 function renderResult(result){
   const values = Array.isArray(result.values) ? result.values : []
-  // Group by exact ParamName
-  const grouped = {}
-  for (const v of values){ (grouped[v.ParamName] ||= []).push(v) }
-  try{ console.log('Hyperboloid ParamNames:', Object.keys(grouped).map(k=>({ name:k, count: grouped[k].length }))) }catch{}
+  // 1) Pick only RH_OUT:Configurator
+  const configuratorEntries = values.filter(v => v.ParamName === 'RH_OUT:Configurator')
+  if (!configuratorEntries.length){ console.error('No RH_OUT:Configurator found'); return }
+  // Flatten all branches and take the first item
+  const flat = configuratorEntries.flatMap(e => flattenItems(e))
+  if (!flat.length){ console.error('Configurator has no items'); return }
 
-  // Clear scenes first
-  scenes.forEach(v=>{ clearScene(v.scene); if (v.group){ v.scene.remove(v.group); disposeGroup(v.group); v.group=null } v.group=new THREE.Group(); v.scene.add(v.group) })
+  // 2) Decode first item to Brep
+  let parsed
+  try{ parsed = JSON.parse(flat[0].data) }catch(e){ console.error('Configurator JSON parse failed:', e); return }
+  let brep
+  try{ brep = rhino.CommonObject.decode(parsed) }catch(e){ console.error('Configurator decode failed:', e); return }
+  try{
+    const ctor = brep?.constructor?.name
+    const facesCount = typeof brep?.faces === 'function' ? brep.faces().count : 0
+    console.log('Configurator decoded:', { constructor: ctor, facesCount })
+    if (ctor !== 'Brep' || facesCount <= 0){ console.error('Configurator is not a valid Brep'); return }
+  }catch{}
 
-  // Viewer 1: Configurator (Brep) + hyperboloid (Curve)
-  const cfgEntries = grouped['RH_OUT:Configurator'] || []
-  const hypEntries = grouped['RH_OUT:hyperboloid'] || []
-  const cfgItems = cfgEntries.flatMap(e=>flattenItems(e))
-  const hypItems = hypEntries.flatMap(e=>flattenItems(e))
-  const cfgMeshesAdded = addItemsPipeline(cfgItems, scenes[0].scene, 'Configurator')
-  addItemsPipeline(hypItems, scenes[0].scene, 'Hyperboloid')
-  fitView(scenes[0])
-  try{ console.log('Configurator viewer stats:', viewerStats(scenes[0])) }catch{}
+  // 3) Mesh via toMesh (createFromBrep unavailable in this build)
+  const MP = rhino?.MeshingParameters || {}
+  let mp = MP.default || null
+  let mesh = (typeof brep.toMesh === 'function') ? brep.toMesh(mp) : null
+  if (!mesh && MP.qualityRenderMesh) mesh = brep.toMesh(MP.qualityRenderMesh)
+  if (!mesh && MP.fastRenderMesh) mesh = brep.toMesh(MP.fastRenderMesh)
+  if (!mesh){ console.error('Configurator toMesh failed'); return }
 
-  // Viewer 2: positive (Brep)
-  const posEntries = grouped['RH_OUT:positive'] || []
-  const posItems = posEntries.flatMap(e=>flattenItems(e))
-  addItemsPipeline(posItems, scenes[1].scene, 'Positive')
-  fitView(scenes[1])
+  // 4) Convert rhino mesh → Three.js and add ONE mesh to viewer 1
+  const verts = mesh.vertices()
+  const pos = new Float32Array(verts.count * 3)
+  for (let i=0;i<verts.count;i++){ const v = verts.get(i); pos[i*3]=v[0]; pos[i*3+1]=v[1]; pos[i*3+2]=v[2] }
+  const faces = mesh.faces()
+  const idx = []
+  for (let i=0;i<faces.count;i++){ const f = faces.get(i); idx.push(f[0],f[1],f[2]); if (f[2] !== f[3]) idx.push(f[0],f[2],f[3]) }
+  const geom = new THREE.BufferGeometry()
+  geom.setAttribute('position', new THREE.BufferAttribute(pos,3))
+  geom.setIndex(idx)
+  geom.computeVertexNormals()
 
-  // Viewer 3: panels (Breps list)
-  const pnlEntries = grouped['RH_OUT:panels'] || []
-  const pnlItems = pnlEntries.flatMap(e=>flattenItems(e))
-  addItemsPipeline(pnlItems, scenes[2].scene, 'Panels')
-  fitView(scenes[2])
+  const v1 = scenes[0]
+  clearScene(v1.scene)
+  if (v1.group){ v1.scene.remove(v1.group); disposeGroup(v1.group); v1.group=null }
+  v1.group = new THREE.Group(); v1.scene.add(v1.group)
+  const mat = new THREE.MeshStandardMaterial({ color:0x6b8cff, metalness:0.05, roughness:0.85, side:THREE.DoubleSide })
+  const m = new THREE.Mesh(geom, mat)
+  v1.group.add(m)
+
+  // Fit camera to geometry bbox
+  geom.computeBoundingBox(); const box = geom.boundingBox
+  const size = new THREE.Vector3().subVectors(box.max, box.min)
+  const center = new THREE.Vector3().addVectors(box.min, box.max).multiplyScalar(0.5)
+  const dist = size.length() * 1.5
+  v1.camera.position.copy(center.clone().add(new THREE.Vector3(dist, dist, dist)))
+  v1.controls.target.copy(center); v1.controls.update()
+  v1.renderer.render(v1.scene, v1.camera)
+  try{ console.log('Configurator viewer stats:', viewerStats(v1)) }catch{}
 }
 
 function meshArrayFromBrep(brep){
