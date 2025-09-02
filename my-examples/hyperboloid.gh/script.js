@@ -122,7 +122,7 @@ async function onSolve(){
   // cancel in-flight
   try{ if (currentSolveAbort){ currentSolveAbort.abort(); currentSolveAbort = null } }catch{}
   const inputs = getInputs()
-  const payload = { definition: 'Hyperboloid.ghx', inputs }
+  const payload = { definition: 'Hyperboloid.ghx', inputs, nocache: true }
   currentSolveAbort = new AbortController()
   const res = await fetch('/solve-hyperboloid', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), signal: currentSolveAbort.signal }).catch(e=>{ if (e?.name === 'AbortError') return null; throw e })
   if (!res) return // aborted
