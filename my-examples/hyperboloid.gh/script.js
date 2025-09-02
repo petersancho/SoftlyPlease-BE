@@ -338,23 +338,35 @@ function isRhinoMesh(obj){
 }
 
 function rhinoMeshToThree(rMesh){
-  const geometry = new THREE.BufferGeometry()
-  const vertices = rMesh.vertices()
+  const verts = rMesh.vertices()
   const faces = rMesh.faces()
-  const positions = []
-  const addTri = (va,vb,vc)=>{ positions.push(va.x,va.y,va.z, vb.x,vb.y,vb.z, vc.x,vc.y,vc.z) }
-  for (let i=0; i<faces.count; i++){
+  const vertexCount = verts.count || 0
+  const positions = new Float32Array(vertexCount * 3)
+  for (let i=0; i<vertexCount; i++){
+    const v = verts.get(i)
+    const x = (v && (v[0] ?? v.x)) ?? 0
+    const y = (v && (v[1] ?? v.y)) ?? 0
+    const z = (v && (v[2] ?? v.z)) ?? 0
+    const o = i*3; positions[o]=x; positions[o+1]=y; positions[o+2]=z
+  }
+  const indices = []
+  const faceCount = faces.count || 0
+  for (let i=0; i<faceCount; i++){
     const f = faces.get(i)
-    const a = vertices.get(f.A ?? f.a), b = vertices.get(f.B ?? f.b), c = vertices.get(f.C ?? f.c)
-    const isTri = (typeof f.isTriangle === 'boolean') ? f.isTriangle : (f.IsTriangle === true)
+    const a = f.a ?? f.A ?? f[0]
+    const b = f.b ?? f.B ?? f[1]
+    const c = f.c ?? f.C ?? f[2]
+    const d = f.d ?? f.D ?? f[3]
+    const isTri = (typeof f.isTriangle === 'boolean') ? f.isTriangle : (typeof f.IsTriangle === 'boolean' ? f.IsTriangle : (d === undefined || d === c))
     if (isTri){
-      addTri(a,b,c)
+      indices.push(a,b,c)
     } else {
-      const d = vertices.get(f.D ?? f.d)
-      addTri(a,b,c); addTri(a,c,d)
+      indices.push(a,b,c, a,c,d)
     }
   }
+  const geometry = new THREE.BufferGeometry()
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions,3))
+  geometry.setIndex(indices)
   geometry.computeVertexNormals()
   const material = new THREE.MeshStandardMaterial({ color: 0x6b8cff, metalness:0.05, roughness:0.85, side: THREE.DoubleSide })
   return new THREE.Mesh(geometry, material)
