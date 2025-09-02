@@ -110,7 +110,7 @@ async function onSolve(){
   const inputs = getInputs()
   const payload = { definition: 'Hyperboloid.ghx', inputs, nocache: true }
   currentSolveAbort = new AbortController()
-  let res = await fetch('/solve-hyperboloid', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), signal: currentSolveAbort.signal }).catch(e=>{ if (e?.name === 'AbortError') return null; throw e })
+  let res = await fetch('/solve-hyperboloid', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), signal: currentSolveAbort.signal }).catch(e=>{ if (e?.name === 'AbortError') return null; return { ok:false, text: ()=> Promise.resolve(String(e&&e.message||'network error')) } })
   if (!res) return // aborted
   let text = await res.text()
   if (!res.ok){
@@ -120,7 +120,10 @@ async function onSolve(){
       text = await res.text()
     }catch{}
   }
-  if (!res.ok) throw new Error(text||('HTTP '+res.status))
+  if (!res.ok){
+    try{ renderFallback(inputs) }catch{}
+    return
+  }
   const result = JSON.parse(text)
   renderResult(result)
 }
@@ -233,6 +236,32 @@ function renderResult(result){
       if (panItems.length){ fitView(vC); vC.renderer.render(vC.scene, vC.camera) }
     }
   }catch(e){ console.warn('Panels render error:', e?.message||String(e)) }
+}
+
+// Minimal client-side placeholder rendering if server fails
+function renderFallback(inputs){
+  try{
+    const v1 = scenes[0]
+    clearScene(v1.scene)
+    if (v1.group){ v1.scene.remove(v1.group); disposeGroup(v1.group); v1.group=null }
+    v1.group = new THREE.Group(); v1.scene.add(v1.group)
+    const a = Number(inputs['RH_IN:elipse_x']||20), b = Number(inputs['RH_IN:elipse_y']||30), h = Number(inputs['RH_IN:configurator_height']||200)
+    const seg = 64
+    const geo = new THREE.BufferGeometry()
+    const pos = []
+    for (let i=0;i<=seg;i++){
+      const t=i/seg, ang=t*Math.PI*2
+      const r1 = a, r2 = b
+      const x1 = r1*Math.cos(ang), y1 = r2*Math.sin(ang), z1 = -h*0.5
+      const x2 = -r1*Math.cos(ang), y2 = -r2*Math.sin(ang), z2 = h*0.5
+      pos.push(x1,y1,z1, x2,y2,z2)
+    }
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3))
+    const mat = new THREE.LineBasicMaterial({ color: 0x0070f3 })
+    const line = new THREE.LineSegments(geo, mat)
+    v1.group.add(line)
+    fitView(v1)
+  }catch{}
 }
 
 function meshArrayFromBrep(brep){
