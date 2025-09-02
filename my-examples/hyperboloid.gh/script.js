@@ -10,8 +10,6 @@ let rhino
 await (rhino3dm().then(m=>{ rhino = m }))
 
 let currentSolveAbort = null
-let computeFailCount = 0
-let nextRetryAtMs = 0
 
 // diagnostics removed
 
@@ -110,21 +108,14 @@ async function onSolve(){
   // cancel in-flight
   try{ if (currentSolveAbort){ currentSolveAbort.abort(); currentSolveAbort = null } }catch{}
   const inputs = getInputs()
-  const now = Date.now()
-  if (now < nextRetryAtMs){ try{ renderFallbackAll(inputs) }catch{} return }
   const payload = { definition: 'Hyperboloid.ghx', inputs }
   currentSolveAbort = new AbortController()
   let res = await fetch('/solve-hyperboloid', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), signal: currentSolveAbort.signal }).catch(e=>{ if (e?.name === 'AbortError') return null; return { ok:false, text: ()=> Promise.resolve(String(e&&e.message||'network error')) } })
   if (!res) return // aborted
   let text = await res.text()
   // no fallback to /solve; rely on /solve-hyperboloid
-  if (!res.ok){
-    try{ renderFallbackAll(inputs) }catch{}
-    try{ computeFailCount = Math.min(computeFailCount + 1, 10); const backoff = Math.min(60000, 2000 * Math.pow(2, computeFailCount-1)); nextRetryAtMs = Date.now() + backoff }catch{}
-    return
-  }
+  if (!res.ok){ try{ renderFallbackAll(inputs) }catch{} return }
   const result = JSON.parse(text)
-  try{ computeFailCount = 0; nextRetryAtMs = 0 }catch{}
   renderResult(result)
 }
 
@@ -206,8 +197,8 @@ function renderResult(result){
   // Render Positive (Viewer B) in yellow
   try{
     // Case-insensitive matching for outputs
-    const posMesh = values.filter(v => String(v.ParamName||'').toLowerCase() === 'rh_out:positivemesh')
-    let posEntries = posMesh.length ? posMesh : values.filter(v => String(v.ParamName||'').toLowerCase() === 'rh_out:positive')
+    const posMesh = values.filter(v => String(v.ParamName||'').toLowerCase().includes('positive') && String(v.ParamName||'').toLowerCase().includes('mesh'))
+    let posEntries = posMesh.length ? posMesh : values.filter(v => String(v.ParamName||'').toLowerCase().includes('positive'))
     const vB = scenes[1]
     if (vB){
       clearScene(vB.scene)
@@ -223,8 +214,8 @@ function renderResult(result){
 
   // Render Panels (Viewer C) in pink
   try{
-    const panMesh = values.filter(v => String(v.ParamName||'').toLowerCase() === 'rh_out:panelsmesh')
-    const panEntries = panMesh.length ? panMesh : values.filter(v => String(v.ParamName||'').toLowerCase() === 'rh_out:panels')
+    const panMesh = values.filter(v => String(v.ParamName||'').toLowerCase().includes('panels') && String(v.ParamName||'').toLowerCase().includes('mesh'))
+    const panEntries = panMesh.length ? panMesh : values.filter(v => String(v.ParamName||'').toLowerCase().includes('panels'))
     const vC = scenes[2]
     if (vC){
       clearScene(vC.scene)
