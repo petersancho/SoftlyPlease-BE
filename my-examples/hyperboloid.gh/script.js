@@ -213,8 +213,9 @@ function renderResult(result){
       if (vB.group){ vB.scene.remove(vB.group); disposeGroup(vB.group); vB.group=null }
       vB.group = new THREE.Group(); vB.scene.add(vB.group)
       const posItems = posEntries.flatMap(e => flattenItems(e))
-      try{ console.log('Positive items:', posItems.length) }catch{}
-      for (const it of posItems){ addItemDataToGroup(it.data, vB.group) }
+      let addedPos = 0
+      for (const it of posItems){ if (addStrictMeshItem(it, vB.group, viewers[1].color)) addedPos++ }
+      try{ console.log('Positive mesh items:', addedPos) }catch{}
       try{ vB.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(viewers[1].color) } }) }catch{}
       if (posItems.length){ fitView(vB); vB.renderer.render(vB.scene, vB.camera) }
     }
@@ -230,8 +231,9 @@ function renderResult(result){
       if (vC.group){ vC.scene.remove(vC.group); disposeGroup(vC.group); vC.group=null }
       vC.group = new THREE.Group(); vC.scene.add(vC.group)
       const panItems = panEntries.flatMap(e => flattenItems(e))
-      try{ console.log('Panels items:', panItems.length) }catch{}
-      for (const it of panItems){ addItemDataToGroup(it.data, vC.group) }
+      let addedPan = 0
+      for (const it of panItems){ if (addStrictMeshItem(it, vC.group, viewers[2].color)) addedPan++ }
+      try{ console.log('Panels mesh items:', addedPan) }catch{}
       try{ vC.group.traverse(o=>{ if (o.isMesh && o.material){ o.material.color = new THREE.Color(viewers[2].color) } }) }catch{}
       if (panItems.length){ fitView(vC); vC.renderer.render(vC.scene, vC.camera) }
     }
@@ -700,6 +702,22 @@ function addItemDataToGroup(rawData, group){
       return
     }
   }catch{}
+}
+
+// Decode and add only Mesh items, colored
+function addStrictMeshItem(item, group, colorHex){
+  try{
+    if (!item) return false
+    let data = item.data
+    if (typeof data === 'string'){ try{ data = JSON.parse(data) }catch{} }
+    if (!data || typeof data !== 'object') return false
+    const m = rhino && rhino.CommonObject && typeof rhino.CommonObject.decode === 'function' ? rhino.CommonObject.decode(data) : null
+    if (!m || !(m.vertices && m.faces)) return false
+    const meshThree = convertRhinoMeshToThree(m, colorHex)
+    if (!meshThree) return false
+    group.add(meshThree)
+    return true
+  }catch{ return false }
 }
 
 // initial solve
