@@ -70,51 +70,49 @@ router.post('/', async (req, res) => {
       const parsed = JSON.parse(text)
       if (parsed && Array.isArray(parsed.values)){
         try{
-          // Post-process: mesh Configurator Brep via Compute and attach as RH_OUT:ConfiguratorMesh
+          // Helper to mesh a Brep JSON and append as Mesh output
+          async function meshAndAppend(brepJson, outName){
+            const mpPrimary = (compute.MeshingParameters && typeof compute.MeshingParameters.qualityRenderMesh === 'function')
+              ? compute.MeshingParameters.qualityRenderMesh()
+              : (typeof compute.MeshingParameters?.default === 'function' ? compute.MeshingParameters.default() : null)
+            if (!mpPrimary || !(compute.Mesh && typeof compute.Mesh.createFromBrep === 'function')) return
+            let meshes = await compute.Mesh.createFromBrep(brepJson, mpPrimary)
+            if (!Array.isArray(meshes) || meshes.length === 0){
+              try{ const mpFast = typeof compute.MeshingParameters.fastRenderMesh === 'function' ? compute.MeshingParameters.fastRenderMesh() : null; if (mpFast) meshes = await compute.Mesh.createFromBrep(brepJson, mpFast) }catch{}
+            }
+            if (!Array.isArray(meshes) || meshes.length === 0){
+              try{ const mpDef = typeof compute.MeshingParameters.default === 'function' ? compute.MeshingParameters.default() : null; if (mpDef) meshes = await compute.Mesh.createFromBrep(brepJson, mpDef) }catch{}
+            }
+            if (Array.isArray(meshes) && meshes.length){
+              parsed.values.push({ ParamName: outName, InnerTree: { '{0}': meshes.map(m => ({ type: 'Rhino.Geometry.Mesh', data: JSON.stringify(m) })) } })
+            }
+          }
+          // Mesh Configurator
           const cfg = parsed.values.find(v => v.ParamName === 'RH_OUT:Configurator')
           if (cfg && cfg.InnerTree){
-            // Find first item in first available branch
             const branches = Object.keys(cfg.InnerTree)
             if (branches.length){
               const items = cfg.InnerTree[branches[0]] || []
               const first = items[0]
-              if (first && first.data){
-                let brepJson = null
-                try{ brepJson = JSON.parse(first.data) }catch{}
-                if (brepJson){
-                  try{
-                    // Prefer qualityRenderMesh, then default
-                    const mp = (compute.MeshingParameters && typeof compute.MeshingParameters.qualityRenderMesh === 'function')
-                      ? compute.MeshingParameters.qualityRenderMesh()
-                      : (typeof compute.MeshingParameters?.default === 'function' ? compute.MeshingParameters.default() : null)
-                    if (compute.Mesh && typeof compute.Mesh.createFromBrep === 'function' && mp){
-                      let meshes = await compute.Mesh.createFromBrep(brepJson, mp)
-                      if (!Array.isArray(meshes) || meshes.length === 0){
-                        try{
-                          const mpFast = typeof compute.MeshingParameters.fastRenderMesh === 'function' ? compute.MeshingParameters.fastRenderMesh() : null
-                          if (mpFast) meshes = await compute.Mesh.createFromBrep(brepJson, mpFast)
-                        }catch{}
-                      }
-                      if (!Array.isArray(meshes) || meshes.length === 0){
-                        try{
-                          const mpDef = typeof compute.MeshingParameters.default === 'function' ? compute.MeshingParameters.default() : null
-                          if (mpDef) meshes = await compute.Mesh.createFromBrep(brepJson, mpDef)
-                        }catch{}
-                      }
-                      try{ console.log('[solve-hyperboloid] Configurator meshed: submeshes=' + (Array.isArray(meshes)? meshes.length : 0)) }catch{}
-                      if (Array.isArray(meshes) && meshes.length){
-                        const entry = {
-                          ParamName: 'RH_OUT:ConfiguratorMesh',
-                          InnerTree: {
-                            '{0}': meshes.map(m => ({ type: 'Rhino.Geometry.Mesh', data: JSON.stringify(m) }))
-                          }
-                        }
-                        parsed.values.push(entry)
-                      }
-                    }
-                  }catch(e){ console.warn('[solve-hyperboloid] meshing failed:', e?.message||String(e)) }
-                }
-              }
+              if (first && first.data){ try{ await meshAndAppend(JSON.parse(first.data), 'RH_OUT:ConfiguratorMesh') }catch{} }
+            }
+          }
+          // Mesh Positive
+          const pos = parsed.values.find(v => v.ParamName === 'RH_OUT:positive')
+          if (pos && pos.InnerTree){
+            const branches = Object.keys(pos.InnerTree)
+            for (const b of branches){
+              const items = pos.InnerTree[b] || []
+              for (const it of items){ try{ const j = JSON.parse(it.data); await meshAndAppend(j, 'RH_OUT:positiveMesh') }catch{} }
+            }
+          }
+          // Mesh Panels
+          const pans = parsed.values.find(v => v.ParamName === 'RH_OUT:panels')
+          if (pans && pans.InnerTree){
+            const branches = Object.keys(pans.InnerTree)
+            for (const b of branches){
+              const items = pans.InnerTree[b] || []
+              for (const it of items){ try{ const j = JSON.parse(it.data); await meshAndAppend(j, 'RH_OUT:panelsMesh') }catch{} }
             }
           }
         }catch(e){ console.warn('[solve-hyperboloid] post-process error:', e?.message||String(e)) }

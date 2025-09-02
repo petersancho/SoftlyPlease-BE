@@ -189,7 +189,8 @@ function renderResult(result){
   }
   // Render Positive (Viewer B)
   try{
-    const posEntries = values.filter(v => v.ParamName === 'RH_OUT:positive')
+    const posMesh = values.filter(v => v.ParamName === 'RH_OUT:positiveMesh')
+    const posEntries = posMesh.length ? posMesh : values.filter(v => v.ParamName === 'RH_OUT:positive')
     const vB = scenes[1]
     if (vB){
       clearScene(vB.scene)
@@ -203,7 +204,8 @@ function renderResult(result){
 
   // Render Panels (Viewer C)
   try{
-    const panEntries = values.filter(v => v.ParamName === 'RH_OUT:panels')
+    const panMesh = values.filter(v => v.ParamName === 'RH_OUT:panelsMesh')
+    const panEntries = panMesh.length ? panMesh : values.filter(v => v.ParamName === 'RH_OUT:panels')
     const vC = scenes[2]
     if (vC){
       clearScene(vC.scene)
