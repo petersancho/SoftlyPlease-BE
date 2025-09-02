@@ -3,6 +3,20 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { Rhino3dmLoader } from 'three/examples/jsm/loaders/3DMLoader'
 import rhino3dm from 'rhino3dm'
 const SOLVE_URL = '/solve-hyperboloid'
+async function postSolve(inputs){
+  console.log('POST', SOLVE_URL, Object.keys(inputs||{}))
+  const res = await fetch(SOLVE_URL, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({ inputs, cachesolve: false })
+  })
+  if (!res.ok){
+    const txt = await res.text().catch(()=> '')
+    console.error('Solve failed', res.status, txt)
+    throw new Error(txt || ('HTTP '+res.status))
+  }
+  return res.json()
+}
 
 const loader = new Rhino3dmLoader()
 loader.setLibraryPath('https://cdn.jsdelivr.net/npm/rhino3dm@8.17.0/')
@@ -89,19 +103,13 @@ function getInputs(){
 }
 
 function bindOutputs(){
-  const ids = [
-    'move_a','move_b','elipse_x','elipse_y','twist_configurator_rings','configurator_height',
-    'move_cone_a','move_cone_b','move_cone_c','move_cone_d','array_panels'
-  ]
-  const debounced = debounce(()=>onSolve(),150)
-  for (const id of ids){
-    const el = document.getElementById(id)
-    if (!el) continue
-    const out = document.getElementById(id+'Val')
-    const evt = 'input'
-    el.addEventListener(evt, ()=>{ if (out) out.textContent = String(el.value); debounced() })
+  const debounced = debounce(()=>onSolve(),120)
+  document.querySelectorAll('input[type="range"], select').forEach(el => {
+    const out = document.getElementById(el.id + 'Val')
+    el.addEventListener('input', ()=>{ if (out) out.textContent = String(el.value); debounced() })
+    el.addEventListener('change', ()=>{ if (out) out.textContent = String(el.value); debounced() })
     if (out) out.textContent = String(el.value)
-  }
+  })
 }
 bindOutputs()
 
