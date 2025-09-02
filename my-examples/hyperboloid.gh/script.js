@@ -92,6 +92,7 @@ function getInputs(){
     'RH_IN:move_cone_a': (document.getElementById('move_cone_a') ? Number(document.getElementById('move_cone_a').value) : 0),
     'RH_IN:move_cone_b': (document.getElementById('move_cone_b') ? Number(document.getElementById('move_cone_b').value) : 0),
     'RH_IN:move_cone_c': (document.getElementById('move_cone_c') ? Number(document.getElementById('move_cone_c').value) : 0),
+    'RH_IN:move_cone_d': (document.getElementById('move_cone_d') ? Number(document.getElementById('move_cone_d').value) : 0),
     'RH_IN:array_panels': (document.getElementById('array') ? Math.round(Number(document.getElementById('array').value)) : 20)
   }
 }
@@ -99,7 +100,7 @@ function getInputs(){
 function bindOutputs(){
   const ids = [
     'move_a','move_b','elipse_x','elipse_y','twist_configurator_rings','configurator_height',
-    'move_cone_a','move_cone_b','move_cone_c','array'
+    'move_cone_a','move_cone_b','move_cone_c','move_cone_d','array'
   ]
   const debounced = debounce(()=>onSolve(),150)
   for (const id of ids){
@@ -162,61 +163,35 @@ function renderResult(result){
       fitView(v1)
       v1.renderer.render(v1.scene, v1.camera)
       console.log('v1 scene children:', v1.scene.children.length, '(was', childBefore, ')')
-      return
     }catch(e){ console.warn('ConfiguratorMesh render error:', e?.message||String(e)) }
   }
-
-  // 1) Pick only RH_OUT:Configurator
-  const configuratorEntries = values.filter(v => v.ParamName === 'RH_OUT:Configurator')
-  if (!configuratorEntries.length){ console.error('No RH_OUT:Configurator found'); return }
-  // Flatten all branches and take the first item
-  const flat = configuratorEntries.flatMap(e => flattenItems(e))
-  if (!flat.length){ console.error('Configurator has no items'); return }
-
-  // 2) Decode first item to Brep
-  let parsed
-  try{ parsed = JSON.parse(flat[0].data) }catch(e){ console.error('Configurator JSON parse failed:', e); return }
-  let brep
-  try{ brep = rhino.CommonObject.decode(parsed) }catch(e){ console.error('Configurator decode failed:', e); return }
+  // Render Positive (Viewer B)
   try{
-    const ctor = brep?.constructor?.name
-    const facesCount = typeof brep?.faces === 'function' ? brep.faces().count : 0
-    console.log('Configurator decoded:', { constructor: ctor, facesCount })
-    if (ctor !== 'Brep' || facesCount <= 0){ console.error('Configurator is not a valid Brep'); return }
-  }catch{}
-
-  // 3) Mesh via toMesh (createFromBrep unavailable in this build)
-  // 4) Render wireframe from Brep edges (no meshing)
-  const renderConfiguratorWireframe = (theBrep, group, color=0x00ffff)=>{
-    if (!theBrep || !theBrep.edges){ console.error('No brep edges'); return 0 }
-    const edges = theBrep.edges(); let added=0
-    for (let i=0;i<edges.count;i++){
-      try{
-        const edge = edges.get(i)
-        const crv = edge.toNurbsCurve ? edge.toNurbsCurve() : edge
-        if (!crv || !crv.points) continue
-        const cps = crv.points(); if (!cps || cps.count < 2) continue
-        const linePoints = []
-        for (let j=0;j<cps.count;j++){ const p=cps.get(j); linePoints.push(new THREE.Vector3(p[0],p[1],p[2])) }
-        const g = new THREE.BufferGeometry().setFromPoints(linePoints)
-        const line = new THREE.Line(g, new THREE.LineBasicMaterial({ color }))
-        group.add(line); added++
-      }catch{}
+    const posEntries = values.filter(v => v.ParamName === 'RH_OUT:positive')
+    const vB = scenes[1]
+    if (vB){
+      clearScene(vB.scene)
+      if (vB.group){ vB.scene.remove(vB.group); disposeGroup(vB.group); vB.group=null }
+      vB.group = new THREE.Group(); vB.scene.add(vB.group)
+      const posItems = posEntries.flatMap(e => flattenItems(e))
+      for (const it of posItems){ addItemDataToGroup(it.data, vB.group) }
+      if (posItems.length){ fitView(vB); vB.renderer.render(vB.scene, vB.camera) }
     }
-    return added
-  }
+  }catch(e){ console.warn('Positive render error:', e?.message||String(e)) }
 
-  const v1 = scenes[0]
-  clearScene(v1.scene)
-  if (v1.group){ v1.scene.remove(v1.group); disposeGroup(v1.group); v1.group=null }
-  v1.group = new THREE.Group(); v1.scene.add(v1.group)
-  const linesAdded = renderConfiguratorWireframe(brep, v1.group, 0x00ffff)
-  if (!linesAdded){ console.error('Configurator wireframe produced no edges'); return }
-
-  // Fit camera to geometry bbox
-  fitView(v1)
-  v1.renderer.render(v1.scene, v1.camera)
-  try{ console.log('Configurator viewer stats:', viewerStats(v1)) }catch{}
+  // Render Panels (Viewer C)
+  try{
+    const panEntries = values.filter(v => v.ParamName === 'RH_OUT:panels')
+    const vC = scenes[2]
+    if (vC){
+      clearScene(vC.scene)
+      if (vC.group){ vC.scene.remove(vC.group); disposeGroup(vC.group); vC.group=null }
+      vC.group = new THREE.Group(); vC.scene.add(vC.group)
+      const panItems = panEntries.flatMap(e => flattenItems(e))
+      for (const it of panItems){ addItemDataToGroup(it.data, vC.group) }
+      if (panItems.length){ fitView(vC); vC.renderer.render(vC.scene, vC.camera) }
+    }
+  }catch(e){ console.warn('Panels render error:', e?.message||String(e)) }
 }
 
 function meshArrayFromBrep(brep){
