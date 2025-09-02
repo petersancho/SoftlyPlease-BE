@@ -54,7 +54,7 @@ function createMeshesFromBrepCompat(brep){
 }
 
 const viewers = [
-  { canvas: document.getElementById('viewA'), filter: (name)=> /^(RH_OUT:ConfiguratorMesh|RH_OUT:Configurator|RH_OUT:points|RH_OUT:text_a|RH_OUT:text_b|RH_OUT:hyperboloid)$/i.test(name), color: 0xe91e63 }, // pink
+  { canvas: document.getElementById('viewA'), filter: (name)=> /^(RH_OUT:ConfiguratorMesh|RH_OUT:Configurator|RH_OUT:points|RH_OUT:point|RH_OUT:text_a|RH_OUT:text_b|RH_OUT:hyperboloid)$/i.test(name), color: 0xe91e63 }, // pink
   { canvas: document.getElementById('viewB'), filter: (name)=> /^(RH_OUT:positiveMesh|RH_OUT:positive)$/i.test(name), color: 0x2196f3 }, // blue
   { canvas: document.getElementById('viewC'), filter: (name)=> /^(RH_OUT:panelsMesh|RH_OUT:panels)$/i.test(name), color: 0xffeb3b }, // yellow
 ]
@@ -189,7 +189,7 @@ function renderResult(result){
           addRhinoGeometryToGroup(brep, v1.group)
           // Add hyperboloid curve + points
           try{ const hypEntries = values.filter(v => v.ParamName === 'RH_OUT:hyperboloid'); const hyps = hypEntries.flatMap(e => flattenItems(e)); for (const it of hyps){ addItemDataToGroup(it.data, v1.group) } }catch{}
-          try{ const ptEntries = values.filter(v => v.ParamName === 'RH_OUT:points'); const pts = ptEntries.flatMap(e => flattenItems(e)); for (const it of pts){ addItemDataToGroup(it.data, v1.group) } }catch{}
+          try{ const ptEntries = values.filter(v => v.ParamName === 'RH_OUT:points' || v.ParamName === 'RH_OUT:point'); const pts = ptEntries.flatMap(e => flattenItems(e)); for (const it of pts){ addItemDataToGroup(it.data, v1.group) } }catch{}
           fitView(v1)
           v1.renderer.render(v1.scene, v1.camera)
         }
