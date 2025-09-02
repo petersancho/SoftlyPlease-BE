@@ -67,9 +67,13 @@ const scenes = viewers.map(v=>{
   const renderer = new THREE.WebGLRenderer({ antialias:true, canvas: v.canvas })
   renderer.setPixelRatio(devicePixelRatio)
   renderer.setSize(v.canvas.clientWidth, v.canvas.clientHeight, false)
+  renderer.outputColorSpace = THREE.SRGBColorSpace
+  renderer.toneMapping = THREE.ACESFilmicToneMapping
+  renderer.toneMappingExposure = 1.0
   const controls = new OrbitControls(camera, renderer.domElement)
-  scene.add(new THREE.HemisphereLight(0xffffff,0x888888,0.9))
-  const dl = new THREE.DirectionalLight(0xffffff,1.0); dl.position.set(5,5,10); scene.add(dl)
+  scene.add(new THREE.HemisphereLight(0xffffff,0x888888,0.8))
+  const dl = new THREE.DirectionalLight(0xffffff,1.2); dl.position.set(5,5,10); scene.add(dl)
+  const fill = new THREE.DirectionalLight(0xffffff,0.4); fill.position.set(-5,-3,6); scene.add(fill)
   return { scene, camera, renderer, controls, group: null }
 })
 
@@ -155,7 +159,7 @@ function renderResult(result){
           if (!rhMesh) continue
           // count triangles for log
           let tri = 0; try{ const faces = rhMesh.faces(); for (let i=0;i<faces.count;i++){ const f=faces.get(i); tri += (f[2] !== f[3]) ? 2 : 1 } }catch{}
-          const threeMesh = convertRhinoMeshToThree(rhMesh)
+          const threeMesh = convertRhinoMeshToThree(rhMesh, 0x6b8cff)
           if (threeMesh){ v1.group.add(threeMesh); console.log('Added mesh triangles:', tri) }
         }catch{}
       }
@@ -292,7 +296,7 @@ function isRhinoMesh(obj){
   return obj && typeof obj.faces === 'object' && typeof obj.vertices === 'object'
 }
 
-function rhinoMeshToThree(rMesh){
+function rhinoMeshToThree(rMesh, colorHex){
   const verts = rMesh.vertices()
   const faces = rMesh.faces()
   const vertexCount = verts.count || 0
@@ -323,14 +327,14 @@ function rhinoMeshToThree(rMesh){
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions,3))
   geometry.setIndex(indices)
   geometry.computeVertexNormals()
-  const material = new THREE.MeshStandardMaterial({ color: 0x6b8cff, metalness:0.05, roughness:0.85, side: THREE.DoubleSide })
+  const material = new THREE.MeshStandardMaterial({ color: (colorHex ?? 0x6b8cff), metalness:0.05, roughness:0.85, side: THREE.DoubleSide, wireframe:false })
   return new THREE.Mesh(geometry, material)
 }
 
 // Convert rhino3dm Mesh to THREE.Mesh with diagnostics
-function convertRhinoMeshToThree(rMesh){
+function convertRhinoMeshToThree(rMesh, colorHex){
   try{
-    return rhinoMeshToThree(rMesh)
+    return rhinoMeshToThree(rMesh, colorHex)
   }catch(e){
     try{ console.error('convertRhinoMeshToThree failed:', e?.message||String(e)) }catch{}
     return null
@@ -445,14 +449,14 @@ function addItemsPipeline(items, scene, label){
     // Mesh direct
     if (ctor === 'Mesh' || (geom?.vertices && geom?.faces)){
       console.log(`${label}[${i}] MESH DETECTED - Adding directly`)
-      const three = convertRhinoMeshToThree(geom)
+      const three = convertRhinoMeshToThree(geom, 0x6b8cff)
       if (three){ scene.add(three); totalMeshCount++ }
       continue
     }
     // Extrusion/SubD
     if (typeof geom?.toBrep === 'function'){
       console.log(`${label}[${i}] EXTRUSION/SUBD DETECTED - Converting to Brep`)
-      try{ const b = geom.toBrep(true); if (b){ const meshes = meshArrayFromBrep(b); console.log(`${label}[${i}] toBrep meshed:`, { isArray:Array.isArray(meshes), length: meshes.length }); for (const m of meshes){ const three = convertRhinoMeshToThree(m); if (three){ scene.add(three); totalMeshCount++ } } } }catch(e){ console.error(`${label}[${i}] toBrep meshing failed:`, e) }
+      try{ const b = geom.toBrep(true); if (b){ const meshes = meshArrayFromBrep(b); console.log(`${label}[${i}] toBrep meshed:`, { isArray:Array.isArray(meshes), length: meshes.length }); for (const m of meshes){ const three = convertRhinoMeshToThree(m, 0x6b8cff); if (three){ scene.add(three); totalMeshCount++ } } } }catch(e){ console.error(`${label}[${i}] toBrep meshing failed:`, e) }
       continue
     }
     console.log(`${label}[${i}] Unhandled type: ${ctor}`)
