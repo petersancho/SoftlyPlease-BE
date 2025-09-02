@@ -27,6 +27,32 @@ async function diagnoseRhino3dm(){
 }
 await diagnoseRhino3dm()
 
+// Ensure clearScene exists
+function clearScene(scene){
+  try{
+    // keep lights/grid if present
+    const keep = new Set()
+    scene.children.forEach(ch=>{ if (ch.isLight || ch.type==='GridHelper') keep.add(ch) })
+    for (let i=scene.children.length-1; i>=0; i--){ const ch=scene.children[i]; if (!keep.has(ch)) scene.remove(ch) }
+  }catch{}
+}
+
+// Polyfill/fallback for createFromBrep per observed API
+function createMeshesFromBrepCompat(brep){
+  try{
+    const MP = rhino?.MeshingParameters || {}
+    const presets = [MP.default, MP.qualityRenderMesh, MP.fastRenderMesh, MP.coarse].filter(Boolean)
+    for (const p of presets){
+      try{ const res = rhino?.Mesh?.createFromBrep ? rhino.Mesh.createFromBrep(brep, p) : null; if (Array.isArray(res) && res.length) return res }catch{}
+    }
+    // last resort: toMesh
+    if (typeof brep?.toMesh === 'function'){
+      try{ const m = brep.toMesh(MP.default || null); if (m) return [m] }catch{}
+    }
+  }catch{}
+  return []
+}
+
 const viewers = [
   { canvas: document.getElementById('viewA'), filter: (name)=> /^(RH_OUT:Configurator|RH_OUT:points|RH_OUT:text_a|RH_OUT:text_b|RH_OUT:hyperboloid)$/i.test(name) },
   { canvas: document.getElementById('viewB'), filter: (name)=> /^RH_OUT:positive$/i.test(name) },
@@ -140,32 +166,18 @@ function renderResult(result){
 }
 
 function meshArrayFromBrep(brep){
-  let meshes = rhino.Mesh.createFromBrep(brep, rhino.MeshingParameters.default)
   const out = []
-  if (meshes){
-    if (Array.isArray(meshes)){
-      for (const m of meshes){ if (m) out.push(m) }
-    } else {
-      const n = (typeof meshes.length === 'number') ? meshes.length : (typeof meshes.count === 'number' ? meshes.count : 0)
-      for (let i=0;i<n;i++){
-        const m = (typeof meshes.get === 'function') ? meshes.get(i) : meshes[i]
-        if (m) out.push(m)
-      }
-    }
-  }
+  try{
+    const primary = createMeshesFromBrepCompat(brep)
+    if (Array.isArray(primary)) for (const m of primary){ if (m) out.push(m) }
+  }catch{}
   if (out.length === 0){
-    const presets = [rhino.MeshingParameters.smooth, rhino.MeshingParameters.coarse]
+    const MP = rhino?.MeshingParameters || {}
+    const presets = [MP.qualityRenderMesh, MP.coarse].filter(Boolean)
     for (const p of presets){
       try{
-        const retry = rhino.Mesh.createFromBrep(brep, p)
+        const retry = rhino?.Mesh?.createFromBrep ? rhino.Mesh.createFromBrep(brep, p) : []
         if (Array.isArray(retry)) { for (const m of retry){ if (m) out.push(m) } }
-        else if (retry){
-          const n2 = (typeof retry.length === 'number') ? retry.length : (typeof retry.count === 'number' ? retry.count : 0)
-          for (let i=0;i<n2;i++){
-            const mm = (typeof retry.get === 'function') ? retry.get(i) : retry[i]
-            if (mm) out.push(mm)
-          }
-        }
         if (out.length) break
       }catch{}
     }
