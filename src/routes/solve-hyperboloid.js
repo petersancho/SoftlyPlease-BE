@@ -67,7 +67,43 @@ router.post('/', async (req, res) => {
     // Treat Compute success as success even if status misreported; detect by JSON shape
     try{
       const parsed = JSON.parse(text)
-      if (parsed && parsed.values){
+      if (parsed && Array.isArray(parsed.values)){
+        try{
+          // Post-process: mesh Configurator Brep via Compute and attach as RH_OUT:ConfiguratorMesh
+          const cfg = parsed.values.find(v => v.ParamName === 'RH_OUT:Configurator')
+          if (cfg && cfg.InnerTree){
+            // Find first item in first available branch
+            const branches = Object.keys(cfg.InnerTree)
+            if (branches.length){
+              const items = cfg.InnerTree[branches[0]] || []
+              const first = items[0]
+              if (first && first.data){
+                let brepJson = null
+                try{ brepJson = JSON.parse(first.data) }catch{}
+                if (brepJson){
+                  try{
+                    // Prefer qualityRenderMesh, then default
+                    const mp = (compute.MeshingParameters && typeof compute.MeshingParameters.qualityRenderMesh === 'function')
+                      ? compute.MeshingParameters.qualityRenderMesh()
+                      : (typeof compute.MeshingParameters?.default === 'function' ? compute.MeshingParameters.default() : null)
+                    if (compute.Mesh && typeof compute.Mesh.createFromBrep === 'function' && mp){
+                      const meshes = await compute.Mesh.createFromBrep(brepJson, mp)
+                      if (Array.isArray(meshes) && meshes.length){
+                        const entry = {
+                          ParamName: 'RH_OUT:ConfiguratorMesh',
+                          InnerTree: {
+                            '{0}': meshes.map(m => ({ type: 'Rhino.Geometry.Mesh', data: JSON.stringify(m) }))
+                          }
+                        }
+                        parsed.values.push(entry)
+                      }
+                    }
+                  }catch(e){ console.warn('[solve-hyperboloid] meshing failed:', e?.message||String(e)) }
+                }
+              }
+            }
+          }
+        }catch(e){ console.warn('[solve-hyperboloid] post-process error:', e?.message||String(e)) }
         return res.status(200).json(parsed)
       }
     }catch{}
