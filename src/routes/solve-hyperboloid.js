@@ -113,13 +113,11 @@ router.post('/', async (req, res) => {
       t.append([0], [value])
       trees.push(t)
     }
-    // Evaluate using server pointer URL (string) to satisfy compute API signature
+    // Evaluate by sending GHX bytes directly to Compute (avoids pointer fetch failures)
     const defObj = req.app.get('definitions').find(o => o.name === defName)
     if (!defObj) return res.status(400).json({ error: 'Definition not found on server.' })
-    const origin = process.env.PUBLIC_APP_ORIGIN || (req.protocol + '://' + req.get('host'))
-    // Use publicly served files URL to ensure Compute can fetch without appserver routing issues
-    const defUrl = `${origin}/files/${encodeURIComponent(defObj.name)}`
-    try{ console.log('[solve-hyperboloid] defUrl:', defUrl) }catch{}
+    const defBytes = getHyperboloidBytesLocal()
+    try{ console.log('[solve-hyperboloid] using local GHX bytes for', defObj.name) }catch{}
 
     // ---- Cache check and coalescing ----
     const defNameForKey = defObj.name
@@ -144,7 +142,7 @@ router.post('/', async (req, res) => {
     }
 
     const promise = (async ()=>{
-      const response = await compute.Grasshopper.evaluateDefinition(defUrl, trees, false)
+      const response = await compute.Grasshopper.evaluateDefinition(defBytes, trees, false)
       const text = await response.text()
       return { ok: response.ok, status: response.status, statusText: response.statusText, text }
     })()
