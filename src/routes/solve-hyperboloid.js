@@ -93,7 +93,7 @@ router.post('/', async (req, res) => {
     pushDouble('RH_IN:move_cone_d', -20, 20)
     // alias support
     if (raw['RH_IN:array'] !== undefined && raw['RH_IN:array_panels'] === undefined) raw['RH_IN:array_panels'] = raw['RH_IN:array']
-    pushInt('RH_IN:array_panels', 1, 200)
+    pushInt('RH_IN:array_panels', 1, 10)
 
     // Init compute client
     compute.url = process.env.COMPUTE_URL || process.env.RHINO_COMPUTE_URL

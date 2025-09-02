@@ -97,14 +97,14 @@ function getInputs(){
     'RH_IN:move_cone_b': (document.getElementById('move_cone_b') ? Number(document.getElementById('move_cone_b').value) : 0),
     'RH_IN:move_cone_c': (document.getElementById('move_cone_c') ? Number(document.getElementById('move_cone_c').value) : 0),
     'RH_IN:move_cone_d': (document.getElementById('move_cone_d') ? Number(document.getElementById('move_cone_d').value) : 0),
-    'RH_IN:array_panels': (document.getElementById('array') ? Math.round(Number(document.getElementById('array').value)) : 20)
+    'RH_IN:array_panels': (document.getElementById('array_panels') ? Math.round(Number(document.getElementById('array_panels').value)) : 5)
   }
 }
 
 function bindOutputs(){
   const ids = [
     'move_a','move_b','elipse_x','elipse_y','twist_configurator_rings','configurator_height',
-    'move_cone_a','move_cone_b','move_cone_c','move_cone_d','array'
+    'move_cone_a','move_cone_b','move_cone_c','move_cone_d','array_panels'
   ]
   const debounced = debounce(()=>onSolve(),150)
   for (const id of ids){
