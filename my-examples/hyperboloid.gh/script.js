@@ -176,27 +176,33 @@ function renderResult(result){
     }catch(e){ console.warn('ConfiguratorMesh render error:', e?.message||String(e)) }
   }
   if (!meshEntries.length){
-    // Fall back to direct Brep output
+    // Fall back to direct Brep or Mesh output
     try{
       const configuratorEntries = values.filter(v => v.ParamName === 'RH_OUT:Configurator')
       const flat = configuratorEntries.flatMap(e => flattenItems(e))
       if (flat.length){
         let parsed
         try{ parsed = JSON.parse(flat[0].data) }catch{}
-        let brep
-        try{ brep = rhino.CommonObject.decode(parsed) }catch{}
-        if (brep){
-          const v1 = scenes[0]
-          clearScene(v1.scene)
-          if (v1.group){ v1.scene.remove(v1.group); disposeGroup(v1.group); v1.group=null }
-          v1.group = new THREE.Group(); v1.scene.add(v1.group)
-          addRhinoGeometryToGroup(brep, v1.group)
-          // Add hyperboloid curve + points
-          try{ const hypEntries = values.filter(v => v.ParamName === 'RH_OUT:hyperboloid'); const hyps = hypEntries.flatMap(e => flattenItems(e)); for (const it of hyps){ addItemDataToGroup(it.data, v1.group) } }catch{}
-          try{ const ptEntries = values.filter(v => v.ParamName === 'RH_OUT:points' || v.ParamName === 'RH_OUT:point'); const pts = ptEntries.flatMap(e => flattenItems(e)); for (const it of pts){ addItemDataToGroup(it.data, v1.group) } }catch{}
-          fitView(v1)
-          v1.renderer.render(v1.scene, v1.camera)
+        let obj
+        try{ obj = rhino.CommonObject.decode(parsed) }catch{}
+        const v1 = scenes[0]
+        clearScene(v1.scene)
+        if (v1.group){ v1.scene.remove(v1.group); disposeGroup(v1.group); v1.group=null }
+        v1.group = new THREE.Group(); v1.scene.add(v1.group)
+        if (obj){
+          // If already a Mesh, add directly; else use geometry fallback
+          if (obj && obj.vertices && obj.faces){
+            const meshThree = convertRhinoMeshToThree(obj, viewers[0].color)
+            if (meshThree) v1.group.add(meshThree)
+          } else {
+            addRhinoGeometryToGroup(obj, v1.group)
+          }
         }
+        // Add hyperboloid curve + points
+        try{ const hypEntries = values.filter(v => v.ParamName === 'RH_OUT:hyperboloid'); const hyps = hypEntries.flatMap(e => flattenItems(e)); for (const it of hyps){ addItemDataToGroup(it.data, v1.group) } }catch{}
+        try{ const ptEntries = values.filter(v => v.ParamName === 'RH_OUT:points' || v.ParamName === 'RH_OUT:point'); const pts = ptEntries.flatMap(e => flattenItems(e)); for (const it of pts){ addItemDataToGroup(it.data, v1.group) } }catch{}
+        fitView(v1)
+        v1.renderer.render(v1.scene, v1.camera)
       }
     }catch{}
   }
