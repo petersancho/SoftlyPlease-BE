@@ -139,11 +139,12 @@ router.post('/', async (req, res) => {
     const promise = (async ()=>{
       const response = await compute.Grasshopper.evaluateDefinition(defUrl, trees, false)
       const text = await response.text()
-      return text
+      return { ok: response.ok, status: response.status, statusText: response.statusText, text }
     })()
     inflight.set(cacheKey, promise)
-    let text
-    try{ text = await promise } finally { inflight.delete(cacheKey) }
+    let evalRes
+    try{ evalRes = await promise } finally { inflight.delete(cacheKey) }
+    const { ok, status, statusText, text } = evalRes || {}
     // Treat Compute success as success even if status misreported; detect by JSON shape
     try{
       const parsed = JSON.parse(text)
@@ -207,8 +208,8 @@ router.post('/', async (req, res) => {
         return res.status(200).send(body)
       }
     }catch{}
-    if (!response.ok){
-      return res.status(500).json({ error: text || (response.status + ' ' + response.statusText) })
+    if (!ok){
+      return res.status(500).json({ error: text || ((status + ' ' + statusText) || 'Compute error') })
     }
     // Fallback: forward text (also cache raw if possible)
     if (!nocache){
